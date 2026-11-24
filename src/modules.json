@@ -591,7 +591,8 @@
   "src/engines/dd/cutscenes.js",
   "src/data/warriorsDJ.js",
   "src/data/ddNecks.js",
-  "src/data/legendsPack4.js"
+  "src/data/legendsPack4.js",
+  "src/engines/dd/subwayMap.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

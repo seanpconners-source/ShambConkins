@@ -216,7 +216,7 @@
   "kind": "family",
   "hasKey": true,
   "hasIcon": true,
-  "keyart": "Key art for \"Chutes and Ladders\", a minigame in a party video game that pays tribute to Chutes and Ladders. Scene: Ladder Rush and Spinner Showdown. Chute mouths (a kid misbehaving) slide you down, so change ladders before you reach one; good-deed stars boost you up. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "keyart": "Key art for \"Chutes and Ladders\", a minigame in a party video game that pays tribute to Chutes and Ladders. Scene: Strands & Ladders, the Death Stranding edition. The whole Chutes and Ladders board game, dressed as a Death Stranding board game. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
   "icon": "Square game icon for \"Chutes and Ladders\" (Chutes and Ladders tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
@@ -346,7 +346,7 @@
   "kind": "game",
   "hasKey": true,
   "hasIcon": true,
-  "keyart": "Key art for \"Fruit Ninja\", a minigame in a party video game that pays tribute to Fruit Ninja. Scene: Fruit Ninja, but the fruit is your opponent’s flying head: swipe to slice heads in half. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "keyart": "Key art for \"Fruit Ninja\", a minigame in a party video game that pays tribute to Fruit Ninja. Scene: Fruit Ninja in a different world every game: a Crappy Crush world or a Flappy Disaster stage, with its own items and characters flying up to be sliced (items 10, characters 15). Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
   "icon": "Square game icon for \"Fruit Ninja\" (Fruit Ninja tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
@@ -436,7 +436,7 @@
   "kind": "game",
   "hasKey": true,
   "hasIcon": true,
-  "keyart": "Key art for \"Turtle Sewer Clash\", a minigame in a party video game that pays tribute to Mario Bros.. Scene: Tmnt: both humans drag left/right from their first touch on their own half to run. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "keyart": "Key art for \"Turtle Sewer Clash\", a minigame in a party video game that pays tribute to Mario Bros.. Scene: Arcade sewer brawl (Mario Bros. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
   "icon": "Square game icon for \"Turtle Sewer Clash\" (Mario Bros. tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
@@ -471,13 +471,13 @@
  },
  {
   "slot": "league-penalties",
-  "title": "Penalty Kicks",
+  "title": "The League · Penalty Shootout",
   "source": "The League",
   "kind": "game",
   "hasKey": true,
   "hasIcon": true,
-  "keyart": "Key art for \"Penalty Kicks\", a minigame in a party video game that pays tribute to The League. Scene: Real-time on one phone. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
-  "icon": "Square game icon for \"Penalty Kicks\" (The League tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+  "keyart": "Key art for \"The League · Penalty Shootout\", a minigame in a party video game that pays tribute to The League. Scene: In goal, swipe or tap the way you dive. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"The League · Penalty Shootout\" (The League tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
   "slot": "fast-quarter-mile",
@@ -546,7 +546,7 @@
   "kind": "game",
   "hasKey": true,
   "hasIcon": true,
-  "keyart": "Key art for \"The Warriors · Come Out to Play\", a minigame in a party video game that pays tribute to The Warriors. Scene: A Streets of Rage style beat 'em up on the Warriors' walk home to Coney Island, taking turns on the same waves. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "keyart": "Key art for \"The Warriors · Come Out to Play\", a minigame in a party video game that pays tribute to The Warriors. Scene: The Warriors' long night, after the film: the cops raid the Conclave, the Turnbull AC's and their bus, the Orphans, the train south, the Baseball Furies, the Lizzies, catch the train at Union Square, . Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
   "icon": "Square game icon for \"The Warriors · Come Out to Play\" (The Warriors tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
@@ -701,13 +701,13 @@
  },
  {
   "slot": "kingpin-bowling",
-  "title": "Kingpin · Hook & Hustle",
+  "title": "Kingpin Bowling",
   "source": "Kingpin",
   "kind": "game",
   "hasKey": true,
   "hasIcon": true,
-  "keyart": "Key art for \"Kingpin · Hook & Hustle\", a minigame in a party video game that pays tribute to Kingpin. Scene: the most iconic moment of Kingpin · Hook & Hustle. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
-  "icon": "Square game icon for \"Kingpin · Hook & Hustle\" (Kingpin tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+  "keyart": "Key art for \"Kingpin Bowling\", a minigame in a party video game that pays tribute to Kingpin. Scene: Real ten-pin bowling in 3D on an oiled lane: the ball skids, hooks and rolls, the pins fly with real physics. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"Kingpin Bowling\" (Kingpin tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
   "slot": "breakout-party",
@@ -836,7 +836,7 @@
   "kind": "game",
   "hasKey": true,
   "hasIcon": true,
-  "keyart": "Key art for \"Rocky · Fight Night\", a minigame in a party video game that pays tribute to Rocky. Scene: the most iconic moment of Rocky · Fight Night. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "keyart": "Key art for \"Rocky · Fight Night\", a minigame in a party video game that pays tribute to Rocky. Scene: Punch-Out style boxing: you box from behind against a big opponent facing you. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
   "icon": "Square game icon for \"Rocky · Fight Night\" (Rocky tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
@@ -858,6 +858,16 @@
   "hasIcon": true,
   "keyart": "Key art for \"Brave · Wind Archery\", a minigame in a party video game that pays tribute to Brave. Scene: Wind pushes the arrow and the target starts moving after the second shot. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
   "icon": "Square game icon for \"Brave · Wind Archery\" (Brave tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+ },
+ {
+  "slot": "mcgavin-pro-tour",
+  "title": "Shooter McGavin's Pro Tour",
+  "source": "Happy Gilmore",
+  "kind": "game",
+  "hasKey": false,
+  "hasIcon": false,
+  "keyart": "Key art for \"Shooter McGavin's Pro Tour\", a minigame in a party video game that pays tribute to Happy Gilmore. Scene: 3D arcade trackball golf. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"Shooter McGavin's Pro Tour\" (Happy Gilmore tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
   "slot": "newlywed-spirit",
@@ -920,6 +930,26 @@
   "icon": "Square game icon for \"The Price Is Right · Come On Down!\" (The Price Is Right tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
+  "slot": "plinko-show",
+  "title": "Plinko",
+  "source": "The Price Is Right",
+  "kind": "game",
+  "hasKey": false,
+  "hasIcon": false,
+  "keyart": "Key art for \"Plinko\", a minigame in a party video game that pays tribute to The Price Is Right. Scene: Come on down. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"Plinko\" (The Price Is Right tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+ },
+ {
+  "slot": "big-wheel",
+  "title": "The Big Wheel",
+  "source": "The Price Is Right",
+  "kind": "game",
+  "hasKey": false,
+  "hasIcon": false,
+  "keyart": "Key art for \"The Big Wheel\", a minigame in a party video game that pays tribute to The Price Is Right. Scene: Three contestants take turns at the Big Wheel: pull it down hard enough to go all the way round, then spin once more if you like. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"The Big Wheel\" (The Price Is Right tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+ },
+ {
   "slot": "hungry-hungry-heads",
   "title": "Hungry Hungry Hippos · Hungry Hungry Heads",
   "source": "Hungry Hungry Hippos",
@@ -951,13 +981,13 @@
  },
  {
   "slot": "driller-duel",
-  "title": "Mr. Driller · Driller Duel",
-  "source": "Mr. Driller",
+  "title": "Dig Duel",
+  "source": "Dig Dug",
   "kind": "game",
   "hasKey": true,
   "hasIcon": true,
-  "keyart": "Key art for \"Mr. Driller · Driller Duel\", a minigame in a party video game that pays tribute to Mr. Driller. Scene: Two shafts with identical blocks. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
-  "icon": "Square game icon for \"Mr. Driller · Driller Duel\" (Mr. Driller tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+  "keyart": "Key art for \"Dig Duel\", a minigame in a party video game that pays tribute to Dig Dug. Scene: Dig Dug style. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"Dig Duel\" (Dig Dug tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
   "slot": "bubble-battle",
@@ -968,6 +998,16 @@
   "hasIcon": true,
   "keyart": "Key art for \"Puzzle Bobble · Bubble Battle\", a minigame in a party video game that pays tribute to Puzzle Bobble. Scene: Two mirrored bubble fields with identical bubbles. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
   "icon": "Square game icon for \"Puzzle Bobble · Bubble Battle\" (Puzzle Bobble tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+ },
+ {
+  "slot": "chutes-ladder-rush",
+  "title": "Chutes and Ladders · Ladder Rush",
+  "source": "Chutes and Ladders",
+  "kind": "game",
+  "hasKey": false,
+  "hasIcon": false,
+  "keyart": "Key art for \"Chutes and Ladders · Ladder Rush\", a minigame in a party video game that pays tribute to Chutes and Ladders. Scene: Chute mouths (a kid misbehaving) slide you down, so change ladders before you reach one; good-deed stars boost you up. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"Chutes and Ladders · Ladder Rush\" (Chutes and Ladders tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
   "slot": "broforce",
@@ -1361,13 +1401,13 @@
  },
  {
   "slot": "t800-scan-long",
-  "title": "T-800 Freeway Chase",
-  "source": "Terminator",
+  "title": "Judgment Day Chase",
+  "source": "Terminator 2: Judgment Day",
   "kind": "version of terminator",
   "hasKey": false,
   "hasIcon": false,
-  "keyart": "Key art for \"T-800 Freeway Chase\", a minigame in a party video game that pays tribute to Terminator. Scene: A Spy Hunter style night-freeway shooter, taking turns on the same traffic. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
-  "icon": "Square game icon for \"T-800 Freeway Chase\" (Terminator tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+  "keyart": "Key art for \"Judgment Day Chase\", a minigame in a party video game that pays tribute to Terminator 2: Judgment Day. Scene: Judgment day chase: a cinematic Terminator 2 chase in the style of Spy Hunter, Chase H.Q. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"Judgment Day Chase\" (Terminator 2: Judgment Day tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
   "slot": "blackjack",
@@ -1740,24 +1780,14 @@
   "icon": "Square game icon for \"Monopoly · Sealed-Bid Auction\" (Monopoly tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
-  "slot": "chutes-ladder-rush",
-  "title": "Chutes and Ladders · Ladder Rush",
-  "source": "Chutes and Ladders",
-  "kind": "version of chutes",
-  "hasKey": false,
-  "hasIcon": false,
-  "keyart": "Key art for \"Chutes and Ladders · Ladder Rush\", a minigame in a party video game that pays tribute to Chutes and Ladders. Scene: Chute mouths (a kid misbehaving) slide you down, so change ladders before you reach one; good-deed stars boost you up. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
-  "icon": "Square game icon for \"Chutes and Ladders · Ladder Rush\" (Chutes and Ladders tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
- },
- {
   "slot": "chutes-spinner-showdown",
-  "title": "Chutes and Ladders · Spinner Showdown",
+  "title": "Strands & Ladders",
   "source": "Chutes and Ladders",
   "kind": "version of chutes",
   "hasKey": false,
   "hasIcon": false,
-  "keyart": "Key art for \"Chutes and Ladders · Spinner Showdown\", a minigame in a party video game that pays tribute to Chutes and Ladders. Scene: The classic 100-square board with its real ladders and chutes. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
-  "icon": "Square game icon for \"Chutes and Ladders · Spinner Showdown\" (Chutes and Ladders tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
+  "keyart": "Key art for \"Strands & Ladders\", a minigame in a party video game that pays tribute to Chutes and Ladders. Scene: The whole Chutes and Ladders board game, dressed as a Death Stranding board game. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark. Wide 16:9 landscape; keep the main subject in the right half and the left third calm and dark so menu text can sit there.",
+  "icon": "Square game icon for \"Strands & Ladders\" (Chutes and Ladders tribute): one big, instantly readable subject (a character or object from it) cut out as a sticker with a thick white outline on a TRANSPARENT background, centred, filling 85% of the square. Bold comic-book illustration with thick ink outlines and dramatic rim lighting; deep navy background with an electric-blue glow and one bright accent colour; playful, slightly crude party-game humour; no text, no letters, no logos, no watermark."
  },
  {
   "slot": "candy-gumdrop-catch",

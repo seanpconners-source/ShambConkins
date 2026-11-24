@@ -9,6 +9,7 @@
 // portrait(who,cx,cy,size) , sfx, noise, snd, DS, BD, names, solo}. person p = {o outfit, pose, face ±1, head, char, pi, mood, big}.
 const TAU=Math.PI*2;
 const SHAPE=require("src/bgShape.js"),DJD=require("src/data/warriorsDJ.js");
+const MOUTH_HZ=7;
 const DJ_PICS={wide:'dj-wide',tall:'dj-tall',fold:'dj-fold'};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=q=>q<.5?2*q*q:1-Math.pow(-2*q+2,2)/2;
 // who speaks: name, colour, and how their face is drawn
@@ -125,9 +126,9 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
    else{x.fillStyle='rgba(40,30,40,.85)';x.fillRect(0,h*.15,w,h*.06);x.fillRect(0,h*.62,w,h*.38);for(let i=0;i<6;i++){x.fillStyle='rgba(255,230,190,.35)';x.fillRect(i*w/6+10,h*.24,w/6-20,h*.32);}}
    return;}
   if(sh.bg==='radio'){x.fillStyle='#08060a';x.fillRect(0,0,w,h);}}
- // the mouth for this moment of the DJ's line (null = closed): ~12 mouth changes a second, each from the letter being typed then
+ // the mouth for this moment of the DJ's line (null = closed): MOUTH_HZ mouth changes a second (owner: 12 talked too fast), each from the letter being typed then
  function djMouth(){const sh=cur.shots[cur.si];let ln=null;for(const L of sh.lines||[])if(cur.t>=L[0])ln=L;if(!ln||ln[1]!=='dj')return null;
-  const age=cur.t-ln[0],text=ln[2];if(age*38>=text.length+1)return null;const ci=Math.min(text.length-1,Math.floor(Math.floor(age*12)*38/12));return DJD.viseme(text[ci]);}
+  const age=cur.t-ln[0],text=ln[2];if(age*38>=text.length+1)return null;const ci=Math.min(text.length-1,Math.floor(Math.floor(age*MOUTH_HZ)*38/MOUTH_HZ));return DJD.viseme(text[ci]);}
  // the painted DJ (ww:dj-<shape> + mouth/blink frames): placed so the face sits 40% down, a slow push-in over the shot
  function djPic(){const w=W(),h=H();for(const n of SHAPE.order(w,h,DJ_PICS)){const im=DS.picture(n);if(im)return {im,n,shape:n.slice(3)};}return null;}
  function djPlace(P,t){const w=W(),h=H(),G=DJD.DJ.guide[P.shape],[iw,ih]=G.size,k=Math.max(w/iw,h/ih)*(1.02+Math.min(t,12)*.003),[fx,fy]=G.face;
@@ -146,8 +147,9 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
   x.drawImage(P.im,ox,oy,G.size[0]*k,G.size[1]*k);
   const frame=(n)=>{const b=box[n],im=b&&DS.picture(P.n+'-'+n);if(im)x.drawImage(im,ox+b[0]*k,oy+b[1]*k,b[2]*k,b[3]*k);};
   const m=djMouth();if(m)frame(m);if(t%3.7<.13)frame('blink');
-  // the shadow settles over her as the shot opens
-  x.save();x.globalAlpha=Math.min(1,.35+t/.8);x.drawImage(djShade(P.shape),ox,oy,G.size[0]*k,G.size[1]*k);x.restore();
+  x.drawImage(djShade(P.shape),ox,oy,G.size[0]*k,G.size[1]*k);
+  // the whole picture (studio, DJ and her shadow together) fades up from black as the shot opens (owner: the shadow used to arrive late)
+  if(t<.8){x.fillStyle=`rgba(0,0,0,${1-t/.8})`;x.fillRect(0,0,W(),H());}
   return true;}
  // the radio DJ: lips at the microphone, in the dark (our own drawing; the painted DJ replaces it when it's in)
  function drawDJ(t){const w=W(),h=H(),u=Math.min(w/470,h/400),cx=w/2,cy=h*.46,talk={small:.4,ee:.5,oo:.7,ah:1}[djMouth()]||.08;

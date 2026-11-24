@@ -26,10 +26,13 @@ const SY_=require("src/engines/dd/story.js");
 const SC=require("src/engines/dd/scenes.js");
 const DS=require("src/data/ddSprites.js");
 const CUT=require("src/engines/dd/cutscenes.js");
+const MAP=require("src/engines/dd/subwayMap.js");
 const {NECKS}=require("src/data/ddNecks.js");
 const {faceSprite,drawFace,faceHeight,headFacts}=require("src/headFacts.js");
+// a character with a picture of their own (not the emoji card): gang members wear their gang's face only then
+const hasArt=id=>{try{return !!id&&require("src/data/userPortraits.js").isRasterArt(require("src/assets.js").portraitURL(id,'normal'));}catch{return false;}};
 
-const FACE_W=15,FACE_UP=.42,VH=380,BACK=210,DEPTH=SY_.DEPTH,FRONT=BACK+DEPTH,FIG=.9,G=980,SAVE='sc-warriors-v1';
+const FACE_W=15,FACE_UP=.3,VH=380,BACK=210,DEPTH=SY_.DEPTH,FRONT=BACK+DEPTH,FIG=.9,G=980,SAVE='sc-warriors-v1';
 const CH=SY_.CHAPTERS,FOES=SY_.FOES;
 // levels (hearts): XP needed for each level, and what it unlocks (the NES game's move ladder)
 const LV_XP=[0,25,70,140,230,340,480];   // paced over the ten chapters
@@ -78,11 +81,15 @@ const MV={
 const WPN={bat:{dmg:5,uses:16,len:40,w:6,col:'#c8944c'},pipe:{dmg:6,uses:14,len:38,w:4.5,col:'#9ca4ac'},chain:{dmg:5,uses:18,len:36,w:3,col:'#bcbcbc'},stick:{dmg:5,uses:14,len:28,w:4,col:'#1c1c1c'},knife:{dmg:5,uses:3,len:14,w:3,col:'#dcdcdc'}};
 const FOOD={chicken:12,burger:8,pizza:6};
 // a sheet missing a newer pose shows the nearest older one
-const SHEET_ALIAS={batReady:'stand',batWind:'swing1',batHit:'swing2',batFollow:'swing2',batBack:'swing2',batLow:'swing2',batOver:'swing1',batSmash:'swing2',block:'stand',bash:'cross',aim:'jab',lobC:'throw1',lob:'toss',skate1:'run1',skate2:'run2',hurtLow:'hurt',charge:'run1',sweep:'kick',taunt:'win'};
+// hero sheets' swing1/swing2 have a bat painted in (owner Nov 24: a second weapon showed under the held one), so the weapon
+// poses fall back to empty-handed cells and the game draws the held weapon in the measured fist (ddNecks.js)
+const SHEET_ALIAS={batReady:'stand',batWind:'hookC',batHit:'cross',batFollow:'cross',batBack:'hookC',batLow:'cross',batOver:'hookC',batSmash:'cross',block:'stand',bash:'cross',aim:'jab',lobC:'throw1',lob:'toss',skate1:'run1',skate2:'run2',hurtLow:'hurt',charge:'run1',sweep:'kick',taunt:'win'};
 // enemy sheets made to the older 26-pose list draw their own weapon in swing1/swing2 (Furies' bat, Lizzies' whip), while the
 // game draws the held weapon itself: the newer weapon poses fall back to empty-handed ones there, so nothing shows twice
 const PERSON_SHEET={p1:'hero-p1',p2:'hero-p2',cyrus:'cast-cyrus',riff:'foe-riff',rogue:'foe-rogue',orphan:'foe-orphan',fury:'foe-fury',lizzie:'foe-lizzie',punk:'foe-punk',turnbull:'foe-turnbull',cop:'foe-cop',sarge:'foe-cop',riot:'foe-riot',hihat:'gang-hihat',bopper:'gang-bopper'};
-const RUN_CYCLE=['run1','walk2','run2','walk2'];
+// run (owner Nov 24: run1/walk2/run2/walk2 rocked back and forth: the upright passing cell between two wide strides):
+// the two stride cells alternate, a touch of bob; hero sheets with their own 8-frame run strip (run-p1/run-p2) use that
+const RUN_CYCLE=['run1','run2'];
 const FOE_ALIAS=Object.assign({},SHEET_ALIAS,{batReady:'stand',batWind:'hookC',batHit:'cross',batFollow:'cross',batBack:'hookC',batLow:'cross',batOver:'hookC',batSmash:'cross'});
 // a cell a sheet left empty (older sheets end their last row with blank cells) counts as missing: checked once per cell
 const blankCells=new WeakMap();
@@ -97,6 +104,8 @@ async function warriorsDD(s){
  const online=!!s.online,solo=!!s.solo&&!online,board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
  const skill=(()=>{try{return require("src/solo.js").cpuSkill?.(s)??.5;}catch{return .5;}})();
  const DIFF=solo?.8+skill*.45:1;   // enemy damage/aggression
+ // the gangs get tougher as the night goes on (owner, Nov 24): per chapter more damage and quicker attacks (HP: spawnFoe)
+ const chDmg=()=>1+chapterNo*.06,chAgg=()=>1+Math.min(.5,chapterNo*.055);
  const save=(()=>{try{return JSON.parse(localStorage.getItem(SAVE)||'{}');}catch{return {};}})();
  save.reached=clamp(save.reached|0,0,CH.length-1);
  const store_=v=>{try{localStorage.setItem(SAVE,JSON.stringify(Object.assign(save,v)));}catch{}};
@@ -104,6 +113,12 @@ async function warriorsDD(s){
  // locked characters this game can free (the film's cast first): a beaten boss who is one of them joins, other bosses free one
  let freePool=[];try{const rw=require('src/rewards.js');freePool=[...new Set(s.players.slice(0,solo?1:2).flatMap(p=>{try{return rw.gameRecruitPool(s.game,store.profile,p).map(ch=>ch.id);}catch{return [];}}))];}catch{}
  s.gameRecruits=[[],[]];
+ // UNLOCKS (owner, Nov 24): no random joins any more. Once a chapter a locked character steps into a gang wave as a named
+ // CHALLENGER (tougher than the rest); knock them out and they join you. Characters with a picture come first.
+ let challenge=null;const usedCh=new Set();
+ function pickChallenger(n){if(online||!freePool.length)return null;const left=freePool.filter(id=>!usedCh.has(id)&&!s.gameRecruits.flat().includes(id));if(!left.length)return null;
+  const art=left.filter(hasArt),pool=art.length?art:left,id=pool[Math.floor(Math.random()*pool.length)];usedCh.add(id);
+  const areas=CH[n].areas,ai=areas.length>1?1+Math.floor(Math.random()*(areas.length-1)):0,nw=(areas[ai].waves||[]).length;return nw?{n,ai,wi:Math.floor(Math.random()*nw),id}:null;}
  // ---- sounds (all our own, synthesized)
  const sfx={
   p:()=>{noise(.05,.05,{f0:2600,q:.6});snd(170,.06,{type:'square',vol:.035,to:90});},
@@ -178,7 +193,7 @@ async function warriorsDD(s){
 
  // ---- the world
  let A=null,cam={x:0,lockA:-1e9,lockB:1e9},F=[],items=[],props=[],shots=[],fx=[],fires=[],hero=null,wave=-1,waveQ=[],phase='title',phaseT=0,t=0,
-  hitstop=0,shakeT=0,slow=0,banner=null,lvBanner=null,combo={n:0,t:0,best:0},target=null,goT=0,bossOn=false,bossF=null,run=null,partner=null,chapterNo=0,
+  hitstop=0,shakeT=0,slow=0,banner=null,lvBanner=null,combo={n:0,t:0,best:0},target=null,goT=0,bossOn=false,bossF=null,run=null,partner=null,chapterNo=0,areaNo=0,mapT=0,lastCh=null,
   spCD=0,bus=null,lurch=0,escapeT=0,spawnT=0,riffsIn=false,bossT=0,story=null,fade=0,needMsgT=0,cut=0,uid=0;
  const lvQueue=[];
  const living=side=>F.filter(f=>(Array.isArray(side)?side.includes(f.side):f.side===side)&&f.st!=='dead'&&!f.gone);
@@ -189,20 +204,23 @@ async function warriorsDD(s){
  function spawnFoe(sp){const T=FOES[sp.type]||FOES.cop,boss=!!sp.boss;uid++;
   const side=sp.side||1;let xx=side>0?cam.x+vw+30+(uid%3)*14:cam.x-30-(uid%3)*14,dd=clamp(sp.d??DEPTH/2,A.dMin,A.dMax),entering=null;
   if(sp.door!=null&&Math.abs(sp.door-(cam.x+vw/2))<vw*.6){xx=sp.door;dd=A.dMin;entering=.6;}
-  const hpK=boss?1:1+chapterNo*.07;const f=makeFighter({side:sp.ally?'ally':'foe',type:sp.type,T,o:BD.OUTFIT[T.o]||BD.OUTFIT.thug,big:T.big||1,hp:Math.round(T.hp*hpK),x:xx,d:dd,dir:-side,
-   face:T.face||null,head:T.head,sheet:SHEET_OF[sp.type]||'foe-thug',weapon:T.weapon?{kind:T.weapon,uses:99,foe:1}:null,ai:{cool:.9+(uid%5)*.2,hover:uid*1.7,mode:'in'},boss,shield:T.shield||0,id:'f'+uid,entering,chaser:!!sp.chaser});
+  const hpK=boss?1+chapterNo*.05:1+chapterNo*.13;const f=makeFighter({side:sp.ally?'ally':'foe',type:sp.type,T,o:BD.OUTFIT[T.o]||BD.OUTFIT.thug,big:T.big||1,hp:Math.round(T.hp*hpK),x:xx,d:dd,dir:-side,
+   face:T.face||(hasArt(SY_.REPS[T.gang])?SY_.REPS[T.gang]:null),head:T.head,sheet:SHEET_OF[sp.type]||'foe-thug',weapon:T.weapon?{kind:T.weapon,uses:99,foe:1}:null,ai:{cool:.9+(uid%5)*.2,hover:uid*1.7,mode:'in'},boss,shield:T.shield||0,id:'f'+uid,entering,chaser:!!sp.chaser});
+  if(sp.challenger){f.face=sp.challenger;f.challenger=sp.challenger;f.hp=Math.round(f.hp*2.6)+8;f.big=Math.max(f.big,1.08);f.ai.cool=.5;
+   fx.push({kind:'txt',txt:nameOf(sp.challenger).toUpperCase()+' WANTS A PIECE!',x:f.x,d:f.d,z:150,t:2.4});sfx.clink?.();}
   f.maxHp=f.hp;F.push(f);return f;}
 
  // ---- chapters and areas
  async function playChapter(n){chapterNo=n;musicK=CH[n].music||0;
   // the chapter card: title, place, the story so far
   await playCut(n);if(!s.alive)return 'quit';
-  story={n,t:0};phase='story';phaseT=0;musicOn=false;
-  await new Promise(r=>{story.done=r;});if(!s.alive)return 'quit';story=null;
+  story={n,t:0,from:n>0?n-1:null};lastCh=n;phase='story';phaseT=0;musicOn=false;
+  await new Promise(r=>{story.done=r;});if(!s.alive)return 'quit';story=null;challenge=pickChallenger(n);
   for(let ai=0;ai<CH[n].areas.length;ai++){const res=await playArea(n,ai);if(!s.alive)return 'quit';if(res!=='clear')return res;}
   return 'clear';}
- async function playArea(n,ai){A=SY_.buildArea(n,ai,seed);
+ async function playArea(n,ai){areaNo=ai;A=SY_.buildArea(n,ai,seed);
   const want=['far-','wall-','floor-'].map(p=>p+A.kind).concat(SC.FALLBACK[A.kind]?['far-','wall-','floor-'].map(p=>p+SC.FALLBACK[A.kind]):[]);
+  want.push(...new Set(A.blocks.map(b=>'prop-'+b.kind)));if(A.events.some(e=>e.kind==='bus'))want.push('bus');want.push('run-p1','run-p2');
   await DS.ready(want,2500);
   cam={x:0,lockA:-1e9,lockB:1e9};F=[];shots=[];fx=[];fires=[];wave=-1;waveQ=[];bossOn=false;bossF=null;target=null;bus=null;lurch=0;riffsIn=false;bossT=0;
   items=A.items.map(i=>({...i,z:0}));props=A.props.map(p=>({...p,hp:2}));escapeT=A.escape||0;spawnT=4;
@@ -212,7 +230,8 @@ async function warriorsDD(s){
   return new Promise(r=>{run.done=r;});}
  function triggerWaves(dt){if(phase!=='play')return;
   const W=A.waves,foes=waveFoes();
-  if(wave+1<W.length&&foes.length===0&&waveQ.length===0&&hero.x>=W[wave+1].at){wave++;cam.lockA=cam.lockB=cam.x;waveQ=W[wave].list.map(e=>({...e,at:t+e.delay}));goT=0;}
+  if(wave+1<W.length&&foes.length===0&&waveQ.length===0&&hero.x>=W[wave+1].at){wave++;cam.lockA=cam.lockB=cam.x;waveQ=W[wave].list.map(e=>({...e,at:t+e.delay}));goT=0;
+   if(challenge&&challenge.n===chapterNo&&challenge.ai===areaNo&&challenge.wi===wave&&!challenge.on){challenge.on=1;const ty=W[wave].list.map(e=>e.type).find(ty=>FOES[ty]&&!FOES[ty].ranged&&!FOES[ty].big)||W[wave].list[0]?.type||'cop';waveQ.push({type:ty,side:-1,delay:1.4,challenger:challenge.id,at:t+1.4});}}
   if(waveQ.length){const mx=W[wave].max+2;for(let i=0;i<waveQ.length;i++){if(waveQ[i].at<=t&&foes.length<mx){spawnFoe(waveQ.splice(i,1)[0]);break;}}}
   const waveDone=wave>=0&&waveQ.length===0&&waveFoes().length===0;
   if(waveDone&&cam.lockB<1e8&&!bossOn){cam.lockA=-1e9;cam.lockB=1e9;goT=3;}
@@ -311,7 +330,7 @@ async function warriorsDD(s){
  function poseOf(f){if(f.forcePose)return f.forcePose;if(f.mv){const sg=f.mv.def.seq[Math.min(f.mv.seg,f.mv.def.seq.length-1)];return sg[0];}
   switch(f.st){case 'walk':{const ph=f.walkPh%4;return f.T?.skate?(Math.floor(f.walkPh*.7)%2?'skate1':'skate2'):['walk1','walk2','walk3','walk2'][Math.floor(ph)];}
    // run = stride, legs passing, stride, legs passing (the sheets' two run cells are both strides: flipping between them only wiggled the back leg)
-   case 'run':return RUN_CYCLE[Math.floor(f.walkPh*1.1)%4];case 'air':return f.airAtk==='spin'?'spin':f.airAtk?'jkick':'jump';
+   case 'run':return RUN_CYCLE[Math.floor(f.walkPh*.8)%2];case 'air':return f.airAtk==='spin'?'spin':f.airAtk?'jkick':'jump';
    case 'hurt':return f.hurtLow?'hurtLow':'hurt';case 'dizzy':case 'grabbed':return 'dizzy';case 'held':return 'hurt';case 'fall':return 'fall';case 'down':case 'dead':return 'down';case 'pit':return 'fall';
    case 'getup':return 'kneel';case 'grabbing':return 'grab';case 'holding':return 'grab';case 'win':return 'win';case 'carry':return 'throw1';
    default:return f.shield>0&&f.ai?'block':f.weapon&&f.weapon.kind!=='knife'?'batReady':Math.sin(t*3+(f.pi||0))>0?'stand':'stand2';}}
@@ -336,7 +355,7 @@ async function warriorsDD(s){
   if(v.shield>0&&a&&!def.special&&kind!=='launch'&&!['dizzy','grabbed','fall','hurt'].includes(v.st)&&Math.sign(a.x-v.x)===v.dir&&!(a.z>20)){v.shield-=def.breaker||kind==='knock'?2:1;sfx.block();
    fx.push({kind:'block',x:v.x+v.dir*16,d:v.d,z:50,t:.25});a.x-=a.dir*14;hitstop=Math.max(hitstop,.04);if(heroHit)run.meter=Math.min(300,run.meter+3);
    if(v.shield<=0){txt(v,'SHIELD BROKEN!');v.shield=0;v.st='dizzy';v.stT=0;v.dazed=true;v.mv=null;}else if(v.ai)v.ai.cool=Math.min(v.ai.cool,.25);return false;}
-  if(heroHit)dmg*=1+.07*(run.lv-1);else if(a&&a.side==='foe')dmg*=DIFF;
+  if(heroHit)dmg*=1+.07*(run.lv-1);else if(a&&a.side==='foe')dmg*=DIFF*chDmg();
   if(v.st==='dizzy'&&heroHit)dmg*=1.2;
   v.hp-=dmg;v.flash=.14;v.hpShow=2;
   hitstop=Math.max(hitstop,kind==='light'?.05:kind==='push'?.06:def.fin?.12:.09);spark(v,a,kind);
@@ -412,7 +431,7 @@ async function warriorsDD(s){
   triggerWaves(dt);
   if(goT>0)goT-=dt;if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}if(lvBanner){lvBanner.t-=dt;if(lvBanner.t<=0)lvBanner=lvQueue.shift()||null;}if(shakeT>0)shakeT-=dt;if(fade>0)fade=Math.max(0,fade-dt*2.5);
   // remove the beaten (now and then one drops food)
-  for(const f of F)if(f.st==='dead'&&f.stT>1.1&&f.side==='foe'&&!f.gone){f.gone=true;run.score+=f.T.pts;gainXP(f.boss?10:3);if(f.boss)bossBeaten(f);else if(uid%6===0)items.push({x:f.x,d:f.d,z:20,vz:150,kind:['pizza','burger'][uid%2]});}
+  for(const f of F)if(f.st==='dead'&&f.stT>1.1&&f.side==='foe'&&!f.gone){f.gone=true;run.score+=f.T.pts;gainXP(f.boss?10:3);if(f.challenger)freeCharacter(f.challenger,f);if(f.boss)bossBeaten(f);else if(uid%6===0)items.push({x:f.x,d:f.d,z:20,vz:150,kind:['pizza','burger'][uid%2]});}
   F=F.filter(f=>!f.gone||f.side==='hero');}
  function physics(f,dt){f.stT+=dt;if(f.entering){f.entering-=dt;f.d=Math.min(f.d+60*dt,A.dMin+30);if(f.entering<=0)f.entering=null;}
   if(f.z>0||f.vz>0){f.z+=f.vz*dt;f.vz-=G*dt;if(f.z<=0){f.z=0;land(f);}}
@@ -511,7 +530,7 @@ async function warriorsDD(s){
  // ---- enemies (and the Riffs on your side)
  function foeStep(f,dt){if(['hurt','fall','down','getup','pit','dead','grabbed','dizzy'].includes(f.st)||f.gone||f.entering)return;
   if(f.st==='atk'){moveStep(f,dt);return;}if(f.st==='holding')return;
-  const ally=f.side==='ally',T=f.T,ai=f.ai;ai.cool-=dt*(ally?1.3:DIFF);
+  const ally=f.side==='ally',T=f.T,ai=f.ai;ai.cool-=dt*(ally?1.3:DIFF*chAgg());
   // a Rogue running off once the Riffs arrive: out of the screen and gone
   if(ai.flee&&!ally&&!f.boss&&!['hurt','fall','down','dead','held','dizzy','grabbed'].includes(f.st)&&!f.mv){f.x+=ai.flee*T.sp*1.5*dt;f.dir=ai.flee;f.st='walk';f.walkPh+=dt*7;
    if(f.x<cam.x-70||f.x>cam.x+vw+70)f.gone=true;return;}
@@ -552,10 +571,11 @@ async function warriorsDD(s){
  // ---- hero out / pit / boss
  function heroOut(h){run.lives--;if(run.lives>0){Object.assign(h,{st:'air',hp:h.maxHp,inv:2.4,dead:false,z:140,vz:0,vx:0,airAtk:null,airHit:new Set()});txt(h,'GET UP!');}else{phase='over';phaseT=0;musicOn=false;sfx.die();}}
  function heroPit(h){run.lives--;if(run.lives>0){Object.assign(h,{st:'air',hp:h.maxHp,inv:2.4,z:160,vz:0,vx:0,airAtk:null,airHit:new Set()});const p=A.pits.find(([a,b])=>h.x>a-10&&h.x<b+10);if(p)h.x=Math.max(cam.x+20,p[0]-50);}else{h.st='dead';phase='over';phaseT=0;musicOn=false;}}
+ function freeCharacter(who,f){if(online||!who)return;const i=cur;if(s.gameRecruits.flat().includes(who))return;s.gameRecruits[i].push(who);fx.push({kind:'txt',txt:nameOf(who).toUpperCase()+' JOINS YOU!',x:f.x,d:f.d,z:140,t:2.8});}
  function bossBeaten(f){slow=1.2;sfx.clear();vibrate([40,60,40,60,100]);
   // freeing someone: the boss if they are a locked character, else the next locked one this game can free
-  const i=cur,who=f.face&&freePool.includes(f.face)?f.face:freePool.find(id=>!s.gameRecruits[0].includes(id)&&!s.gameRecruits[1].includes(id));
-  if(who&&!online){if(!s.gameRecruits[i].includes(who))s.gameRecruits[i].push(who);fx.push({kind:'txt',txt:nameOf(who).toUpperCase()+' JOINS YOU!',x:f.x,d:f.d,z:140,t:2.6});}
+  // a boss who is a locked character joins (the other unlocks are the chapter's challenger)
+  if(f.face&&freePool.includes(f.face))freeCharacter(f.face,f);
   setTimeout(()=>{if(!s.alive||phase!=='play')return;areaClear(chapterNo===CH.length-1?'THE WARRIORS ARE HOME!':null);},900);}
  // ---- the test bot (online-native / tests): walk right, fight what's near, step out of gun lines
  function botThink(dt){const h=hero;if(!h||phase!=='play'){bot.stick={sx:0,sy:0};return;}bot.t-=dt;const foes=living('foe');let near=null,bd=1e9;for(const v of foes){if(v.entering)continue;if(A.escape&&v.x<h.x-40&&!(v.mv&&Math.abs(v.x-h.x)<70))continue;const d=Math.abs(v.x-h.x)+Math.abs(v.d-h.d)*2;if(d<bd){bd=d;near=v;}}
@@ -581,9 +601,9 @@ async function warriorsDD(s){
    for(let i=0;i<6;i++){const fx2=X+(i-2.5)*fi.r*.32,fh=10+6*Math.sin(t*14+i*1.7);x.fillStyle=`rgba(255,${150+i*12},40,${.8*a})`;x.beginPath();x.moveTo(fx2-4,Y);x.quadraticCurveTo(fx2,Y-fh*1.6,fx2+4,Y);x.fill();}}
   // the bus: warning lights on its row, then the bus itself
   if(bus){const Y=BACK+bus.d;if(bus.t<1.3&&Math.floor(t*8)%2){x.fillStyle='rgba(255,60,40,.25)';x.fillRect(0,Y-24,vw,48);x.font='900 22px "SC Bangers",Impact';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#ffd23c';x.fillText('BUS!',bus.dir>0?40:vw-40,Y);}
-   if(bus.t>=1.3){const X=bus.x-cam.x,L=220;x.save();x.translate(X,Y);x.scale(bus.dir,1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(-L,-4,L+10,10);x.fillStyle='#e8c83c';x.fillRect(-L,-70,L+8,66);x.fillStyle='#1c1c1c';x.fillRect(-L,-14,L+8,10);
+   if(bus.t>=1.3){const X=bus.x-cam.x,L=220,bim=DS.picture('bus');if(bim){const bw=L+20,bh=bw*bim.height/bim.width;x.save();x.translate(X,Y);x.scale(bus.dir,1);x.fillStyle='rgba(0,0,0,.35)';x.beginPath();x.ellipse(-L/2+4,0,L*.55,7,0,0,7);x.fill();x.drawImage(bim,-L-6,4-bh,bw,bh);x.restore();}else{x.save();x.translate(X,Y);x.scale(bus.dir,1);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(-L,-4,L+10,10);x.fillStyle='#e8c83c';x.fillRect(-L,-70,L+8,66);x.fillStyle='#1c1c1c';x.fillRect(-L,-14,L+8,10);
     for(let i=0;i<5;i++)x.fillRect(-L+14+i*40,-62,30,22);x.fillStyle='#fff8c0';x.fillRect(2,-30,6,8);x.fillStyle='#0c0c0c';for(const wx of [-L+30,-40]){x.beginPath();x.arc(wx,-4,12,0,7);x.fill();}
-    x.font='900 11px "SC Nunito",sans-serif';x.fillStyle='#1c1c1c';x.textAlign='center';x.fillText('TURNBULL AC',-L/2,-31);x.restore();}}
+    x.font='900 11px "SC Nunito",sans-serif';x.fillStyle='#1c1c1c';x.textAlign='center';x.fillText('TURNBULL AC',-L/2,-31);x.restore();}}}
   x.restore();
   if(portrait&&bandY+VH*k<H){const y0=SYw(FRONT),g2=x.createLinearGradient(0,y0,0,H);g2.addColorStop(0,'rgba(0,0,0,.2)');g2.addColorStop(1,'rgba(0,0,0,.85)');x.fillStyle=g2;x.fillRect(0,y0,W,H-y0);}
   // depth-sorted: obstacles, props, items, fighters, shots
@@ -612,22 +632,24 @@ async function warriorsDD(s){
  // where the neck and head are on a drawn sheet cell (measured from the art: src/data/ddNecks.js), in screen space; the cell is
  // drawn at (ox,oy) mirrored by `face`, scaled sc, turned by rot round (ox,oy). null = this cell has no measurement
  function cellNeck(sheetName,name,ox,oy,face,sc,rot){const m=NECKS[sheetName]?.[name];if(!m)return null;const ft=DS.footOf(name),c=Math.cos(rot),sn=Math.sin(rot);
-  const T=(px,py)=>{const lx=(px-ft[0])*sc*face,ly=(py-ft[1])*sc;return {x:ox+lx*c-ly*sn,y:oy+lx*sn+ly*c};};return {neck:T(m[0],m[1]),head:T(m[2],m[3])};}
+  const T=(px,py)=>{const lx=(px-ft[0])*sc*face,ly=(py-ft[1])*sc;return {x:ox+lx*c-ly*sn,y:oy+lx*sn+ly*c};};return {neck:T(m[0],m[1]),head:T(m[2],m[3]),hand:m.length>5?T(m[4],m[5]):null};}
  function drawFighter(f){const sx=SX(f.x),sy=SYw(BACK+f.d),kk=k*FIG,blink=(f.st==='dead'&&f.stT>.4&&Math.floor(t*14)%2)||(f.inv>0&&f.side==='hero'&&Math.floor(t*16)%2&&!f.mv);if(blink)return;
   if(sx<-90||sx>s.W+90)return;
-  const SCL=sheetCell(f.sheet,f.poseName||'stand'),sheet=SCL?.img,cell=SCL?.cell,name=SCL?.name||f.poseName||'stand';
+  let SCL=sheetCell(f.sheet,f.poseName||'stand');
+  // a hero's own 8-frame run strip (ww:run-p1/-p2) when it's in: frame by stride, the neck from the measured strip (else run1's)
+  const strip=f.st==='run'&&f.sheet?.startsWith('hero-')?DS.picture('run-'+f.sheet.slice(5)):null;
+  if(strip){const fr=Math.floor(f.walkPh*1.6)%8;SCL={img:strip,cell:{sx:fr*DS.CELL,sy:0},name:'run1',strip:'run-'+f.sheet.slice(5),fr};}
+  const sheet=SCL?.img,cell=SCL?.cell,name=SCL?.name||f.poseName||'stand';
   let spots;const spinning=f.st==='atk'&&f.mv?.def.spin||f.airAtk==='spin',spc=Math.cos(f.spinA||0);
   // a spin kick turns the body round smoothly (x squashed by the cosine of the turn) instead of flipping every frame
   const face=spinning?(f.airAtk==='spin'?f.baseDir:f.dir)*(spc>=0?1:-1)*Math.max(.2,Math.abs(spc)):f.dir;
   if(spinning)drawSwoosh(f,sx,sy,kk,false);
   x.save();if(f.entering)x.globalAlpha=1-f.entering/.6*.7;
   if(cell){const sc=kk*f.big/DS.UNIT;x.save();x.globalAlpha*=.32;x.fillStyle='#000';x.beginPath();x.ellipse(sx,sy,22*kk*f.big,6*kk,0,0,7);x.fill();x.restore();
-   // a running stride is the float: lift the body a touch
-   const lift=f.st==='run'&&(name==='run1'||name==='run2')?3*kk:0;
-   // the passing cell is upright: lean it into the run like the strides
-   const rot=f.st==='run'&&name==='walk2'?face*.12:0;x.save();x.translate(sx,sy-f.z*kk-lift);if(rot)x.rotate(rot);x.scale(face*sc,sc);const ft=DS.footOf(name);if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
+   // a running stride bobs: up through the stride, down as the back leg comes through
+   const lift=f.st==='run'&&!SCL.strip?(name==='run1'?3:1)*kk*(.6+.4*Math.abs(Math.sin(f.walkPh*.8*Math.PI))):0,rot=0;x.save();x.translate(sx,sy-f.z*kk-lift);if(rot)x.rotate(rot);x.scale(face*sc,sc);const ft=DS.footOf(name);if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
    const J=BD.joints(f.pose);const tp=p=>({x:sx+p[0]*face*kk*f.big,y:sy-f.z*kk+p[1]*kk*f.big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),wa:f.pose.wa,wl:f.pose.wl};
-   const cn=cellNeck(f.sheet,name,sx,sy-f.z*kk-lift,face,sc,rot);if(cn){spots.neck=cn.neck;spots.head=cn.head;spots.measured=1;}}
+   const cn=SCL.strip&&NECKS[SCL.strip]?.['r'+SCL.fr]?cellNeck(SCL.strip,'r'+SCL.fr,sx,sy-f.z*kk-lift,face,sc,rot):cellNeck(f.sheet,name,sx,sy-f.z*kk-lift,face,sc,rot);if(cn){spots.neck=cn.neck;spots.head=cn.head;if(cn.hand)spots.hand=cn.hand;spots.measured=1;}}
   else spots=BD.drawBody(x,f.pose,{x:sx,y:sy,face,k:kk,o:f.o,big:f.big,flash:f.flash*5,z:f.z});
   // the riot shield, a weapon, a carried barrel
   if(f.shield>0&&!['fall','down','dead'].includes(f.st)){const hx=spots.hand.x+face*4*kk,hy=spots.hand.y;x.fillStyle='rgba(160,190,220,.45)';x.strokeStyle='#2c3448';x.lineWidth=2;x.beginPath();x.roundRect(hx-4*kk,hy-34*kk,8*kk,52*kk,3*kk);x.fill();x.stroke();}
@@ -647,6 +669,7 @@ async function warriorsDD(s){
   else BD.drawGangHead(x,cx,cy-fw*.08,fw*1.02,f.head||'thug',{face,tilt,mood,id:f.id});
   x.restore();
   if(f.side==='ally'&&f.st!=='dead'&&!(riffsIn&&bossF&&Math.abs(f.x-bossF.x)<90)){x.fillStyle='#e8a83c';x.font=`900 ${Math.max(8,7*kk)}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(f.type==='fox'?'FOX':'RIFF',cx,cy-fw*1.2);}
+  if(f.challenger&&f.st!=='dead'){x.font=`900 ${Math.max(9,8*kk)}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.lineWidth=3;x.strokeStyle='#000';const nm=nameOf(f.challenger).toUpperCase();x.strokeText(nm,cx,cy-fw*1.25);x.fillStyle='#ff5c5c';x.fillText(nm,cx,cy-fw*1.25);}
   if(f.st==='dizzy'){for(let i=0;i<3;i++){const a=t*6+i*2.1;x.fillStyle='#ffe85c';x.font=`${10*kk}px sans-serif`;x.textAlign='center';x.fillText('★',spots.face.x+Math.cos(a)*14*kk,spots.face.y-fh*.75+Math.sin(a)*4*kk);}}
   // a telegraphed attack: a red ! over the head before it comes
   if(f.side==='foe'&&f.mv?.def.tell&&f.mv.seg===0){x.font=`900 ${Math.max(14,16*kk)}px "SC Bangers",Impact`;x.textAlign='center';x.textBaseline='middle';x.fillStyle=`rgba(255,${80+Math.floor(80*Math.sin(t*30))},40,.95)`;x.strokeStyle='#000';x.lineWidth=3;x.strokeText('!',cx,cy-fw*1.3);x.fillText('!',cx,cy-fw*1.3);}
@@ -807,11 +830,7 @@ async function warriorsDD(s){
   const nBtn=(save.reached||0)>0?4:2,menuH=nBtn*(bh+fs*.55)+(save.best?fs*1.2:0),menuY=Math.max(H*.3,Math.min(H*.58,H-menuH-6));
   if(logo){const room=(phase==='select'?H*.3:menuY)-H*.03-fs*.4,w=Math.min(W*.9,640,room*logo.width/logo.height),h=w*logo.height/logo.width;x.drawImage(logo,(W-w)/2,H*.03,w,h);}
   else{big('THE WARRIORS',W/2,H*.15,Math.min(W/7,fs*4.4),'#ff3c3c');small('COME OUT TO PLAY',W/2,H*.26,fs*1.2,'#ffd23c');}
-  if(phase==='select'){// the chapters reached so far
-   small('CHAPTERS',W/2,H*.33,fs*1.1,'#ffd23c');const cols=W>H?2:1,cw=Math.min(cols===2?W*.44:W*.8,300),n=Math.min(CH.length,(save.reached|0)+1),rows=Math.ceil(n/cols),rh=Math.min(fs*1.95,(H*.55-bh)/rows-fs*.3);
-   for(let i=0;i<n;i++){const col=cols===2?i%2:0,row=cols===2?Math.floor(i/2):i,X=cols===2?W/2+(col?8:-cw-8):W/2-cw/2,Y=H*.37+row*(rh+fs*.3);ui.btns.push({x:X,y:Y,w:cw,h:rh,act:()=>titleDone?.(i)});
-    x.fillStyle='rgba(20,10,14,.88)';x.strokeStyle='#e8b83c';x.lineWidth=2;x.beginPath();x.roundRect(X,Y,cw,rh,9);x.fill();x.stroke();fitSmall(`${i+1}. ${CH[i].title}`,X+cw/2,Y+rh/2,Math.min(fs*.95,rh*.5),cw-12,'#fff');}
-   const by=Math.min(H*.37+rows*(rh+fs*.3)+fs*.4,H-bh-8);ui.btns.push({x:x0,y:by,w:bw,h:bh,act:()=>{phase='title';}});x.fillStyle='#3c3c44';x.beginPath();x.roundRect(x0,by,bw,bh,10);x.fill();small('BACK',W/2,by+bh/2,fs);ui.draw();return;}
+  if(phase==='select'){drawSelectMap();return;}
   let y0=menuY;
   const add=(label,act,main)=>{ui.btns.push({x:x0,y:y0,w:bw,h:bh,act});x.fillStyle=main?'#e8b83c':'rgba(20,10,14,.85)';x.strokeStyle='#000';x.lineWidth=3;x.beginPath();x.roundRect(x0,y0,bw,bh,12);x.fill();x.stroke();fitSmall(label,W/2,y0+bh/2,fs*1.02,bw-14,main?'#1c0c0c':'#fff');y0+=bh+fs*.55;};
   add('START · THE CONCLAVE',()=>titleDone?.(0),true);
@@ -820,14 +839,30 @@ async function warriorsDD(s){
   add('MOVES',()=>{ui.moves=true;});
   if(save.best)small(`BEST ${save.best}`,W/2,y0+fs*.3,fs*.85,'#ccc');
   ui.draw();}
- function drawStory(){const W=s.W,H=s.H,fs=clamp(Math.min(W,H)*.04,12,20),C=CH[story.n];story.t+=1/60;titleBg();x.fillStyle='rgba(0,0,0,.6)';x.fillRect(0,0,W,H);
-  const a=Math.min(1,story.t*2);x.save();x.globalAlpha=a;
-  if(story.end){fitBig('THE END',W/2,H*.3,Math.min(fs*4,W/7),W*.9,'#ffd23c');fitSmall('The Warriors made it home to Coney Island.',W/2,H*.44,fs*1.05,W*.9,'#fff');
-   if(story.t>1)fitSmall('Can you dig it?',W/2,H*.52,fs*1.2,W*.9,'#ff8ca0');if(story.t>1.6)fitSmall(`${names[cur]} · ${run?.score||0} points`,W/2,H*.62,fs,W*.9,'#ccc');}
-  else{small(`CHAPTER ${story.n+1}`,W/2,H*.24,fs*1.05,'#ff8ca0');fitBig(C.title,W/2,H*.33,Math.min(fs*3.4,W/8),W*.9,'#ffd23c');small(C.place,W/2,H*.42,fs*.95,'#ccc');
-   C.story.forEach((ln,i)=>{if(story.t>.5+i*.6)fitSmall(ln,W/2,H*.54+i*fs*1.9,fs*1.02,W*.9,'#fff');});}
-  if(story.t>1.4&&Math.floor(story.t*2)%2)small(story.end?'TAP TO FINISH':'TAP TO FIGHT',W/2,H*.82,fs*.95,'#ffd23c');x.restore();
-  if(story.t>(story.end?7:5.5)||(bot.on&&story.t>.9))story.done?.();}
+ // the chapter select = the subway map (owner, Nov 24): tap a stop you've reached
+ function drawSelectMap(){const W=s.W,H=s.H,fs=clamp(Math.min(W,H)*.04,12,20),reached=Math.min(CH.length-1,save.reached|0);mapT+=1/60;ui.btns=[];
+  const m=MAP.drawMap(x,W,H,{chapters:CH,reached,at:reached,t:mapT,done:new Set(save.cleared||[])}),P=m.L.panel;
+  for(const sp of m.spots)if(sp.reached)ui.btns.push({x:sp.x-sp.r,y:sp.y-sp.r,w:sp.r*2,h:sp.r*2,act:()=>titleDone?.(sp.i)});
+  panelBox(P);const cx=P.x+P.w/2;fitBig('CHOOSE YOUR STOP',cx,P.y+P.h*.14,Math.min(fs*2.2,P.w/9,P.h*.14),P.w*.9,'#ffd23c');
+  fitSmall('Tap a stop on the map you have reached',cx,P.y+P.h*.3,fs*.95,P.w*.9,'#fff');
+  const bw=Math.min(P.w*.8,260),bh=Math.min(fs*2.3,P.h*.2),by=P.y+P.h-bh-fs*.6;
+  [['CONTINUE · '+CH[reached].title,()=>titleDone?.(reached),true],['BACK',()=>{phase='title';}]].forEach(([l,act,main],i)=>{const yy=by-(1-i)*(bh+fs*.5);ui.btns.push({x:cx-bw/2,y:yy,w:bw,h:bh,act});x.fillStyle=main?'#e8b83c':'#3c3c44';x.beginPath();x.roundRect(cx-bw/2,yy,bw,bh,10);x.fill();fitSmall(l,cx,yy+bh/2,fs*.95,bw-12,main?'#1c0c0c':'#fff');});
+  ui.draw();}
+ // a dark card behind the map's text
+ function panelBox(P){x.fillStyle='rgba(10,6,8,.82)';x.strokeStyle='#e8b83c';x.lineWidth=2;x.beginPath();x.roundRect(P.x,P.y,P.w,P.h,12);x.fill();x.stroke();}
+ // two short lines of text in a width (the story lines on the map card)
+ function wrapText(txt,cx,cy,f,w,col){x.font=`800 ${f}px "SC Nunito",sans-serif`;const words=txt.split(' ');let a='',lines=[];for(const wd of words){const t2=a?a+' '+wd:wd;if(x.measureText(t2).width>w&&a){lines.push(a);a=wd;}else a=t2;}lines.push(a);
+  lines.forEach((l,i)=>fitSmall(l,cx,cy+(i-(lines.length-1)/2)*f*1.25,f,w,col));}
+ // between chapters: the map shows the ride to the next stop, the chapter's story beside it (owner, Nov 24)
+ function drawStory(){const W=s.W,H=s.H,fs=clamp(Math.min(W,H)*.04,12,20),C=CH[story.n];story.t+=1/60;
+  const n=story.end?CH.length-1:story.n,m=MAP.drawMap(x,W,H,{chapters:CH,reached:Math.max(save.reached|0,n),at:n,from:story.end?null:story.from,t:story.t,done:new Set(save.cleared||[])}),P=m.L.panel,cx=P.x+P.w/2;
+  const a=Math.min(1,story.t*2);x.save();x.globalAlpha=a;panelBox(P);const S=(txt,yk,f,col)=>fitSmall(txt,cx,P.y+P.h*yk,f,P.w*.9,col);
+  if(story.end){fitBig('THE END',cx,P.y+P.h*.2,Math.min(fs*3.4,P.w/6),P.w*.9,'#ffd23c');S('The Warriors made it home to Coney Island.',.38,fs*1.02,'#fff');
+   if(story.t>1)S('Can you dig it?',.5,fs*1.15,'#ff8ca0');if(story.t>1.6)S(`${names[cur]} · ${run?.score||0} points`,.62,fs,'#ccc');}
+  else{S(`CHAPTER ${story.n+1}`,.12,fs*1.02,'#ff8ca0');fitBig(C.title,cx,P.y+P.h*.27,Math.min(fs*2.8,P.w/9,P.h*.15),P.w*.92,'#ffd23c');S(C.place,.4,fs*.92,'#ccc');
+   C.story.forEach((ln,i)=>{if(story.t>.5+i*.6)wrapText(ln,cx,P.y+P.h*(.52+i*.17),fs*.95,P.w*.88,'#fff');});}
+  if(story.t>1.4&&Math.floor(story.t*2)%2)S(story.end?'TAP TO FINISH':'TAP TO FIGHT',.9,fs*.95,'#ffd23c');x.restore();
+  if(story.t>(story.end?7:6.5)||(bot.on&&story.t>.9))story.done?.();}
  function drawMoves(){const W=s.W,H=s.H,fs=clamp(Math.min(W,H)*.03,10,15);x.fillStyle='rgba(6,4,8,.95)';x.fillRect(0,0,W,H);big('MOVES',W/2,fs*2.6,fs*2.2,'#ffd23c');
   const lv=run?.lv||1,rows=[['PUNCH x3','Jab, cross, hook: each hit chains into the next',1],['KICK x2','Kick, roundhouse',1],['PUNCH PUNCH KICK','Cross into a leg sweep',2],['RUN · DASH PUNCH','Push the stick all the way · + PUNCH',1],['BACK KICK','Stick AWAY + KICK',1],
    ['WEAPONS','Stand on one + PUNCH. PUNCH x3: swing, backhand, smash',1],['THROW WEAPON','Holding one + KICK: it spins at them, then pick it back up',1],['BARRELS & ROCKS','Next to one + PUNCH to lift, PUNCH to throw',1],['SHIELDS','Riot cops block from the front: hit their back, grab, jump-kick',1],
@@ -851,12 +886,12 @@ async function warriorsDD(s){
   killAll:()=>{for(const f of living('foe')){f.shield=0;f.inv=0;f.entering=null;damage(hero,f,999,'knock',100,{});}},lv:n=>{run.xp=LV_XP[n-1];run.lv=n;},meter:v=>{run.meter=v;},
   boss:()=>{if(!A?.boss)return;wave=A.waves.length-1;waveQ=[];for(const f of living('foe'))f.gone=true;hero.x=A.boss.at+5;cam.x=Math.max(0,A.boss.at-vw*.4);},
   end:()=>{if(!A)return;wave=A.waves.length-1;waveQ=[];for(const f of living('foe'))f.gone=true;hero.x=A.len-(A.escape?200:100);cam.x=Math.max(0,A.len-vw);if(A.boss&&!bossOn)startBoss();},
-  give:k2=>{hero.weapon={kind:k2,uses:99};},spawn:(type,dx=60)=>{const f=spawnFoe({type,side:1,d:hero.d});f.x=hero.x+dx;f.entering=null;return f;},
+  give:k2=>{hero.weapon={kind:k2,uses:99};},get challenge(){return challenge;},selectMap:()=>{phase='select';},get freePool(){return freePool;},challenger:(id,dx=70)=>{const f=spawnFoe({type:'orphan',side:1,d:hero.d,challenger:id||freePool[0]});f.x=hero.x+dx;f.entering=null;return f;},spawn:(type,dx=60)=>{const f=spawnFoe({type,side:1,d:hero.d});f.x=hero.x+dx;f.entering=null;return f;},
   get cuts(){return cuts;},cut:k=>{phase="cut";cuts.start(k,()=>{phase="wait";});},  get bus(){return bus;},get riffs(){return riffsIn;},get cam(){return cam;},get k(){return k;},get vw(){return vw;}};
 
  async function turn(pi,startAt,count){cur=pi;const lv0=clamp(1+Math.ceil(startAt*.75),1,7);run={lives:board?2:3,lv:lv0,xp:LV_XP[lv0-1],meter:0,score:0,hurt:false};let n=startAt,cleared=0,conts=solo?2:0;
   for(;;){run.hurt=false;run.hp=null;run.weapon=null;combo.best=0;const res=await playChapter(n);if(!s.alive||res==='quit')return {score:run.score,cleared};
-   if(res==='clear'){cleared++;n++;if(solo){soloProgress(s,run.score,cleared,`${CH[n-1].title} cleared · ${run.score}`);if(n>(save.reached||0))store_({reached:Math.min(n,CH.length-1)});}
+   if(res==='clear'){cleared++;n++;if(solo){soloProgress(s,run.score,cleared,`${CH[n-1].title} cleared · ${run.score}`);if(n>(save.reached||0))store_({reached:Math.min(n,CH.length-1)});store_({cleared:[...new Set([...(save.cleared||[]),n-1])]});}
     if(n>=CH.length){if(solo)await ending();break;}if(cleared>=count)break;continue;}
    if(conts>0){conts--;const go=await askContinue();if(go){run.lives=3;run.score=Math.floor(run.score/2);continue;}}
    break;}

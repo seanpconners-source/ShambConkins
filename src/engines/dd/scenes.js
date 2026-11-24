@@ -182,8 +182,26 @@ function drawArea(g,A,camX,vw,BACK,FRONT,t){const c={A,cam:camX,vw,B:BACK,F:FRON
   g.fillStyle='rgba(255,255,255,.12)';g.fillRect(X0,y0+2,X1-X0,1.5);}}
 // solid obstacles, drawn at their front edge (depth-sorted with the fighters by the engine). X = screen x of b.x in world
 // units, yb/yf = y of the back/front edge
+// how much wider than its footprint a painted prop is drawn
+const PROP_W={car:1.05,wreck:1.05,newsstand:1.1,bench:1.15,couch:1.1,swings:1.1,hotdog:1.15,grave:1.25,hydrant:1.6,meter:2,mailbox:1.4,trashcan:1.35,phone:1.4,lamp:2.2,pylon:1.4,sink:1.3};
 function drawBlock(g,b,X,yb,yf,t){const w=b.w,k=b.kind,box=(h,front,top)=>{rect(g,top,X,yb-h,w,yf-yb);rect(g,front,X,yf-h,w,h);g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1;g.strokeRect(X,yf-h,w,h);};
  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(X+w/2,yf,w*.6,4,0,0,7);g.fill();
+ // a painted prop (ddSprites prop-<kind>): as wide as the footprint (cars/newsstands a touch wider), standing on the front edge
+ const im=DS.picture('prop-'+k);if(im){const pw=w*(PROP_W[k.split('-')[0]]||1.2),ph=pw*im.height/im.width;g.drawImage(im,X+w/2-pw/2,yf-ph+2,pw,ph);return;}
+ const kk=k.split('-')[0],v=+(k.split('-')[1]||1);
+ if(kk==='grave'){const st=v===2?'#7c7c84':v===3?'#5c5c64':'#6c6c78',H=v===3?40:v===4?20:28;g.fillStyle=st;g.strokeStyle='#22222a';g.lineWidth=1;
+  if(v===2){g.fillRect(X+w*.4,yf-H-6,w*.2,H+6);g.fillRect(X+w*.12,yf-H+4,w*.76,w*.2);g.fillRect(X,yf-6,w,6);g.strokeRect(X,yf-6,w,6);}
+  else if(v===3){g.beginPath();g.moveTo(X+w*.25,yf);g.lineTo(X+w*.38,yf-H);g.lineTo(X+w/2,yf-H-8);g.lineTo(X+w*.62,yf-H);g.lineTo(X+w*.75,yf);g.fill();g.stroke();}
+  else{g.beginPath();g.moveTo(X,yf);g.lineTo(X,yf-H);g.arc(X+w/2,yf-H,w/2,Math.PI,0);g.lineTo(X+w,yf);g.fill();g.stroke();g.fillStyle='rgba(0,0,0,.35)';g.fillRect(X+w*.3,yf-H+2,w*.4,1.5);g.fillRect(X+w*.25,yf-H+6,w*.5,1.5);}
+  g.fillStyle='rgba(70,110,50,.5)';g.fillRect(X,yf-3,w,3);return;}
+ if(kk==='hydrant'){rect(g,'#b81c1c',X+1,yf-14,w-2,14);rect(g,'#d82c2c',X+2,yf-18,w-4,5);rect(g,'#8c1414',X-1,yf-11,w+2,3);rect(g,'#b81c1c',X+w/2-1.5,yf-21,3,3);return;}
+ if(kk==='meter'){rect(g,'#4c4c54',X+w/2-1,yf-26,2,26);rect(g,'#7c7c84',X,yf-36,w,11);rect(g,'#cce0e8',X+1.2,yf-34,w-2.4,4);return;}
+ if(kk==='newsstand'){box(30,'#2c5c3c','#3c7c4c');rect(g,'#1c3c28',X-2,yb-34,w+4,5);for(let i=0;i<4;i++)rect(g,['#e8e0c8','#c83c3c','#e8c83c','#4c8cc8'][i],X+4+i*(w-8)/4,yf-24,(w-8)/4-2,10);return;}
+ if(kk==='mailbox'){rect(g,'#1c1c1c',X+2,yf-6,2,6);rect(g,'#1c1c1c',X+w-4,yf-6,2,6);rect(g,'#2c4c9c',X,yf-24,w,18);g.fillStyle='#2c4c9c';g.beginPath();g.arc(X+w/2,yf-24,w/2,Math.PI,0);g.fill();rect(g,'#c8c8d8',X+2,yf-20,w-4,1.5);return;}
+ if(kk==='trashcan'){rect(g,'#6c6c70',X,yf-18,w,18);for(let i=1;i<4;i++)rect(g,'#4c4c50',X+i*w/4,yf-18,1,18);g.fillStyle='#8c8c90';g.beginPath();g.ellipse(X+w/2+3,yf-20,w*.55,3,-.2,0,7);g.fill();return;}
+ if(kk==='phone'){rect(g,'#9c9ca4',X+2,yf-44,w-4,44);rect(g,'#4c8cc8',X,yf-48,w,6);rect(g,'#1c1c24',X+5,yf-36,w-10,14);rect(g,'#2c2c2c',X+w/2-2,yf-32,4,6);return;}
+ if(kk==='hotdog'){rect(g,'#0c0c0c',X+4,yf-6,6,6);rect(g,'#0c0c0c',X+w-10,yf-6,6,6);box(18,'#c8c8cc','#e8e8ec');rect(g,'#5c5c5c',X+w/2-1,yb-48,2,30);g.fillStyle='#e83c3c';g.beginPath();g.moveTo(X-4,yb-46);g.quadraticCurveTo(X+w/2,yb-64,X+w+4,yb-46);g.fill();return;}
+ if(kk==='pylon'){g.fillStyle='#ff7c1c';g.beginPath();g.moveTo(X+1,yf);g.lineTo(X+w/2,yf-14);g.lineTo(X+w-1,yf);g.fill();rect(g,'#fff',X+w*.3,yf-8,w*.4,2);rect(g,'#ff7c1c',X-1,yf-2,w+2,2);return;}
  if(k==='bench'){rect(g,'#3c2c1c',X+3,yf-10,3,10);rect(g,'#3c2c1c',X+w-6,yf-10,3,10);rect(g,'#7c5c34',X,yf-14,w,4);rect(g,'#6c4c2c',X,yb-24,w,4);rect(g,'#6c4c2c',X,yb-30,w,4);rect(g,'#2c2c2c',X+2,yb-30,2,30);rect(g,'#2c2c2c',X+w-4,yb-30,2,30);}
  else if(k==='grave'){g.fillStyle='#6c6c78';g.beginPath();g.moveTo(X,yf);g.lineTo(X,yf-22);g.arc(X+w/2,yf-22,w/2,Math.PI,0);g.lineTo(X+w,yf);g.fill();g.strokeStyle='#2c2c34';g.stroke();g.fillStyle='#3c3c48';g.fillRect(X+w*.3,yf-20,w*.4,1.5);g.fillRect(X+w*.25,yf-15,w*.5,1.5);}
  else if(k==='car'||k==='wreck'){const body=k==='wreck'?'#2c2420':'#3c5c8c';rect(g,'#0c0c0c',X+8,yf-10,12,10);rect(g,'#0c0c0c',X+w-20,yf-10,12,10);box(18,body,k==='wreck'?'#3c3430':'#5c7cac');rect(g,k==='wreck'?'#1c1410':'#2c4c7c',X+w*.22,yb-34,w*.56,16);rect(g,k==='wreck'?'#0c0808':'#9cc8e8',X+w*.28,yb-31,w*.44,10);

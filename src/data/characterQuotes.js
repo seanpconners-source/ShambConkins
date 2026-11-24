@@ -399,6 +399,14 @@ const QUOTES={
  'dd-maggott':['It’s judgment day, sinners! Come out, come out wherever you are!'],
  'dd-pinkley':['I’d rather be a civilian, sir.','What kind of general, sir?'],
  'dd-posey':['I only hit him once.','I don’t like to be pushed so I hit him.'],
+ 'cyrus':['Can you dig it?','Can you count, suckers? I say, the future is ours... if you can count!'],
+ 'masai':['I want them all! I want ALL the Warriors!','You Warriors are good. Real good.'],
+ 'mercy':['Friday nights are good. Saturday nights are better.','Real tough muthas, ain’t ya?'],
+ 'fox-warriors':['It was Cleon’s choice; Swan’s war chief.'],
+ 'vermin':['We came this far and we’re gonna go the rest of the way.','Who wants to hide?'],
+ 'rembrandt':['They think we shot Cyrus. Every gang in the city must be looking for us!'],
+ 'cowboy-warriors':['You never know what you’re gonna run into out there. If we’re wearing our colors, we can’t hide.'],
+ 'snow-warriors':['The truce. Is it still on?'],
 };
 // quotesOf: every real line a character has (merged duplicate ids fall back to the kept id); quoteOf: one of them
 // (rand = a seeded random for games that must agree on both phones). No real line = nothing: a description is never a quote.

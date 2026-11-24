@@ -42,6 +42,12 @@ for (const [name, w, h, what] of pics) save(name + '-template', await page.evalu
   if (name.startsWith('far-') || name.startsWith('wall-') || name.startsWith('floor-')) lines.push('repeats side to side: right edge joins the left edge');
   if (name.startsWith('floor-')) lines.push('fighters walk on this; seen from the side at an angle');
   if (name.startsWith('wall-')) lines.push('bottom edge = where the walkable floor starts', 'TRANSPARENT above the top of what it shows (no sky): PNG with alpha,', 'roofs/fences/trees end in their own outline over the far picture');
+  if (name.startsWith('prop-') || name === 'bus') lines.push('stands on the BOTTOM edge, fills the width; transparent background', 'seen from the front and a little above, like the fighters');
+  if (name.startsWith('map-tag-')) lines.push('transparent background; hand-painted, only the words given');
+  if (name === 'map-base') lines.push('the game draws the route, the stops and the gang tags on top: leave', 'the map itself clean (no station names, no dots)');
+  if (name.startsWith('run-p')) {x.setLineDash([6, 4]); for (let i = 1; i < 8; i++) {x.beginPath(); x.moveTo(i * 256, 0); x.lineTo(i * 256, h); x.stroke();} x.setLineDash([]);
+    x.fillStyle = pink; for (let i = 0; i < 8; i++) {x.beginPath(); x.arc(i * 256 + 128, 244, 5, 0, 7); x.fill();}
+    lines.push('8 frames of 256 x 256; feet on the pink dot of each frame', 'HEADLESS: stop at the neck like hero-p1/-p2');}
   if (name.startsWith('fx-')) {const n = name === 'fx-fury' ? 4 : 6, fw = w / n; x.setLineDash([6, 4]); for (let i = 1; i < n; i++) {x.beginPath(); x.moveTo(i * fw, 0); x.lineTo(i * fw, h); x.stroke();} x.setLineDash([]);}
   x.fillStyle = '#333'; x.textBaseline = 'top'; lines.forEach((l, i) => {x.font = `${i ? 400 : 700} ${fs * (i ? .7 : 1)}px sans-serif`; x.fillText(l.trim(), 12, 10 + i * fs * (i ? .95 : 1.3));});
   return c.toDataURL('image/png');}, {name, w, h, what}));
@@ -54,5 +60,14 @@ for (const kind of areas) save('ref-' + kind, await page.evaluate(kind => {
   x.restore(); x.fillStyle = '#ff2a6a'; x.font = '700 30px sans-serif'; x.fillText('ref-' + kind + ' (drawn by the game now): far = sky/back, wall = band above the floor line, floor = below it', 20, 40);
   x.strokeStyle = '#ff2a6a'; x.setLineDash([10, 8]); x.lineWidth = 3; x.beginPath(); x.moveTo(0, 210 * K); x.lineTo(c.width, 210 * K); x.stroke();
   return c.toDataURL('image/png');}, kind));
+// the subway map as the game draws it now (land, lines and where the stops go), for map-base
+mods['src/engines/dd/subwayMap.js'] = fs.readFileSync(path.join(root, 'src/engines/dd/subwayMap.js'), 'utf8');
+mods['src/bgShape.js'] = fs.readFileSync(path.join(root, 'src/bgShape.js'), 'utf8');
+await page.evaluate(mods => { const cache = {}; window.require = id => { if (cache[id]) return cache[id]; const e = cache[id] = {}; new Function('exports', 'require', mods[id] || '')(e, window.require); return e; }; }, mods);
+save('ref-map', await page.evaluate(() => {const M = require('src/engines/dd/subwayMap.js'), c = document.getElementById('c'); c.width = 1600; c.height = 2000; const x = c.getContext('2d');
+  x.drawImage(M.drawnPoster(1600, 2000), 0, 0); x.fillStyle = '#ff2a6a'; x.strokeStyle = '#000'; x.font = '700 34px sans-serif';
+  M.STOPS.forEach((s, i) => {x.beginPath(); x.arc(s.x * 1600, s.y * 2000, 22, 0, 7); x.fill(); x.stroke(); x.fillText('stop ' + (i + 1), s.x * 1600 + (s.tag === 'l' ? -150 : 30), s.y * 2000 + 12);});
+  x.font = '700 40px sans-serif'; x.fillText('ref-map: keep the land roughly here; the game draws the pink stops, the route and the tags', 30, 1960);
+  return c.toDataURL('image/png');}));
 await browser.close();
 console.log('warriors templates ->', outDir, sheets.length * 2 + pics.length + areas.length, 'files');

@@ -13,29 +13,31 @@ const DEPTH=130;
 const FOES={
  cop:{hp:10,sp:56,moves:['eswing','kick'],weapon:'stick',o:'cop',head:'cop',pts:250,name:'Patrolman',gang:'NYPD'},
  riot:{hp:16,sp:42,moves:['bash','eswing'],weapon:'stick',o:'riot',head:'riot',pts:450,name:'Riot cop',gang:'NYPD',shield:4},
- sarge:{hp:70,sp:58,moves:['eswing','kick2','bash'],weapon:'stick',o:'sarge',head:'sarge',pts:6000,name:'THE SERGEANT',gang:'NYPD',big:1.24,charge:1,noGrab:1},
+ sarge:{hp:70,sp:58,moves:['eswing','kick2','bash'],weapon:'stick',o:'sarge',head:'sarge',face:'warriors-cop',pts:6000,name:'THE SERGEANT',gang:'NYPD',big:1.24,charge:1,noGrab:1},
  skin:{hp:11,sp:60,moves:['jab','cross','hook','kick'],o:'turnbull',head:'bald',pts:250,name:'Turnbull',gang:"TURNBULL AC'S"},
  chain:{hp:11,sp:56,moves:['eswing'],weapon:'chain',o:'turnbull',head:'bald',pts:300,name:'Chain swinger',gang:"TURNBULL AC'S"},
  big:{hp:28,sp:42,moves:['hook','ebash','bgrab'],o:'turnbull',head:'bald',pts:800,name:'Turnbull bruiser',gang:"TURNBULL AC'S",big:1.3,noGrab:1},
- driver:{hp:80,sp:52,moves:['hook','ebash','bgrab','kick2'],o:'turnbull',head:'driver',pts:7000,name:'THE BUS DRIVER',gang:"TURNBULL AC'S",big:1.34,charge:1,noGrab:1},
+ driver:{hp:80,sp:52,moves:['hook','ebash','bgrab','kick2'],o:'turnbull',head:'driver',face:'turnbull-ac',pts:7000,name:'THE BUS DRIVER',gang:"TURNBULL AC'S",big:1.34,charge:1,noGrab:1},
  orphan:{hp:7,sp:54,moves:['jab','cross','kick'],o:'orphan',head:'scruffy',pts:200,name:'Orphan',gang:'THE ORPHANS'},
  lob:{hp:7,sp:50,moves:['jab'],o:'orphan',head:'scruffy',pts:300,name:'Molotov kid',gang:'THE ORPHANS',ranged:'lob'},
- orphboss:{hp:55,sp:60,moves:['jab','cross','hook','jkickE'],o:'orphan',head:'scruffy',pts:5000,name:'ORPHANS LEADER',gang:'THE ORPHANS',big:1.12,ranged:'lob',noGrab:1},
+ orphboss:{hp:55,sp:60,moves:['jab','cross','hook','jkickE'],o:'orphan',head:'scruffy',face:'sully',pts:5000,name:'ORPHANS LEADER',gang:'THE ORPHANS',big:1.12,ranged:'lob',noGrab:1},
  fury:{hp:12,sp:74,moves:['eswing','jkickE'],weapon:'bat',o:'fury',head:'fury',pts:400,name:'Baseball Fury',gang:'BASEBALL FURIES'},
  furyboss:{hp:80,sp:72,moves:['eswing','eswing','jkickE','kick2'],weapon:'bat',o:'fury',head:'fury',face:'baseball-fury',pts:8000,name:'THE LEAD FURY',gang:'BASEBALL FURIES',big:1.16,noGrab:1,leap:1},
  liz:{hp:9,sp:68,moves:['jab','kick','jkickE'],o:'lizzie',head:'lizzie',pts:300,name:'Lizzie',gang:'THE LIZZIES'},
  knifeliz:{hp:9,sp:62,moves:['jab','kick'],o:'lizzie',head:'lizzie',pts:350,name:'Lizzie',gang:'THE LIZZIES',ranged:'knife'},
  gunliz:{hp:8,sp:56,moves:['kick'],o:'lizzie',head:'lizzie',pts:450,name:'Lizzie with a gun',gang:'THE LIZZIES',ranged:'gun'},
- lizboss:{hp:60,sp:66,moves:['jab','cross','kick2','jkickE'],o:'lizzie',head:'lizzie',pts:7000,name:'LIZZIES LEADER',gang:'THE LIZZIES',big:1.1,ranged:'gun',noGrab:1},
+ lizboss:{hp:60,sp:66,moves:['jab','cross','kick2','jkickE'],o:'lizzie',head:'lizzie',face:'starr',pts:7000,name:'LIZZIES LEADER',gang:'THE LIZZIES',big:1.1,ranged:'gun',noGrab:1},
  punk:{hp:11,sp:60,moves:['jab','cross','hook','kick'],o:'punk',head:'punk',pts:300,name:'Punk',gang:'THE PUNKS'},
  skater:{hp:10,sp:92,moves:['jab','kick'],o:'punk',head:'punk',pts:400,name:'Skater Punk',gang:'THE PUNKS',skate:1},
- punkboss:{hp:85,sp:70,moves:['hook','ebash','bgrab','kick2'],o:'punk',head:'punk',pts:8000,name:'THE BIG PUNK',gang:'THE PUNKS',big:1.3,skate:1,noGrab:1},
+ punkboss:{hp:85,sp:70,moves:['hook','ebash','bgrab','kick2'],o:'punk',head:'punk',face:'vance',pts:8000,name:'THE BIG PUNK',gang:'THE PUNKS',big:1.3,skate:1,noGrab:1},
  rogue:{hp:13,sp:62,moves:['jab','cross','hook','kick'],o:'rogue',head:'rogue',pts:350,name:'Rogue',gang:'THE ROGUES'},
  bottler:{hp:11,sp:56,moves:['jab','kick'],o:'rogue',head:'rogue',pts:450,name:'Rogue',gang:'THE ROGUES',ranged:'bottle'},
  luther:{hp:110,sp:60,moves:['jab','cross','kick2','jkickE'],o:'rogue',head:'rogue',face:'luther',pts:15000,name:'LUTHER',gang:'THE ROGUES',big:1.12,ranged:'gun',noGrab:1},
  riff:{hp:60,sp:76,moves:['jab','cross','hook','kick2'],o:'riff',head:'riff',pts:0,name:'Riff',gang:'THE RIFFS'},
  // one of the crew, running the 96th Street platform with you (an ally until the cops drag him to the edge)
- fox:{hp:60,sp:96,moves:['jab','cross','kick'],o:'warrior',head:'thug',pts:0,name:'Fox',gang:'THE WARRIORS'}};
+ fox:{hp:60,sp:96,moves:['jab','cross','kick'],o:'warrior',head:'thug',face:'fox-warriors',pts:0,name:'Fox',gang:'THE WARRIORS'}};
+// every gang's face in the roster (owner, Nov 24): its members wear it once that character has a picture, else the drawn head
+const REPS={NYPD:'warriors-cop',"TURNBULL AC'S":'turnbull-ac','THE ORPHANS':'sully','BASEBALL FURIES':'baseball-fury','THE LIZZIES':'starr','THE PUNKS':'vance','THE ROGUES':'luther','THE RIFFS':'masai','THE WARRIORS':'fox-warriors'};
 // one area: kind (scenery, src/engines/dd/scenes.js), len, waves 'type type ...' at hero x, depth range, doors, blocks
 // (solid obstacles x..x+w, d0..d1), pits [x0,x1,d0,d1] (a hole across part or all of the floor), props/items, events, boss. A wave list may say 'door' spawns.
 const W=(at,list,o={})=>({at,list:list.split(' ').filter(Boolean),...o});
@@ -129,13 +131,40 @@ const CHAPTERS=[
   outro:'The Riffs take care of the Rogues. The Warriors are home.'}];
 const parse=(str,f)=>String(str||'').split(' ').filter(Boolean).map(f);
 // build one area for play: waves with spawn sides/delays, items, props, blocks, pits, events (seeded)
-function buildArea(ch,ai,seed){const C=CHAPTERS[ch],A=C.areas[ai],r=seededRandom(seed+':ww-story:'+ch+':'+ai);
+// longer areas (owner, Nov 24): every x position is stretched (more from chapter to chapter) and the room this opens up gets
+// extra fights; later chapters also bring more enemies per wave and more on screen at once
+const stretch=ch=>1.4+ch*.03;
+// what stands about in each kind of area, and how often (every N world units); sizes = footprint [width, depth] in world units
+const PROP_SIZE={grave:[16,8],hydrant:[9,6],meter:[5,5],newsstand:[40,14],mailbox:[13,9],trashcan:[13,9],phone:[16,12],bench:[30,10],lamp:[8,6],hotdog:[34,14],pylon:[8,6]};
+const STREET={every:240,kinds:['hydrant','meter','meter','newsstand','mailbox','trashcan','trashcan','phone','pylon']};
+const DECOR={cemetery:{every:60,front:.5,gap:10,kinds:['grave-1','grave-2','grave-3','grave-4','grave-1','grave-3']},conclave:{every:330,kinds:['trashcan','lamp','bench']},
+ park:{every:300,kinds:['bench','trashcan','lamp']},riverside:{every:300,kinds:['bench','trashcan','lamp']},playground:{every:300,kinds:['trashcan','bench','pylon']},
+ elstreet:STREET,tenement:STREET,burning:{every:260,kinds:['hydrant','trashcan','meter','pylon','newsstand']},yard:{every:320,kinds:['trashcan','pylon']},
+ station:{every:330,kinds:['trashcan','newsstand','phone']},platform:{every:330,kinds:['trashcan','phone']},boardwalk:{every:280,kinds:['trashcan','bench','hotdog','lamp']},
+ beach:{every:420,kinds:['trashcan','pylon']}};
+function buildArea(ch,ai,seed){const C=CHAPTERS[ch],A0=C.areas[ai],r=seededRandom(seed+':ww-story:'+ch+':'+ai),K=stretch(ch),X=v=>Math.round(v*K);
+ const sp=str=>str?str.split(' ').filter(Boolean):[],pos=(str,i)=>str&&sp(str).map(q=>{if(i==='@'){const [k,x]=q.split('@');return k+'@'+X(+x);}const p=q.split(':');p[0]=X(+p[0]);return p.join(':');}).join(' ');
+ const A={...A0,len:X(A0.len),doors:A0.doors&&sp(A0.doors).map(d=>X(+d)).join(' '),items:pos(A0.items,'@'),props:pos(A0.props,'@'),events:pos(A0.events,'@'),
+  blocks:A0.blocks&&sp(A0.blocks).map(q=>{const [k,rest]=q.split('@'),p=rest.split(':');p[0]=X(+p[0]);return k+'@'+p.join(':');}).join(' '),pits:pos(A0.pits,':'),
+  boss:A0.boss&&{...A0.boss,at:X(A0.boss.at)},fox:A0.fox&&X(A0.fox),escape:A0.escape&&Math.round(A0.escape*K)};
+ // the stretched-out stretches between fights get one more wave of the same gang
+ const types=[...new Set(A0.waves.flatMap(w=>w.list))].filter(t=>FOES[t]&&!FOES[t].big),extra=Math.floor(ch/3),pick=()=>types[Math.floor(r()*types.length)];
+ const wv=[];A0.waves.forEach((w,i)=>{const at=X(w.at),prev=wv.length?wv[wv.length-1].at:0;const mid=Math.round((prev+at)/2),pitNear=(A0.pits?sp(A0.pits):[]).some(q=>{const px=X(+q.split(':')[0]);return px>mid-200&&px<mid+900;});
+  if(types.length&&at-prev>620&&!A0.chase&&!pitNear)wv.push({at:mid,list:Array.from({length:2+Math.floor(ch/4)},pick),door:w.door,filler:1});
+  wv.push({...w,at,list:[...w.list,...Array.from({length:types.length?extra:0},pick)]});});
+ A.waves=wv;
  const doors=parse(A.doors,Number);
- const waves=A.waves.map((w,wi)=>({at:w.at,max:2+Math.min(2,Math.floor(ch/3)),list:w.list.map((type,i)=>({type,side:i%2?-1:1,door:w.door&&doors.length&&r()<.6?doors[Math.floor(r()*doors.length)]:null,delay:i*.75+r()*.5,d:r()*DEPTH}))}));
+ const waves=A.waves.map((w,wi)=>({at:w.at,max:2+Math.min(4,Math.floor(ch/2)),list:w.list.map((type,i)=>({type,side:i%2?-1:1,door:w.door&&doors.length&&r()<.6?doors[Math.floor(r()*doors.length)]:null,delay:i*.75+r()*.5,d:r()*DEPTH}))}));
  const items=parse(A.items,q=>{const [k,x]=q.split('@');return {kind:k,x:+x,d:20+r()*(DEPTH-40)};});
  const props=parse(A.props,q=>{const [k,x]=q.split('@');return {kind:k,x:+x,d:14+r()*(DEPTH-28),hides:r()<.5?['chicken','burger','pizza'][Math.floor(r()*3)]:null};});
  const blocks=parse(A.blocks,q=>{const [k,rest]=q.split('@'),[x,w,d]=rest.split(':').map(Number);const dd={bench:18,grave:12,car:30,wreck:34,lamp:8,swings:14,couch:22,sink:16}[k]||16;return {kind:k,x,w,d0:d,d1:d+dd};});
  const pits=parse(A.pits,q=>{const [x,w,d0,dd]=q.split(':').map(Number);return d0!=null&&!isNaN(d0)?[x,x+w,d0,d0+dd]:[x,x+w,-99,999];});
+ // street furniture and graves scattered along the floor (owner, Nov 24: way more of them, the game should look awesome); most
+ // stand by the back wall, some in the foreground at the front edge. Seeded, kept off pits, other blocks and the area's ends.
+ const DEC=DECOR[A.kind];if(DEC){const n=Math.round(A.len/DEC.every),placed=[];for(let i=0;i<n;i++){const k=DEC.kinds[Math.floor(r()*DEC.kinds.length)],[w,dd]=PROP_SIZE[k.split('-')[0]]||[16,8];
+  const x=180+r()*(A.len-420),front=r()<(DEC.front??.45),d0=front?(A.dMax??DEPTH-4)-dd-r()*6:(A.dMin??4)+r()*10;
+  const gap=DEC.gap??24,clash=[...placed,...blocks].some(b=>x<b.x+b.w+gap&&x+w>b.x-gap&&d0<b.d1+6&&d0+dd>b.d0-6)||pits.some(([a,b])=>x<b+20&&x+w>a-20);
+  if(!clash)placed.push({kind:k,x,w,d0,d1:d0+dd,decor:1});}blocks.push(...placed);}
  const events=parse(A.events,q=>{const [k,x]=q.split('@');return {kind:k,x:+x,done:false};});
  return {...A,ch,ai,chapter:C,doors,waves,items,props,blocks,pits,events,dMin:A.dMin??4,dMax:A.dMax??DEPTH-4,last:ai===C.areas.length-1};}
-Object.assign(exports,{FOES,CHAPTERS,DEPTH,buildArea});
+Object.assign(exports,{REPS,FOES,CHAPTERS,DEPTH,buildArea});

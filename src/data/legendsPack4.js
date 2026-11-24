@@ -88,7 +88,22 @@ const ROWS4=[
  ['dd-lever','Roscoe Lever','The Dirty Dozen','🔧','Stuart Cooper','competitor','Young, nervous, determined to make it through.'],
  ['dd-sawyer','Seth Sawyer','The Dirty Dozen','🪓','Colin Maitland','survivor','Signs up for the mission rather than the noose.'],
  ['dd-vladek','Milo Vladek','The Dirty Dozen','⛏️','Tom Busby','scavenger','Digs in, holds the line.'],
- ['dd-bravos','Tassos Bravos','The Dirty Dozen','🗡️','Al Mancini','competitor','Steady hands, quiet nerve, one of the twelve.']
+ ['dd-bravos','Tassos Bravos','The Dirty Dozen','🗡️','Al Mancini','competitor','Steady hands, quiet nerve, one of the twelve.'],
+ // ---- The Warriors (owner, Nov 24: one member of every gang in the roster; they wear their gang's face in the brawler, and
+ // the rest of the crew and the Riffs from the film). Photo pages are the actors' (the film's credits); none where there is no page.
+ ['cyrus','Cyrus','The Warriors','🙌','Roger Hill (actor)','competitor','Leader of the Gramercy Riffs, host of the Van Cortlandt summit.'],
+ ['masai','Masai','The Warriors','🗡️','Masai (The Warriors)','competitor','Second-in-command of the Riffs; wants all the Warriors.'],
+ ['mercy','Mercy','The Warriors','💄','Deborah Van Valkenburgh','explorer','Rides with the Warriors all the way to Coney.'],
+ ['fox-warriors','Fox','The Warriors','🦊','Thomas G. Waites','scavenger','The Warriors scout.'],
+ ['vermin','Vermin','The Warriors','🦺','Terry Michos','survivor','Carries the Warriors money and tokens.'],
+ ['rembrandt','Rembrandt','The Warriors','🎨','Marcelino Sánchez','scavenger','The youngest Warrior, the graffiti artist.'],
+ ['cowboy-warriors','Cowboy','The Warriors','🤠','Cowboy (The Warriors)','survivor','The Warrior in the cowboy hat.'],
+ ['snow-warriors','Snow','The Warriors','❄️','Snow (The Warriors)','competitor','A Warriors enforcer with a taste for music.'],
+ ['sully','Sully','The Warriors','🧥','Paul Greco','scavenger','Leader of the Orphans.'],
+ ['starr','Starr','The Warriors','🔫','Starr (The Warriors)','competitor','Leader of the Lizzies.'],
+ ['vance','Vance','The Warriors','🛼','Konrad Sheehan','competitor','The roller-skating leader of the Punks.'],
+ ['turnbull-ac','Turnbull AC','The Warriors','🚌','Turnbull AC (The Warriors)','survivor',"A skinhead of the Turnbull AC's, riding the painted bus."],
+ ['warriors-cop','The Policewoman','The Warriors','👮','Mercedes Ruehl','survivor','The undercover cop in the park.'],
 ];
 const NEW_CHARACTERS4=ROWS4.map(([id,name,source,icon,actor,perk,line,extra={}])=>({
  id,name,source,icon,actor,assetKey:'char:'+id,unlockAt:999,perkType:perk,perk:PERKS4[perk]||PERKS4.competitor,unlockPhrase:line,

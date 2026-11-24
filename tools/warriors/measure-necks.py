@@ -19,7 +19,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 CELL, R = 256, 20          # face circle radius in cell px (the game's face is ~FACE_W 15 units = 30 px wide + hair)
 FIX = {}                   # 'sheet:pose': [nx, ny, hx, hy]
 
-def measure(cell, guess_n, guess_h, pose=''):
+def fist(body, c, guess_hand):
+    """the front fist: the body pixel farthest from the torso centre in the direction of the template's front hand (within ~45
+    degrees), above the hips; holds a weapon"""
+    by, bx = np.nonzero(body); v = np.array(guess_hand, float) - c; v /= (np.linalg.norm(v) or 1)
+    d = np.stack([bx - c[0], by - c[1]]); r = np.hypot(*d) + 1e-6; cos = (v @ d) / r
+    ok = (cos > .7) & (by < c[1] + 40)
+    if not ok.any(): return [int(round(guess_hand[0])), int(round(guess_hand[1]))]
+    i = np.argmax(np.where(ok, r * (cos ** 2), -1)); return [int(bx[i]), int(by[i])]
+
+def measure(cell, guess_n, guess_h, pose='', guess_hand=None):
     """the torso = the thickest part of the body; its long axis points at the neck from the end with little body past it
     (the legs carry on past the hips, at most an arm past the shoulders)"""
     body = ndimage.binary_opening(cell[..., 3] > 40, iterations=1)
@@ -59,7 +68,8 @@ def measure(cell, guess_n, guess_h, pose=''):
     if pose == 'dizzy':
         a = np.array([.82, .57]); neck = neck + np.array([4, 6])
     head = neck + a * R * .95
-    return [int(round(neck[0])), int(round(neck[1])), int(round(head[0])), int(round(head[1]))]
+    hand = fist(body, c, guess_hand) if guess_hand is not None else []
+    return [int(round(neck[0])), int(round(neck[1])), int(round(head[0])), int(round(head[1]))] + hand
 
 def main():
     skip = {sys.argv[sys.argv.index('--preview') + 1]} if '--preview' in sys.argv else set()
@@ -76,11 +86,12 @@ def main():
             i = j['i']; ox, oy = (i % 8) * CELL, (i // 8) * CELL
             if oy + CELL > im.shape[0]: continue
             cell = im[oy:oy + CELL, ox:ox + CELL]
-            r = FIX.get(f'{sheet}:{pose}') or measure(cell, j['neck'], j['head'], pose)
+            r = FIX.get(f'{sheet}:{pose}') or measure(cell, j['neck'], j['head'], pose, j.get('hand'))
             if r is None: continue
             res[pose] = r
             if dr:
-                nx, ny, hx, hy = r
+                nx, ny, hx, hy = r[:4]
+                if len(r) > 5: dr.ellipse((ox + r[4] - 6, oy + r[5] - 6, ox + r[4] + 6, oy + r[5] + 6), outline=(0, 160, 255), width=3)
                 dr.ellipse((ox + hx - R, oy + hy - R, ox + hx + R, oy + hy + R), outline=(0, 255, 0), width=2)
                 dr.rectangle((ox + nx - 3, oy + ny - 3, ox + nx + 3, oy + ny + 3), fill=(255, 0, 0))
                 dr.text((ox + 4, oy + 4), pose, fill=(255, 255, 0))
@@ -95,7 +106,7 @@ def main():
     old.update(out)
     body = ',\n'.join(f' {json.dumps(k)}:' + json.dumps(v, separators=(',', ':')) for k, v in old.items())
     open(p, 'w').write(
-        "// Where the head goes on each cell of THE WARRIORS fighter sheets: NECKS[sheet][pose] = [neckX, neckY, headX, headY] in\n"
+        "// Where the head goes on each cell of THE WARRIORS fighter sheets: NECKS[sheet][pose] = [neckX, neckY, headX, headY, fistX, fistY] in\n"
         "// cell px (256 px cells, src/data/ddSprites.js). Measured from the art by tools/warriors/measure-necks.py (re-run it\n"
         "// after new sheet art); the game puts the chin on the neck and turns the face along neck -> head.\n"
         "const NECKS=/*@@*/{\n" + body + "\n}/*@@end*/;\nObject.assign(exports,{NECKS});\n")

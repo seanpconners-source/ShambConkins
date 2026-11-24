@@ -1,6 +1,6 @@
 # Characters that still need a portrait
 
-Made by `node tools/gpt-art-todo.mjs` (684 of 775 have one).
+Made by `node tools/gpt-art-todo.mjs` (687 of 858 have one).
 Rules are in START-HERE.md → "Character portraits". File name = `<id>.png`, extra faces `<id>.<mood>.png`.
 
 | id (file name) | name | from |
@@ -41,7 +41,6 @@ Rules are in START-HERE.md → "Character portraits". File name = `<id>.png`, ex
 | `kb-crazy-88` | Crazy 88 Fighter | Kill Bill |
 | `wf-craig-buettner` | Craig Buettner | Saturday Night Live |
 | `shane-over` | Shane Ober | ShambConkins Friends |
-| `carlos-valle` | Carlos Valle | ShambConkins Friends |
 | `bert` | Bert | ShambConkins Friends |
 | `flarpy` | Flarpy | ShambConkins |
 | `lsoh-crystal` | Crystal | Little Shop of Horrors |
@@ -51,14 +50,12 @@ Rules are in START-HERE.md → "Character portraits". File name = `<id>.png`, ex
 | `reno-sven-jones` | Sven Jones | Reno 911! |
 | `reno-cherisha-kimball` | Cherisha Kimball | Reno 911! |
 | `idio-frito` | Frito Pendejo | Idiocracy |
-| `idio-upgrayedd` | Upgrayedd | Idiocracy |
 | `idio-cabinet` | Camacho’s Cabinet | Idiocracy |
 | `idio-beef-supreme` | Beef Supreme | Idiocracy |
 | `mac-tonight` | Mac Tonight | McDonald’s |
 | `vpr-lisa-vanderpump` | Lisa Vanderpump | Vanderpump Rules |
 | `vpr-ken-todd` | Ken Todd | Vanderpump Rules |
 | `vpr-giggy` | Giggy | Vanderpump Rules |
-| `vpr-stassi-schroeder` | Stassi Schroeder | Vanderpump Rules |
 | `vpr-katie-maloney` | Katie Maloney | Vanderpump Rules |
 | `vpr-kristen-doute` | Kristen Doute | Vanderpump Rules |
 | `vpr-jax-taylor` | Jax Taylor | Vanderpump Rules |
@@ -95,4 +92,87 @@ Rules are in START-HERE.md → "Character portraits". File name = `<id>.png`, ex
 | `mw-conner-leavitt` | Conner Leavitt | The Secret Lives of Mormon Wives |
 | `mw-marciano-brunette` | Marciano Brunette | The Secret Lives of Mormon Wives |
 | `weird-al` | "Weird Al" Yankovic | UHF |
+| `joe-dirt` | Joe Dirt | Joe Dirt |
+| `bobby-boucher` | Bobby Boucher | The Waterboy |
+| `dean-solomon` | Dean Solomon | The Brothers Solomon |
+| `john-solomon` | John Solomon | The Brothers Solomon |
+| `kulap-vilaysack` | Kulap Vilaysack | Who Charted? |
+| `howard-kremer` | Howard Kremer | Who Charted? |
+| `paul-scheer` | Paul Scheer | Human Giant |
+| `rob-huebel` | Rob Huebel | Human Giant |
+| `aziz-ansari` | Aziz Ansari | Human Giant |
+| `tim-heidecker` | Tim Heidecker | Tim and Eric Awesome Show, Great Job! |
+| `eric-wareheim` | Eric Wareheim | Tim and Eric Awesome Show, Great Job! |
+| `eric-andre` | Eric André | The Eric Andre Show |
+| `shoenice` | Shoenice | YouTube |
+| `mullet-reviews` | Mullet Reviews | YouTube |
+| `tay-zonday` | Tay Zonday | YouTube |
+| `joe-cooper` | Joe "Coop" Cooper | BASEketball |
+| `doug-remer` | Doug Remer | BASEketball |
+| `trey-parker` | Trey Parker | South Park |
+| `matt-stone` | Matt Stone | South Park |
+| `michael-bay` | Michael Bay | Transformers |
+| `shia-labeouf` | Shia LaBeouf | Transformers |
+| `james-cameron` | James Cameron | Terminator |
+| `jeff-goldblum` | Jeff Goldblum | Jurassic Park |
+| `michael-jackson` | Michael Jackson | Michael Jackson |
+| `john-malkovich` | John Malkovich | Being John Malkovich |
+| `mahatma-gandhi` | Mahatma Gandhi | Gandhi |
+| `bond-pattinson` | James Bond · Robert Pattinson | James Bond |
+| `mad-max` | Max Rockatansky | Mad Max |
+| `lord-humungus` | Lord Humungus | Mad Max |
+| `wez` | Wez | Mad Max |
+| `toecutter` | Toecutter | Mad Max |
+| `gyro-captain` | The Gyro Captain | Mad Max |
+| `feral-kid` | The Feral Kid | Mad Max |
+| `immortan-joe` | Immortan Joe | Mad Max |
+| `furiosa` | Imperator Furiosa | Mad Max |
+| `nux` | Nux | Mad Max |
+| `david-byrne` | David Byrne | Talking Heads |
+| `tina-weymouth` | Tina Weymouth | Talking Heads |
+| `chris-frantz` | Chris Frantz | Talking Heads |
+| `jerry-harrison` | Jerry Harrison | Talking Heads |
+| `dani-ardor` | Dani Ardor | Midsommar |
+| `the-mask` | The Mask | The Mask |
+| `alvey-avery` | Alvey Avery | Son of the Mask |
+| `tim-avery` | Tim Avery | Son of the Mask |
+| `gr-pat` | Pat | Green Room |
+| `gr-amber` | Amber | Green Room |
+| `gr-darcy` | Darcy Banker | Green Room |
+| `gr-reece` | Reece | Green Room |
+| `gr-sam` | Sam | Green Room |
+| `gr-tiger` | Tiger | Green Room |
+| `gr-gabe` | Gabe | Green Room |
+| `drop-dead-fred` | Drop Dead Fred | Drop Dead Fred |
+| `godzilla` | Godzilla | Godzilla |
+| `herkermer-homolka` | Herkermer Homolka | Congo |
+| `amy-gorilla` | Amy | Congo |
+| `brundlefly` | Brundlefly | The Fly |
+| `psycho-goreman` | Psycho Goreman | Psycho Goreman |
+| `dd-reisman` | Major Reisman | The Dirty Dozen |
+| `dd-franko` | Victor Franko | The Dirty Dozen |
+| `dd-jefferson` | Robert Jefferson | The Dirty Dozen |
+| `dd-wladislaw` | Joseph Wladislaw | The Dirty Dozen |
+| `dd-maggott` | Archer Maggott | The Dirty Dozen |
+| `dd-pinkley` | Vernon Pinkley | The Dirty Dozen |
+| `dd-posey` | Samson Posey | The Dirty Dozen |
+| `dd-jiminez` | Pedro Jiminez | The Dirty Dozen |
+| `dd-gilpin` | Glenn Gilpin | The Dirty Dozen |
+| `dd-lever` | Roscoe Lever | The Dirty Dozen |
+| `dd-sawyer` | Seth Sawyer | The Dirty Dozen |
+| `dd-vladek` | Milo Vladek | The Dirty Dozen |
+| `dd-bravos` | Tassos Bravos | The Dirty Dozen |
+| `cyrus` | Cyrus | The Warriors |
+| `masai` | Masai | The Warriors |
+| `mercy` | Mercy | The Warriors |
+| `fox-warriors` | Fox | The Warriors |
+| `vermin` | Vermin | The Warriors |
+| `rembrandt` | Rembrandt | The Warriors |
+| `cowboy-warriors` | Cowboy | The Warriors |
+| `snow-warriors` | Snow | The Warriors |
+| `sully` | Sully | The Warriors |
+| `starr` | Starr | The Warriors |
+| `vance` | Vance | The Warriors |
+| `turnbull-ac` | Turnbull AC | The Warriors |
+| `warriors-cop` | The Policewoman | The Warriors |
 | `ml-harry-doyle` | Harry Doyle | Major League (film) |

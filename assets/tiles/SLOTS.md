@@ -1,6 +1,6 @@
 # Arcade picture slots
 
-Made by `node tools/arcade-art-slots.mjs`. 202 slots: 115 have key art, 119 have an icon.
+Made by `node tools/arcade-art-slots.mjs`. 205 slots: 115 have key art, 119 have an icon.
 
 Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscape ~1600x900) and `assets/tiles/<slot>.webp`
 (square tile icon, ~480 px; a cut-out with a clear background gets the glowing outline). Then rebuild.
@@ -28,7 +28,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `hyrule` | The Legend of Zelda (hyrule-rupee-rush, hyrule-sword-duel) | family | ✅ / ✅ |
 | `clue` | Clue (clue-whodunit, clue-lineup) | family | ✅ / ✅ |
 | `monopoly` | Monopoly (monopoly-speed-die, monopoly-auction) | family | ✅ / ✅ |
-| `chutes` | Chutes and Ladders (chutes-ladder-rush, chutes-spinner-showdown) | family | ✅ / ✅ |
+| `chutes` | Chutes and Ladders (chutes-spinner-showdown) | family | ✅ / ✅ |
 | `candy` | Candy Land (candy-gumdrop-catch, candy-color-dash) | family | ✅ / ✅ |
 | `baseball` | Major League (major-league-bats, major-league-fielding) | family | ✅ / ✅ |
 | `pool` | Paddy's Pool (paddys-eight-ball, color-of-money) | family | ✅ / ✅ |
@@ -54,7 +54,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `derezzed-cycles` | TRON Legacy · Derezzed Light Cycles | game | ✅ / ✅ |
 | `brawndo-fruit-merge` | Brawndo Fruit Merge | game | ✅ / ✅ |
 | `home-alone-paint-can` | Paint Can Physics | game | ✅ / ✅ |
-| `league-penalties` | Penalty Kicks | game | ✅ / ✅ |
+| `league-penalties` | The League · Penalty Shootout | game | ✅ / ✅ |
 | `fast-quarter-mile` | Fast & Furious · Quarter-Mile Drag Race | game | ✅ / ✅ |
 | `snake-v-snake` | Slither · Snake vs. Snake | game | ✅ / ✅ |
 | `banana-money-grab` | Arrested Development · Banana Stand Tapper | game | ✅ / ✅ |
@@ -77,7 +77,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `taskmaster-curling` | Olympic Curling | game | · / · |
 | `alien-sonar-grid` | Alien · Motion Tracker | game | ✅ / ✅ |
 | `happy-gilmore-golf` | Happy Gilmore × Caddyshack · Putt-Putt | game | ✅ / ✅ |
-| `kingpin-bowling` | Kingpin · Hook & Hustle | game | ✅ / ✅ |
+| `kingpin-bowling` | Kingpin Bowling | game | ✅ / ✅ |
 | `breakout-party` | Breakout · Atari 1976 | game | ✅ / ✅ |
 | `asteroid-drift` | Asteroids · Atari 1979 | game | ✅ / ✅ |
 | `snake-run` | Snake II · Nokia 3310 | game | ✅ / ✅ |
@@ -93,17 +93,21 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `fight-night` | Rocky · Fight Night | game | ✅ / ✅ |
 | `gopher-hunt` | Caddyshack · Gopher Hunt | game | ✅ / ✅ |
 | `wind-archery` | Brave · Wind Archery | game | ✅ / ✅ |
+| `mcgavin-pro-tour` | Shooter McGavin's Pro Tour | game | · / · |
 | `newlywed-spirit` | The Newlywed Game · Spirit Battery | game | · / ✅ |
 | `roast-battle` | Roast Battle · Crowd Meter | game | · / ✅ |
 | `draw-it` | Pictionary · Draw It | game | · / ✅ |
 | `battleship-fog` | Battleship · Fog of War | game | ✅ / ✅ |
 | `simon-faceoff` | Simon · Face-Off | game | ✅ / ✅ |
 | `price-bid-off` | The Price Is Right · Come On Down! | game | ✅ / ✅ |
+| `plinko-show` | Plinko | game | · / · |
+| `big-wheel` | The Big Wheel | game | · / · |
 | `hungry-hungry-heads` | Hungry Hungry Hippos · Hungry Hungry Heads | game | ✅ / ✅ |
 | `disc-duel` | Windjammers · Disc Duel | game | ✅ / ✅ |
 | `arrow-arena` | TowerFall · Arrow Arena | game | ✅ / ✅ |
-| `driller-duel` | Mr. Driller · Driller Duel | game | ✅ / ✅ |
+| `driller-duel` | Dig Duel | game | ✅ / ✅ |
 | `bubble-battle` | Puzzle Bobble · Bubble Battle | game | ✅ / ✅ |
+| `chutes-ladder-rush` | Chutes and Ladders · Ladder Rush | game | · / · |
 | `broforce` | Sean of a Gun | game | ✅ / ✅ |
 | `broforce-jungle` | Sean of a Gun: Jungle | game | ✅ / ✅ |
 | `broforce-factory` | Sean of a Gun: Factory | game | ✅ / ✅ |
@@ -143,7 +147,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `paddys-darts` | Paddy’s Darts | version of paddys | ✅ / ✅ |
 | `office-hockey-shootout` | The Mighty Ducks · Hockey Shootout | version of ducks | · / · |
 | `space-swarm` | Space Invaders · Mars Attacks! | version of invaders | · / · |
-| `t800-scan-long` | T-800 Freeway Chase | version of terminator | · / · |
+| `t800-scan-long` | Judgment Day Chase | version of terminator | · / · |
 | `blackjack` | Blackjack | version of casino | · / · |
 | `five-card` | Five-Card Panic | version of casino | · / · |
 | `roulette` | Bad Decision Roulette | version of casino | · / · |
@@ -181,8 +185,7 @@ Drop `assets/keyart/<slot>.webp` (big picture behind the selected game, landscap
 | `clue-lineup` | Clue · Lineup | version of clue | · / · |
 | `monopoly-speed-die` | Monopoly · Speed Die | version of monopoly | · / · |
 | `monopoly-auction` | Monopoly · Sealed-Bid Auction | version of monopoly | · / · |
-| `chutes-ladder-rush` | Chutes and Ladders · Ladder Rush | version of chutes | · / · |
-| `chutes-spinner-showdown` | Chutes and Ladders · Spinner Showdown | version of chutes | · / · |
+| `chutes-spinner-showdown` | Strands & Ladders | version of chutes | · / · |
 | `candy-gumdrop-catch` | Candy Land · Gumdrop Mountain Catch | version of candy | · / · |
 | `candy-color-dash` | Candy Land · Color Card Dash | version of candy | · / · |
 | `smb-world-1` | Super Mario Bros. · World 1 | version of smb | · / · |

@@ -84,7 +84,34 @@ Object.assign(PICTURES,{
  'cut-dawn':{w:1920,h:1080,what:'inside a subway car at dawn: orange sunrise through the windows, empty floor in front'},
  'cut-coney':{w:1920,h:1080,what:'Coney Island beach at dawn: the big Ferris wheel, boardwalk, ocean, empty sand in front'},
  'cut-radio':{w:1920,h:1080,what:'a dark radio studio at night: one microphone, an ON AIR light, nothing else'},
+ // the Turnbull bus that runs down the street (side view facing RIGHT, wheels on the bottom edge)
+ bus:{w:1536,h:512,what:"the Turnbull AC's bus: a battered old yellow-and-black school bus covered in armour plates and graffiti, side view facing RIGHT, wheels on the bottom edge, transparent background"},
+ // solid obstacles and street furniture on the floor (src/engines/dd/scenes.js drawBlock): standing on the bottom edge, filling the width,
+ // seen from the front and a little above like the fighters; transparent background
+ 'prop-grave-1':{w:256,h:320,what:'a weathered rounded granite headstone, mossy, leaning a touch'},'prop-grave-2':{w:256,h:320,what:'a stone cross grave marker on a plinth'},
+ 'prop-grave-3':{w:256,h:320,what:'a tall thin obelisk headstone with a cracked corner'},'prop-grave-4':{w:320,h:256,what:'a low wide double headstone with a small stone angel'},
+ 'prop-hydrant':{w:192,h:256,what:'a red NYC fire hydrant, chipped paint'},'prop-meter':{w:128,h:384,what:'a 1970s single parking meter on a pole'},
+ 'prop-newsstand':{w:512,h:384,what:'a green metal 1970s New York newsstand kiosk with papers and magazines (made-up mastheads only)'},
+ 'prop-mailbox':{w:256,h:320,what:'a blue 1970s US mailbox on legs, dented'},'prop-trashcan':{w:256,h:288,what:'a dented metal garbage can with the lid half off, trash spilling'},
+ 'prop-phone':{w:256,h:448,what:'a 1970s New York phone booth / payphone stand, scuffed and covered in stickers'},
+ 'prop-bench':{w:448,h:256,what:'a park bench, wooden slats on iron legs'},'prop-lamp':{w:192,h:640,what:'an old iron street lamp post with a lit lamp at the top'},
+ 'prop-car':{w:640,h:320,what:'a parked 1970s sedan, side view facing RIGHT'},'prop-wreck':{w:640,h:320,what:'a burnt-out 1970s car wreck, side view, a few flames'},
+ 'prop-swings':{w:512,h:384,what:'an old playground swing set'},'prop-couch':{w:512,h:256,what:'a beat-up 1970s couch'},'prop-sink':{w:256,h:288,what:'a grimy public restroom sink on a pedestal'},
+ 'prop-hotdog':{w:512,h:384,what:'a Coney Island hot dog cart with an umbrella (made-up name only)'},'prop-pylon':{w:128,h:192,what:'an orange traffic cone'},
+ // the heroes' own run cycle (owner, Nov 24: the 2-cell run looked silly): 8 frames of 256 x 256 left to right, the same headless
+ // body as hero-p1/-p2, running RIGHT, feet on each cell's foot point (128, 244), a full stride for both legs
+ 'run-p1':{w:2048,h:256,what:'hero-p1 (Sean\'s Warrior: leather vest, bare arms, brown trousers) running right: an 8-frame run cycle (contact, down, passing, up, then the same for the other leg), headless like the sheet'},
+ 'run-p2':{w:2048,h:256,what:'hero-p2 (Amber\'s Warrior) running right: the same 8-frame run cycle, headless like the sheet'},
+ // the subway map (src/engines/dd/subwayMap.js): the station wall it hangs on (three screen shapes), the map poster itself (no stops
+ // or names: the game draws the route, stops and tags at STOPS), and each chapter's gang tag beside its stop
+ 'map-wall':{w:1920,h:1080,what:'a grimy 1970s New York subway station wall, straight on: dirty cream tiles, a maroon tile band, soot streaks, faded spray-paint scribbles (no words), harsh fluorescent light; the middle left empty for a poster'},
+ 'map-wall-tall':{w:1080,h:1920,what:'the same grimy 1970s subway station wall, upright phone framing'},'map-wall-fold':{w:1504,h:1670,what:'the same grimy 1970s subway station wall, near-square framing'},
+ 'map-base':{w:1600,h:2000,what:'a worn 1970s-style New York City subway map poster in our own design: cream land, pale blue water, green parks, coloured subway lines; The Bronx top, Manhattan the thin island down the middle-left, Brooklyn and Queens right, Staten Island bottom left; creased, yellowed, a few stains; NO station names or text except a black title strip at the top'},
  logo:{w:1600,h:700,what:'title logo THE WARRIORS / COME OUT TO PLAY, transparent'},'title-bg':{w:1920,h:1080,what:'title backdrop: a dark city street at night, two fighters back to back'}});
+// each chapter's gang tag on the map: our own spray-painted / patch style logo for that gang or place, transparent
+const MAP_TAGS={conclave:'THE CONCLAVE: a gold sunburst patch',turnbull:"TURNBULL AC'S: a skinhead gang patch with a bus",orphans:'ORPHANS: a scruffy stencil tag',train1:'THE TRAIN SOUTH: a subway car stencil',
+ furies:'BASEBALL FURIES: a baseball bat crossed with a baseball',lizzies:'LIZZIES: a pink lipstick kiss tag',union:'UNION SQUARE: a station sign stencil',punks:'PUNKS: a roller skate tag',ride:'THE RIDE HOME: a dawn sun tag',coney:'CONEY ISLAND: a Ferris wheel tag'};
+for(const [id,w] of Object.entries(MAP_TAGS))PICTURES['map-tag-'+id]={w:512,h:192,what:`${w}, written out in big hand-painted letters (only the words given), transparent background`};
 const imgs=new Map();let ver=0;
 function picture(name){const url=USER['ww:'+name];if(!url||typeof Image==='undefined')return null;
  let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;ver++;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}

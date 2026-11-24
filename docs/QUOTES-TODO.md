@@ -50,7 +50,7 @@ only from a real source (the show/film/game, or an interview for real people). W
 - Son of the Mask: Alvey Avery (`alvey-avery`)
 - Godzilla: Godzilla (`godzilla`)
 
-## No verified line found yet (173)
+## No verified line found yet (178)
 
 - *NSYNC: Chris · *NSYNC (`nsync-chris`)
 - *NSYNC: JC · *NSYNC (`nsync-jc`)
@@ -225,4 +225,8 @@ only from a real source (the show/film/game, or an interview for real people). W
 - Who Charted?: Kulap Vilaysack (`kulap-vilaysack`)
 - YouTube: Mullet Reviews (`mullet-reviews`)
 - YouTube: Shoenice (`shoenice`)
-
+- The Warriors: Sully (`sully`)
+- The Warriors: Starr (`starr`)
+- The Warriors: Vance (`vance`)
+- The Warriors: Turnbull AC (`turnbull-ac`)
+- The Warriors: The Policewoman (`warriors-cop`)
