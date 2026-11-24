@@ -33,7 +33,9 @@ const FOES={
  rogue:{hp:13,sp:62,moves:['jab','cross','hook','kick'],o:'rogue',head:'rogue',pts:350,name:'Rogue',gang:'THE ROGUES'},
  bottler:{hp:11,sp:56,moves:['jab','kick'],o:'rogue',head:'rogue',pts:450,name:'Rogue',gang:'THE ROGUES',ranged:'bottle'},
  luther:{hp:110,sp:60,moves:['jab','cross','kick2','jkickE'],o:'rogue',head:'rogue',face:'luther',pts:15000,name:'LUTHER',gang:'THE ROGUES',big:1.12,ranged:'gun',noGrab:1},
- riff:{hp:60,sp:76,moves:['jab','cross','hook','kick2'],o:'riff',head:'riff',pts:0,name:'Riff',gang:'THE RIFFS'}};
+ riff:{hp:60,sp:76,moves:['jab','cross','hook','kick2'],o:'riff',head:'riff',pts:0,name:'Riff',gang:'THE RIFFS'},
+ // one of the crew, running the 96th Street platform with you (an ally until the cops drag him to the edge)
+ fox:{hp:60,sp:96,moves:['jab','cross','kick'],o:'warrior',head:'thug',pts:0,name:'Fox',gang:'THE WARRIORS'}};
 // one area: kind (scenery, src/engines/dd/scenes.js), len, waves 'type type ...' at hero x, depth range, doors, blocks
 // (solid obstacles x..x+w, d0..d1), pits [x0,x1,d0,d1] (a hole across part or all of the floor), props/items, events, boss. A wave list may say 'door' spawns.
 const W=(at,list,o={})=>({at,list:list.split(' ').filter(Boolean),...o});
@@ -73,15 +75,19 @@ const CHAPTERS=[
    {kind:'train',len:1500,beat:'MIND THE GAP',sub:'They come through the doors between the cars',moving:1,doors:'20 740 1480',dMin:26,dMax:112,
     waves:[W(150,'skin skin',{door:1}),W(560,'skin chain orphan',{door:1}),W(1060,'big skin skin',{door:1})],items:'stick@400 pizza@900',events:'lurch@300 lurch@800 lurch@1200'}],
   outro:'FIRE ON THE TRACKS! Everybody off at 96th Street.'},
- {id:'furies',title:'THE BASEBALL FURIES',place:'Riverside Park · Manhattan',music:4,
-  story:['96th Street. A quiet park by the river.','Then the bats come out. The Furies don\'t talk. They swing.'],
+ {id:'furies',title:'THE BASEBALL FURIES',place:'96th Street · Riverside Park',music:4,
+  story:['96th Street. The cops were waiting on the platform. RUN.','Then a quiet park by the river, and the bats come out.'],
   areas:[
+   // the chase down the 96th Street platform: no waves to clear, the cops come from behind and the screen keeps moving;
+   // Fox runs with you until a cop drags him to the platform edge as a train comes in (chase/fox: warriorsDD.js chaseStep)
+   {kind:'station96',len:3200,beat:'96TH STREET',sub:'The cops were waiting. RUN!',chase:1,fox:1650,siren:1,
+    waves:[],items:'stick@420 chicken@1700 burger@2600'},
    {kind:'riverside',len:1800,beat:'RIVERSIDE PARK',sub:'Grab a bat of your own',
     waves:[W(160,'fury fury'),W(640,'fury fury fury'),W(1200,'fury fury fury fury')],blocks:'bench@420:26:6 lamp@980:8:10',items:'bat@300 burger@1100'},
    {kind:'playground',len:1400,beat:'THE PLAYGROUND',sub:'The lead Fury wants a word',
     waves:[W(200,'fury fury fury')],blocks:'swings@560:60:4',items:'chicken@500',
     boss:{at:860,type:'furyboss',minions:'fury fury',line:'Batter up.'}}],
-  outro:'The Furies are down. Some of the boys got split up.'},
+  outro:'The Furies are down. Fox is gone, and the boys are split up.'},
  {id:'lizzies',title:'THE LIZZIES',place:'A party uptown',music:5,
   story:['Music, drinks, smiles. An invitation nobody should take.','It\'s a trap. The Lizzies hate the Warriors as much as anyone.'],
   areas:[

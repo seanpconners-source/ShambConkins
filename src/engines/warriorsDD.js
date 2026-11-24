@@ -89,7 +89,7 @@ const blankCells=new WeakMap();
 function blankCell(img,c){let m=blankCells.get(img);if(!m){m=new Map();blankCells.set(img,m);}const key=c.sx+','+c.sy;if(m.has(key))return m.get(key);let b=false;
  try{const cv=document.createElement('canvas');cv.width=cv.height=24;const g=cv.getContext('2d',{willReadFrequently:true});g.drawImage(img,c.sx,c.sy,DS.CELL,DS.CELL,0,0,24,24);const d=g.getImageData(0,0,24,24).data;b=true;for(let q=3;q<d.length;q+=4)if(d[q]>8){b=false;break;}}catch{}
  m.set(key,b);return b;}
-const SHEET_OF={cop:'foe-cop',sarge:'foe-cop',riot:'foe-riot',skin:'foe-turnbull',chain:'foe-turnbull',big:'foe-turnbull',driver:'foe-turnbull',orphan:'foe-orphan',lob:'foe-orphan',orphboss:'foe-orphan',fury:'foe-fury',furyboss:'foe-fury',
+const SHEET_OF={fox:'hero-p2',cop:'foe-cop',sarge:'foe-cop',riot:'foe-riot',skin:'foe-turnbull',chain:'foe-turnbull',big:'foe-turnbull',driver:'foe-turnbull',orphan:'foe-orphan',lob:'foe-orphan',orphboss:'foe-orphan',fury:'foe-fury',furyboss:'foe-fury',
  liz:'foe-lizzie',knifeliz:'foe-lizzie',gunliz:'foe-lizzie',lizboss:'foe-lizzie',punk:'foe-punk',skater:'foe-punk',punkboss:'foe-punk',rogue:'foe-rogue',bottler:'foe-rogue',luther:'foe-rogue',riff:'foe-riff'};
 
 async function warriorsDD(s){
@@ -218,6 +218,7 @@ async function warriorsDD(s){
   if(waveDone&&cam.lockB<1e8&&!bossOn){cam.lockA=-1e9;cam.lockB=1e9;goT=3;}
   // the boss of the area
   if(A.boss&&!bossOn&&wave===W.length-1&&waveDone&&hero.x>=A.boss.at)startBoss();
+  if(A.chase){chaseStep(dt);return;}
   // the escape stage: cops keep coming from behind, the train leaves when time runs out
   if(A.escape){escapeT-=dt;spawnT-=dt;if(spawnT<=0){spawnT=8;if(living('foe').filter(f=>f.chaser).length<2&&living('foe').length<4)spawnFoe({type:uid%4===0?'riot':'cop',side:-1,d:(uid*37)%DEPTH,chaser:true});}
    if(escapeT<=0){escapeT=22;A.trainLeave=1;banner={big:'MISSED IT!',small:'Next train in 20 seconds',t:2};for(let i=0;i<3;i++)spawnFoe({type:'cop',side:i%2?-1:1,d:i*40+20,chaser:true});}
@@ -234,6 +235,33 @@ async function warriorsDD(s){
   if(bossOn&&A.boss.riffs&&!riffsIn&&(hero.hp<hero.maxHp*.42||bossT>38))riffsArrive();
   // the Riffs' beating happens in the middle of the screen: the boss is drawn back there (also while he's being hit)
   if(riffsIn&&bossF&&bossF.hp>0&&!bossF.gone&&!['fall','down','dead','pit'].includes(bossF.st)){const c=cam.x+vw/2,dx=c-bossF.x;if(Math.abs(dx)>6)bossF.x+=Math.sign(dx)*Math.min(Math.abs(dx),110*dt);}}
+ // ---- the 96th Street chase (owner: "subway platform running from the cops should be a stage... that one dude"): nothing to
+ // clear, the screen keeps moving right after a head start, cops pour in from behind (and now and then one blocks the way
+ // ahead); Fox runs with you until a cop drags him to the platform edge as a train comes in. Reach the far end to get away.
+ function chaseStep(dt){A.chaseT=(A.chaseT||0)+dt;
+  if(A.chaseT>2.5){A.push=Math.max(A.push||0,cam.x)+(28+Math.min(34,(A.chaseT-2.5)*.8))*dt;cam.lockA=Math.min(A.push,Math.max(0,A.len-vw));}
+  if(A.fox&&!A.foxF&&!A.foxDone){A.foxF=spawnFoe({type:'fox',ally:true,side:-1,d:clamp(hero.d+22,A.dMin,A.dMax)});A.foxF.x=hero.x-36;A.foxF.dir=1;A.foxF.entering=null;}
+  spawnT-=dt;if(spawnT<=0){spawnT=Math.max(1.4,2.6-A.chaseT*.012);if(living('foe').filter(f=>f.chaser).length<5)spawnFoe({type:uid%5===0?'riot':'cop',side:-1,d:(uid*37)%DEPTH,chaser:true});}
+  A.aheadT=(A.aheadT??6)-dt;if(A.aheadT<=0){A.aheadT=7.5;if(living('foe').length<6)spawnFoe({type:'cop',side:1,d:(uid*53)%DEPTH,chaser:true});}
+  // cops left far behind give up (frees room for fresh ones)
+  for(const f of living('foe'))if(f.chaser&&!f.scripted&&f.x<cam.x-140)f.gone=true;
+  foxMoment(dt);
+  if(hero.x>=A.len-150&&!(A.foxT&&!A.foxDone))areaClear('YOU GOT AWAY!');}
+ function foxMoment(dt){const fx_=A.foxF;if(!fx_||A.foxDone)return;
+  if(!A.foxT&&hero.x>=A.fox){A.foxT=1e-3;const cop=spawnFoe({type:'cop',side:1,d:A.dMin,chaser:true});cop.entering=null;cop.inv=99;A.foxCop=cop;
+   Object.assign(fx_,{x:Math.min(hero.x+70,cam.x+vw-90),d:A.dMin,scripted:1,inv:99,mv:null,dir:1});Object.assign(cop,{x:fx_.x+30,d:A.dMin,scripted:1,dir:-1});
+   banner={big:'FOX!',small:'A cop has him at the edge of the platform! A train is coming!',t:2.6};sfx.siren();vibrate([40,40,40]);}
+  if(!A.foxT)return;A.foxT+=dt;const cop=A.foxCop;
+  // the train: a warning down the edge row, then it roars past in the track pit behind them
+  if(A.foxT>1.6&&A.trainPass==null&&!A.foxHit){A.trainPass=cam.x-260-1920;sfx.horn();}
+  if(A.trainPass!=null){A.trainPass+=1500*dt;
+   if(!A.foxHit&&A.trainPass+1920>fx_.x){A.foxHit=1;shakeT=.6;A.flash=.35;fx_.gone=true;if(cop)cop.gone=true;sfx.thud();
+    for(const v of F)if(!v.gone&&v.side==='foe'&&v.d<A.dMin+14&&Math.abs(v.x-fx_.x)<160){v.hp=0;knockdown(v,300,260,true,null);}
+    banner={big:'FOX IS GONE',small:'No time. Keep running!',t:2.8};}
+   if(A.trainPass>cam.x+vw+200){A.trainPass=null;A.foxDone=true;run.foxLost=true;}}}
+ // a scripted fighter: Fox and the cop wrestling at the edge of the platform
+ function scriptStep(f,dt){f.st='idle';f.vx=0;const k2=Math.floor(t*3.3+(f.type==='fox'?0:1))%2;f.forcePose=k2?'grab':'hurt';
+  const o=f.type==='fox'?A.foxCop:A.foxF;if(o)f.dir=Math.sign(o.x-f.x)||f.dir;f.x+=Math.sin(t*7)*6*dt;}
  function startBoss(){bossOn=true;bossT=0;cam.x=cam.lockA=cam.lockB=Math.max(0,Math.min(A.len-vw,hero.x-vw*.35));musicBoss=true;
   bossF=spawnFoe({type:A.boss.type,boss:true,side:1,d:DEPTH/2});bossF.x=cam.x+vw+40;
   const ms=A.boss.minions.split(' ').filter(Boolean);ms.forEach((ty,i)=>{const m=spawnFoe({type:ty,side:i%2?-1:1,d:(i+1)*DEPTH/(ms.length+1)});m.hp=Math.round(m.hp*.8);});
@@ -280,7 +308,7 @@ async function warriorsDD(s){
    // a queued chain move starts as soon as the hit is out (cancel the recovery)
    if(m.chainQ&&m.seg>actEnd){const q=m.chainQ;f.mv=null;f.st='idle';startMove(f,q);return;}
    if(m.seg>=def.seq.length){f.mv=null;f.st=f.grabbed?'grabbing':'idle';f.spinA=0;if(def.special)spCD=.3;}}}
- function poseOf(f){if(f.mv){const sg=f.mv.def.seq[Math.min(f.mv.seg,f.mv.def.seq.length-1)];return sg[0];}
+ function poseOf(f){if(f.forcePose)return f.forcePose;if(f.mv){const sg=f.mv.def.seq[Math.min(f.mv.seg,f.mv.def.seq.length-1)];return sg[0];}
   switch(f.st){case 'walk':{const ph=f.walkPh%4;return f.T?.skate?(Math.floor(f.walkPh*.7)%2?'skate1':'skate2'):['walk1','walk2','walk3','walk2'][Math.floor(ph)];}
    // run = stride, legs passing, stride, legs passing (the sheets' two run cells are both strides: flipping between them only wiggled the back leg)
    case 'run':return RUN_CYCLE[Math.floor(f.walkPh*1.1)%4];case 'air':return f.airAtk==='spin'?'spin':f.airAtk?'jkick':'jump';
@@ -353,7 +381,7 @@ async function warriorsDD(s){
   readStick();if(bot.on)botThink(dt);if(spCD>0)spCD-=dt;
   if(hero&&phase==='play')heroStep(hero,dt);
   if(bossOn)bossT+=dt;
-  for(const f of F){if((f.side==='foe'||f.side==='ally')&&phase==='play')foeStep(f,dt);physics(f,dt);f.inv=Math.max(0,f.inv-dt);f.flash=Math.max(0,f.flash-dt);if(f.hpShow>0)f.hpShow-=dt;
+  for(const f of F){if(f.scripted){if(phase==='play')scriptStep(f,dt);}else if((f.side==='foe'||f.side==='ally')&&phase==='play')foeStep(f,dt);physics(f,dt);f.inv=Math.max(0,f.inv-dt);f.flash=Math.max(0,f.flash-dt);if(f.hpShow>0)f.hpShow-=dt;
    const want=BD.P[poseOf(f)]||BD.P.stand,rate=f.mv?(f.mv.def.seq[f.mv.seg]?(2.6/Math.max(.04,f.mv.def.seq[f.mv.seg][1])):20):f.st==='walk'||f.st==='run'?14:10;
    f.pose=BD.blend(f.pose,want,1-Math.exp(-dt*rate));f.poseName=poseOf(f);}
   // shots
@@ -488,7 +516,7 @@ async function warriorsDD(s){
   if(ai.flee&&!ally&&!f.boss&&!['hurt','fall','down','dead','held','dizzy','grabbed'].includes(f.st)&&!f.mv){f.x+=ai.flee*T.sp*1.5*dt;f.dir=ai.flee;f.st='walk';f.walkPh+=dt*7;
    if(f.x<cam.x-70||f.x>cam.x+vw+70)f.gone=true;return;}
   // pick a target: the hero, or a Riff who is closer (once the Riffs are in, they all go for the boss)
-  let h=null;if(ally&&riffsIn&&bossF&&bossF.hp>0&&!bossF.gone)h=bossF;else if(ally){let bd=1e9;const fs=living('foe');for(const v of fs){if(v.boss&&fs.length>1)continue;const d=Math.abs(v.x-f.x)+Math.abs(v.d-f.d)*2;if(d<bd){bd=d;h=v;}}if(!h){f.st='idle';return;}}
+  let h=null;if(ally&&riffsIn&&bossF&&bossF.hp>0&&!bossF.gone)h=bossF;else if(ally){let bd=1e9;const fs=living('foe');for(const v of fs){if(v.boss&&fs.length>1)continue;const d=Math.abs(v.x-f.x)+Math.abs(v.d-f.d)*2;if(d<bd){bd=d;h=v;}}if(!h||(f.type==='fox'&&Math.abs(h.x-f.x)>160)){if(f.type==='fox'&&hero){const gx=hero.x+(f.d<hero.d?-34:34),dx=gx-f.x;if(Math.abs(dx)>8){f.x+=Math.sign(dx)*Math.min(Math.abs(dx),T.sp*1.6*dt);f.st='run';f.walkPh+=dt*8;f.dir=Math.sign(dx);}else{f.st='idle';f.dir=hero.dir;}}else f.st='idle';return;}}
   else{h=hero;let bd=hero&&canBeHit(hero,f)?Math.abs(hero.x-f.x)+60:1e9;if(!f.boss)for(const v of living('ally')){const d=Math.abs(v.x-f.x);if(d<bd){bd=d;h=v;}}}
   if(!h||h.st==='dead'||h.st==='pit'){f.st='idle';return;}
   // scared Rogues back off once the Riffs are here
@@ -503,7 +531,7 @@ async function warriorsDD(s){
   if(f.boss&&riffsIn){gx=cam.x+vw/2;gd=(A.dMin+A.dMax)/2;}
   if(ally&&riffsIn&&h===bossF){gx=h.x+side*(24*h.big+6+Math.abs(f.ring||0)*6);gd=clamp(h.d+(f.ring||0)*8,A.dMin,A.dMax);}
   gx=clamp(gx,cam.x+14,cam.x+vw-14);
-  const dx=gx-f.x,dd=gd-f.d,sp=T.sp*(f.boss&&f.hp<f.maxHp*.4?1.3:1)*(ally?1:(.85+.25*DIFF));
+  const dx=gx-f.x,dd=gd-f.d,sp=T.sp*(f.boss&&f.hp<f.maxHp*.4?1.3:1)*(ally?1:(.85+.25*DIFF))*(A.chase&&f.chaser?1.7:1);
   if(Math.abs(dx)>4||Math.abs(dd)>3){f.x+=clamp(dx,-1,1)*Math.min(Math.abs(dx),sp*dt*(Math.abs(dx)>150?1.6:1));f.d+=clamp(dd,-1,1)*Math.min(Math.abs(dd),sp*.6*dt);f.st='walk';f.walkPh+=dt*6;}else f.st='idle';
   f.dir=Math.sign(h.x-f.x)||f.dir;
   const adx=Math.abs(h.x-f.x),add=Math.abs(h.d-f.d);
@@ -544,6 +572,10 @@ async function warriorsDD(s){
   const sh=shakeT>0?(Math.random()-.5)*shakeT*20:0,sway=A.moving?Math.sin(t*2.2)*1.2+Math.sin(t*7.1)*.4:0;
   x.save();x.translate(sh,bandY+sway*k);x.scale(k,k);
   SC.drawArea(x,A,cam.x,vw,BACK,FRONT,t);
+  // 96th Street: the warning down the platform edge, then the train roaring past in the track pit
+  if(A.chase&&A.foxT&&!A.foxHit&&Math.floor(t*8)%2){const Y=BACK+A.dMin;x.fillStyle='rgba(255,60,40,.28)';x.fillRect(0,Y-16,vw,32);x.font='900 22px "SC Bangers",Impact';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#ffd23c';x.fillText('TRAIN!',40,Y);}
+  if(A.trainPass!=null){const y0=BACK*.55-6;for(let i=0;i<5;i++)SC.drawTrainSide(x,A.trainPass-cam.x+i*384,y0,BACK,t,false);
+   x.fillStyle='rgba(255,250,220,.5)';x.beginPath();x.ellipse(A.trainPass-cam.x+5*384,y0+30,40,22,0,0,7);x.fill();}
   // fire patches on the floor
   for(const fi of fires){const X=fi.x-cam.x,Y=BACK+fi.d,a=Math.min(1,fi.t);x.fillStyle=`rgba(255,120,30,${.35*a})`;x.beginPath();x.ellipse(X,Y,fi.r,fi.r*.35,0,0,7);x.fill();
    for(let i=0;i<6;i++){const fx2=X+(i-2.5)*fi.r*.32,fh=10+6*Math.sin(t*14+i*1.7);x.fillStyle=`rgba(255,${150+i*12},40,${.8*a})`;x.beginPath();x.moveTo(fx2-4,Y);x.quadraticCurveTo(fx2,Y-fh*1.6,fx2+4,Y);x.fill();}}
@@ -614,7 +646,7 @@ async function warriorsDD(s){
   else if(sp){x.save();x.translate(cx,cy);x.rotate(tilt);x.drawImage(sp.cv,sp.x,sp.y);x.restore();}
   else BD.drawGangHead(x,cx,cy-fw*.08,fw*1.02,f.head||'thug',{face,tilt,mood,id:f.id});
   x.restore();
-  if(f.side==='ally'&&f.st!=='dead'&&!(riffsIn&&bossF&&Math.abs(f.x-bossF.x)<90)){x.fillStyle='#e8a83c';x.font=`900 ${Math.max(8,7*kk)}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText('RIFF',cx,cy-fw*1.2);}
+  if(f.side==='ally'&&f.st!=='dead'&&!(riffsIn&&bossF&&Math.abs(f.x-bossF.x)<90)){x.fillStyle='#e8a83c';x.font=`900 ${Math.max(8,7*kk)}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(f.type==='fox'?'FOX':'RIFF',cx,cy-fw*1.2);}
   if(f.st==='dizzy'){for(let i=0;i<3;i++){const a=t*6+i*2.1;x.fillStyle='#ffe85c';x.font=`${10*kk}px sans-serif`;x.textAlign='center';x.fillText('★',spots.face.x+Math.cos(a)*14*kk,spots.face.y-fh*.75+Math.sin(a)*4*kk);}}
   // a telegraphed attack: a red ! over the head before it comes
   if(f.side==='foe'&&f.mv?.def.tell&&f.mv.seg===0){x.font=`900 ${Math.max(14,16*kk)}px "SC Bangers",Impact`;x.textAlign='center';x.textBaseline='middle';x.fillStyle=`rgba(255,${80+Math.floor(80*Math.sin(t*30))},40,.95)`;x.strokeStyle='#000';x.lineWidth=3;x.strokeText('!',cx,cy-fw*1.3);x.fillText('!',cx,cy-fw*1.3);}
@@ -695,6 +727,8 @@ async function warriorsDD(s){
    if(tg.face){const sp=faceSprite(tg.face,'normal',fs*1.8,1);if(sp)x.drawImage(sp.cv,tx+sp.x+fs,ty+sp.y+fs*1.2);else BD.drawGangHead(x,tx+fs,ty+fs*1.1,fs*1.4,tg.head,{face:1,id:tg.id});}else BD.drawGangHead(x,tx+fs,ty+fs*1.1,fs*1.4,tg.head,{face:1,id:tg.id});
    small((tg.T?.name||'').toUpperCase().slice(0,20),tx+fs*2.2,ty+fs*.55,fs*.85,tg.boss?'#ff8c6c':'#fff','left');bar(tx+fs*2.2,ty+fs*1.2,tw-fs*2.4,fs*.6,tg.hp/tg.maxHp,tg.boss?'#ff5c3c':'#e8e8e8');
    if(tg.shield>0)fitSmall('SHIELD: hit from behind, grab or jump-kick',tx+fs*2.2,ty+fs*2.3,fs*.68,tw-fs*2.4,'#9cf','left');}
+  if(A?.flash>0){A.flash-=1/60;x.fillStyle=`rgba(255,255,240,${Math.min(1,A.flash*2.2)})`;x.fillRect(0,0,W,H);}
+  if(A?.chase&&!A.foxT)small('RUN! THE COPS ARE BEHIND YOU',W/2,top+fs*3.4,fs*1.1,'#ff5c5c');
   if(A?.escape){const tsec=Math.max(0,Math.ceil(escapeT));small(A.trainLeave?'NEXT TRAIN':`TRAIN LEAVES IN 0:${String(tsec).padStart(2,'0')}`,W/2,top+fs*2,fs*1.1,tsec<=10||A.trainLeave?'#ff5c5c':'#ffd23c');}
   if(online&&partner){small(`${names[1-cur]}: chapter ${Math.floor(partner.ms/10)+1} · ${partner.sc}`,W/2,top+fs*3.4,fs*.8,'#9cf');}
   // off-screen enemies: arrows at the edges

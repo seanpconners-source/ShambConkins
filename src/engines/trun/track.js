@@ -55,24 +55,32 @@ function makeCourse(seed,{stage=0}={}){
  const segs=[];// built straights
  const order=zoneOrder(seed);
  // content of straight k, independent of direction
- function content(k){const r=seededRandom(seed+':trun:'+k),lvl=Math.min(1,k/28);
+ function content(k){const r=seededRandom(seed+':trun:'+k),lvl=Math.min(1,k/28),
+   // past straight 28 it keeps getting harder: tighter spacing, more blocked lanes, harder traps, more corners
+   lvl2=Math.max(0,Math.min(1,(k-28)/32));
   const zone=zoneAt(k,order),gate=k>0&&k%ZLEN===0,mix=ZONES[zone].mix,tot=mix.reduce((x,y)=>x+y,0);
-  const len=k===0?70:Math.round(36+r()*34+lvl*18+(gate?44:0));
-  const turn=k===0?(r()<.5?'L':'R'):r()<.22?'T':r()<.5?'L':'R';
+  const len=k===0?70:Math.round(Math.max(30,36+r()*34+lvl*18-lvl2*14)+(gate?44:0));
+  const turn=k===0?(r()<.5?'L':'R'):r()<.22+lvl2*.13?'T':r()<.5?'L':'R';
   const obs=[],coins=[];
   let at=k===0?26:gate?56:10+r()*4;// a zone gate gets a clear run-in so the title card can be read
   const end=len-9;// keep the corner run-up clear
   // room between obstacles grows with the speed you'll have by then (a jump covers ~.7 s of running)
-  const gapBase=11+lvl*9;
+  // past straight 28 runners keep speeding up (sim.js speedAt; they reach straight k at about 18.1+.082(k-28) m/s, measured
+  // with the autopilot): spacing in metres grows with that speed so a jump still has ground after it, while the content
+  // itself gets nastier (lvl2)
+  const sk=k>28?Math.min(24,18.1+(k-28)*.082)/18.1:1;
+  const gapBase=(11+lvl*9)*sk;
   while(at<end){
    // pick a kind by the zone's weights (fire only once the run has got going)
    let p=r()*tot,ki=0;while(ki<mix.length-1&&p>=mix[ki]){p-=mix[ki];ki++;}
    // the deadlier traps only once the run has got going
    if((ki===3||ki===6||ki===7)&&lvl<=.25)ki=ki===3?1:2;
+   // later on, the soft stumbles (roots, webs) are often swapped for traps that kill
+   if(lvl2>0&&(ki===0||ki===9)&&r()<lvl2*.55)ki=[1,2,6,7,8][Math.floor(r()*5)];
    const kind=KIND_IDS[ki];let o=null;
-   if(kind==='gap')o={kind,at,len:2.2+r()*(.6+lvl*1.2)};
+   if(kind==='gap')o={kind,at,len:2.2+r()*(.6+lvl*1.2+lvl2*.5)};
    else if(kind==='block'){// block one or two lanes, leave at least one free
-    const free=Math.floor(r()*3),two=r()<.35+lvl*.3;const lanes=[0,1,2].filter(l=>l!==free&&(two||r()<.5));
+    const free=Math.floor(r()*3),two=r()<.35+lvl*.3+lvl2*.2;const lanes=[0,1,2].filter(l=>l!==free&&(two||r()<.5));
     if(!lanes.length)lanes.push((free+1)%3);o={kind,at,lanes};}
    else o={kind,at};
    obs.push(o);
@@ -80,7 +88,7 @@ function makeCourse(seed,{stage=0}={}){
    const lane=o.kind==='block'?[0,1,2].find(l=>!o.lanes.includes(l)):Math.floor(r()*3);
    if(r()<.75){const n=4+Math.floor(r()*4);for(let i=0;i<n;i++){const a=o.at-2.2-(n-i)*1.6;if(a>2)coins.push({at:a,lane,y:.75});}}
    if(JUMP_KINDS.has(o.kind)&&r()<.6){const L=o.kind==='gap'?o.len:1.2;for(let i=0;i<5;i++){const f=i/4,a=o.at-1.6+f*(L+3.2);coins.push({at:a,lane,y:.9+Math.sin(f*Math.PI)*1.4});}}
-   at+=gapBase+r()*(9-lvl*3)+(o.kind==='gap'?o.len:0);}
+   at+=gapBase+r()*(9-lvl*3)*sk*(1-.35*lvl2)+(o.kind==='gap'?o.len:0);}
   // a coin line through the corner run-up
   if(r()<.5)for(let i=0;i<6;i++)coins.push({at:len-8.5+i*1.1,lane:1,y:.75});
   coins.sort((a,b)=>a.at-b.at);

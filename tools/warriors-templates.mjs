@@ -41,7 +41,7 @@ for (const [name, w, h, what] of pics) save(name + '-template', await page.evalu
   const lines = [`${name}  ${w} x ${h}`, ...what.match(/.{1,46}(\s|$)/g)];
   if (name.startsWith('far-') || name.startsWith('wall-') || name.startsWith('floor-')) lines.push('repeats side to side: right edge joins the left edge');
   if (name.startsWith('floor-')) lines.push('fighters walk on this; seen from the side at an angle');
-  if (name.startsWith('wall-')) lines.push('bottom edge = where the walkable floor starts');
+  if (name.startsWith('wall-')) lines.push('bottom edge = where the walkable floor starts', 'TRANSPARENT above the top of what it shows (no sky): PNG with alpha,', 'roofs/fences/trees end in their own outline over the far picture');
   if (name.startsWith('fx-')) {const n = name === 'fx-fury' ? 4 : 6, fw = w / n; x.setLineDash([6, 4]); for (let i = 1; i < n; i++) {x.beginPath(); x.moveTo(i * fw, 0); x.lineTo(i * fw, h); x.stroke();} x.setLineDash([]);}
   x.fillStyle = '#333'; x.textBaseline = 'top'; lines.forEach((l, i) => {x.font = `${i ? 400 : 700} ${fs * (i ? .7 : 1)}px sans-serif`; x.fillText(l.trim(), 12, 10 + i * fs * (i ? .95 : 1.3));});
   return c.toDataURL('image/png');}, {name, w, h, what}));

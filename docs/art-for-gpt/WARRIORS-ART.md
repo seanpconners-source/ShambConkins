@@ -111,7 +111,7 @@ The **templates** (`<sheet>-template.png`) show every cell with its pose name, t
 | (enemy) | `charge` | shoulder charge: bent low, shoulder first, running |
 | (enemy) | `taunt` | arms raised, calling the hero out |
 
-## 2. Stage art: the story's 18 places (3 pictures each, 54 in all)
+## 2. Stage art: the story's 19 places (3 pictures each, 57 in all)
 | File | Size | What |
 |---|---|---|
 | `far-<area>.png` | 2048 x 512 | the sky and the far scenery behind; scrolls slowly; **repeats side to side** (right edge joins the left edge) |
@@ -137,6 +137,7 @@ No people, no text other than our own signs, no logos. Keep the floor fairly eve
 | `apartment2` | an apartment block hallway: doors, stair landing |
 | `station` | a subway platform: tiled wall with the station name, the track pit, steel columns |
 | `platform` | another subway platform, same style |
+| `station96` | the 96th Street platform for the cop chase: white tile, the station name in mosaic, steel columns, the track pit at the back edge where a train rushes past (the game draws the train) |
 | `restroom` | a grimy subway men's room: tiled walls, stalls, sinks |
 | `boardwalk` | Coney Island boardwalk at dawn: game stalls, a big Ferris wheel and parachute tower far behind |
 | `beach` | Coney Island beach at dawn: sand, waves, the parachute tower far away |

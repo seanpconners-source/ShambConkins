@@ -46,8 +46,8 @@ const SHEETS={
 const BIOMES=['nyc','gotham','suburb','forest','jungle','beach','desert','snow','graveyard','gothic','lava','space','digital','themepark','funhouse','stage','mountains','countryside'];
 // STORY AREAS (src/engines/dd/story.js kinds): the same three layers. An area with no picture uses the old biome picture
 // that fits (scenes.js FALLBACK), else it is drawn. Moving trains (train, trainDawn) scroll their far layer by time.
-const AREAS=['conclave','park','cemetery','elstreet','yard','tenement','burning','train','trainDawn','riverside','playground','apartment','apartment2','station','platform','restroom','boardwalk','beach'];
-const AREA_WHAT={conclave:'Van Cortlandt Park at night: a field full of gangs facing a lit stage, trees behind',park:'a park path through dark woods at night, iron fence, lamps',
+const AREAS=['conclave','park','cemetery','elstreet','yard','tenement','burning','train','trainDawn','riverside','playground','apartment','apartment2','station','platform','station96','restroom','boardwalk','beach'];
+const AREA_WHAT={station96:'the 96th Street subway platform at night (1970s): white tiled wall with the station name in mosaic, steel columns, the track pit at the back edge of the platform where trains rush past, yellow edge strip',conclave:'Van Cortlandt Park at night: a field full of gangs facing a lit stage, trees behind',park:'a park path through dark woods at night, iron fence, lamps',
  cemetery:'an old cemetery at night: fog, gravestones, iron fence, a mausoleum',elstreet:'a Bronx street under the elevated train tracks at night: storefronts, neon, graffiti',
  yard:'a rail yard at night: boxcars, floodlights, chain-link fence, gravel and rails',tenement:'a Bronx street of brownstone tenements at night: stoops, doorways, fire escapes',
  burning:'the same street lit orange by a burning car, smoke',train:'inside a 1970s graffiti-covered subway car (far layer = the tunnel seen through the windows)',

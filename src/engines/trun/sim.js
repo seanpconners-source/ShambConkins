@@ -13,7 +13,10 @@ function calmSpeed(e){if(e<BRK.slow)return 1-.5*e/BRK.slow;
  if(e<BRK.go)return 0;const k=Math.min(1,(e-BRK.go)/(BRK.end-BRK.go));return k*k*(3-2*k);}
 
 const POW={magnet:12,boost:5,shield:20,idol:12};// idol (the golden idol): coins count double
-const ZONE_BONUS=250,V0=9,VMAX=17.5,ACC=.05,G=30,JUMP=10.4,SLIDE=.78,STAND=1.75,DUCK=.8,WINDOW=8,CHASE=14,CLOSE=2.2,BACK=1.1;
+// speed: up to VMAX in the first ~2.4 minutes, then it keeps creeping up to VTOP (owner: "doesn't really get any harder...
+// needs to get faster and harder as it progresses"); the corner window grows a little with the speed so turns stay possible
+const VTOP=24,ACC2=.018;
+const ZONE_BONUS=250,V0=9,VMAX=17.5,ACC=.06,G=30,JUMP=10.4,SLIDE=.78,STAND=1.75,DUCK=.8,WINDOW=8,CHASE=14,CLOSE=2.2,BACK=1.1;
 
 function makeRunner(course,{who=0}={}){
  const C=course;
@@ -21,7 +24,7 @@ function makeRunner(course,{who=0}={}){
   turnQ:null,turnQT:0,lastStumble:-99,jumpQ:0,bonus:0,calm:0,zone:C.get(0).zone,mile:0,pow:null,powT:0,safeT:0,chase:CHASE,slowT:0,air:false,events:[],hit:new Set(),got:new Set(),
   dist(){return R.seg.s0+R.a;},brkT(){return R.calm>0?CALM-R.calm:-1;},score(){return Math.floor(R.dist()+R.coins*10+R.bonus);},
   // a corner is near: inside the turn window of the current straight
-  inWindow(){return R.a>R.seg.len-WINDOW;},
+  inWindow(){return R.a>R.seg.len-WINDOW*Math.sqrt(Math.max(1,R.v/VMAX));},
   input(k){if(!R.alive)return;
    if(k==='up'){if(!R.air){R.vy=JUMP;R.air=true;R.slide=0;R.ev('jump');}else R.jumpQ=.22;}// pressed just before landing: jump on touchdown
    else if(k==='down'){if(R.air){R.vy=Math.min(R.vy,-18);R.slideQ=true;}else{R.slide=SLIDE;R.ev('slide');}}
@@ -33,7 +36,7 @@ function makeRunner(course,{who=0}={}){
   stumble(){if(R.pow==='shield'){R.pow=null;R.safeT=1.2;R.ev('shieldPop');return;}if(R.t-R.lastStumble<7.5&&R.lastStumble>0){R.chase=0;R.kill('caught');return;}
    R.lastStumble=R.t;R.chase=CLOSE;R.slowT=.9;R.ev('stumble');},
   step(dt){if(!R.alive){R.t+=dt;return;}
-   R.t+=dt;R.v=Math.min(VMAX,V0+ACC*R.t);
+   R.t+=dt;R.v=speedAt(R.t);
    if(R.pow){R.powT-=dt;if(R.powT<=0){if(R.pow==='boost')R.safeT=1.2;R.pow=null;R.ev('powEnd');}}
    R.safeT=Math.max(0,R.safeT-dt);
    R.calm=Math.max(0,R.calm-dt);const ce=R.brkT(),calmK=ce>=0?calmSpeed(ce):1;
@@ -117,4 +120,5 @@ function simulate(seed,{skill=.7,rnd,maxT=400,dt=1/30}={}){
  while(R.alive&&R.t<maxT){bot(dt);R.step(dt);R.events.length=0;}
  return {score:R.score(),dist:Math.floor(R.dist()),coins:R.coins,dead:R.dead,t:+R.t.toFixed(1)};}
 
-Object.assign(exports,{BRK,CALM,BRK_GAP,calmSpeed,ZONE_BONUS,POW,makeRunner,makeBot,simulate,V0,VMAX,STAND,DUCK,CHASE,CLOSE,SLIDE});
+function speedAt(t){const t1=(VMAX-V0)/ACC;return t<t1?V0+ACC*t:Math.min(VTOP,VMAX+ACC2*(t-t1));}
+Object.assign(exports,{speedAt,VTOP,BRK,CALM,BRK_GAP,calmSpeed,ZONE_BONUS,POW,makeRunner,makeBot,simulate,V0,VMAX,STAND,DUCK,CHASE,CLOSE,SLIDE});

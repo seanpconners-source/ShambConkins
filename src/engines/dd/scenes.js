@@ -5,7 +5,7 @@
 // window view by time. Everything is a pure function of the camera and the clock, so both phones draw the same.
 const DS=require("src/data/ddSprites.js");
 function hash(n){n=(n^61)^(n>>>16);n=n+(n<<3);n=n^(n>>>4);n=Math.imul(n,0x27d4eb2d);return ((n^(n>>>15))>>>0)/4294967296;}
-const FALLBACK={conclave:'forest',park:'forest',cemetery:'graveyard',elstreet:'nyc',yard:'nyc',tenement:'nyc',burning:'nyc',riverside:'forest',playground:'nyc',station:'gotham',platform:'gotham',boardwalk:'themepark',beach:'beach'};
+const FALLBACK={conclave:'forest',park:'forest',cemetery:'graveyard',elstreet:'nyc',yard:'nyc',tenement:'nyc',burning:'nyc',riverside:'forest',playground:'nyc',boardwalk:'themepark',beach:'beach'};
 const pic=(kind,layer)=>DS.picture(layer+'-'+kind)||(FALLBACK[kind]?DS.picture(layer+'-'+FALLBACK[kind]):null);
 function tilePic(g,im,camX,par,vw,y,h){const w=h*im.width/im.height,o=((camX*par)%w+w)%w;for(let X=-o;X<vw;X+=w)g.drawImage(im,X,y,w+1,h);}
 function sky(g,vw,BACK,top,bot){const gr=g.createLinearGradient(0,-300,0,BACK);gr.addColorStop(0,top);gr.addColorStop(1,bot);g.fillStyle=gr;g.fillRect(0,-400,vw,BACK+400);}
@@ -115,7 +115,7 @@ const K={
  station:{far(g,c){rect(g,'#0c0c10',0,-400,c.vw,c.B+400);},
   wall(g,c){const y=c.B*.55;rect(g,'#c8c4b4',0,-40,c.vw,y+40);g.strokeStyle='rgba(60,60,60,.25)';g.lineWidth=.6;for(let yy=-40;yy<y;yy+=6){g.beginPath();g.moveTo(0,yy);g.lineTo(c.vw,yy);g.stroke();}
    each(c.cam,c.vw,8,1,X=>{g.beginPath();g.moveTo(X,-40);g.lineTo(X,y);g.stroke();});
-   each(c.cam,c.vw,320,1,(X,i)=>{rect(g,'#2c5c3c',X+40,y*.28,180,20);g.font='900 13px "SC Nunito",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#f0ece0';g.fillText(c.A.kind==='platform'||i%2?'UNION SQ':'14 ST',X+130,y*.28+10);});
+   each(c.cam,c.vw,320,1,(X,i)=>{rect(g,'#2c5c3c',X+40,y*.28,180,20);g.font='900 13px "SC Nunito",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#f0ece0';g.fillText(c.A.kind==='station96'?(i%2?'96 ST':'BROADWAY'):c.A.kind==='platform'||i%2?'UNION SQ':'14 ST',X+130,y*.28+10);});
    rect(g,'#3c5c3c',0,y-8,c.vw,4);
    // the track pit and rails, then the train (at the end of the platform on the escape stage)
    rect(g,'#141414',0,y,c.vw,c.B-y);rect(g,'#6c6c6c',0,c.B-14,c.vw,2);rect(g,'#6c6c6c',0,c.B-6,c.vw,2);each(c.cam,c.vw,16,1,X=>rect(g,'#2c2418',X,c.B-16,8,14));
@@ -123,6 +123,7 @@ const K={
    if(c.A.escape){const tx=c.A.len-420-c.cam,lv=c.A.trainLeave||0;drawTrainSide(g,tx+lv,y-6,c.B,c.t,c.A.trainOpen);}},
   floor(g,c){rect(g,'#e8c83c',0,c.B,c.vw,4);floorStripes(g,c.vw,c.B+4,c.F,'#6c6860','#34322e',c.cam,0);g.fillStyle='rgba(0,0,0,.25)';each(c.cam,c.vw,24,1,X=>rect(g,'rgba(0,0,0,.2)',X,c.B+4,1,c.F-c.B+300));}},
  platform:{far(g,c){K.station.far(g,c);},wall(g,c){K.station.wall(g,c);},floor(g,c){K.station.floor(g,c);}},
+ station96:{far(g,c){K.station.far(g,c);},wall(g,c){K.station.wall(g,c);},floor(g,c){K.station.floor(g,c);}},
  restroom:{far(g,c){rect(g,'#1c201c',0,-400,c.vw,c.B+400);},
   wall(g,c){rect(g,'#c8d8c8',0,-40,c.vw,c.B+40);g.strokeStyle='rgba(60,80,60,.25)';g.lineWidth=.6;for(let yy=-40;yy<c.B;yy+=7){g.beginPath();g.moveTo(0,yy);g.lineTo(c.vw,yy);g.stroke();}each(c.cam,c.vw,7,1,X=>{g.beginPath();g.moveTo(X,-40);g.lineTo(X,c.B);g.stroke();});
    rect(g,'#3c6c4c',0,c.B*.5,c.vw,4);each(c.cam,c.vw,90,1,(X,i)=>{rect(g,'#5c6c64',X+6,c.B*.12,70,c.B*.88);rect(g,'#7c8c84',X+8,c.B*.14,66,c.B*.84);rect(g,'#c8a43c',X+60,c.B*.55,3,6);
@@ -192,4 +193,4 @@ function drawBlock(g,b,X,yb,yf,t){const w=b.w,k=b.kind,box=(h,front,top)=>{rect(
  else if(k==='couch'){box(16,'#6c1c3c','#8c2c4c');rect(g,'#5c142c',X,yb-30,w,16);rect(g,'#7c2444',X-3,yf-22,7,22);rect(g,'#7c2444',X+w-4,yf-22,7,22);}
  else if(k==='sink'){box(20,'#c8ccc8','#e8ece8');rect(g,'#9ca4a0',X+6,yb-24,w-12,4);rect(g,'#5c5c5c',X+w/2-1,yb-30,2,8);}
  else box(16,'#5c5c5c','#7c7c7c');}
-Object.assign(exports,{drawArea,drawBlock,KINDS:Object.keys(K),FALLBACK});
+Object.assign(exports,{drawArea,drawBlock,drawTrainSide,KINDS:Object.keys(K),FALLBACK});
