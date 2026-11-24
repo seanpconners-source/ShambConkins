@@ -38,7 +38,7 @@ const HOST_LINES={intro:['Here\'s a game a whole lot of people love to watch...'
 async function plinko(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#14062e'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound(),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({song:'plinko'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const mine=i=>net?i===me:!(cpu&&i===1);
  let W=s.W,H=s.H,t=0,mode='intro',introT=0,cur=0,curtain=0,banner=null,hostSay=null,modelPose='present',hostPose='talk',hurry=false,cheerT=0;
  const P=names.map(()=>({won:0,chips:1,dropped:0,picks:[]}));
@@ -156,7 +156,7 @@ async function plinko(s){
    while(chip.hit<chip.sim.hits.length&&chip.sim.hits[chip.hit][0]<=chip.t){const pi=chip.sim.hits[chip.hit][1];lit.set(pi,1);sfx.peg(pi);chip.hit++;}
    if(chip.i>=path.length-1){hurry=false;landChip();}}
   draw();});
- s.debug={get mode(){return mode;},P,get cur(){return cur;},simChip,VALUES,pick:j=>pickDigit(j),drop:xx=>dropAt(xx??BW/2),get price(){return pick;},
+ s.debug={snd,get mode(){return mode;},P,get cur(){return cur;},simChip,VALUES,pick:j=>pickDigit(j),drop:xx=>dropAt(xx??BW/2),get price(){return pick;},
   set hurry(v){hurry=!!v;},bot:net?()=>{if(!mine(cur))return '';if(mode==='price'&&pick&&pick.res==null){pickDigit(Math.random()<.6?pick.right:1-pick.right);return 'pick';}if(mode==='aim'){dropAt(BW/2+(Math.random()-.5)*300);return 'drop';}hurry=true;return '';}:null};
  // remote slot messages arrive in order with the drops: read {l} right after a watched drop
  const origNext=net?net.next.bind(net):null;

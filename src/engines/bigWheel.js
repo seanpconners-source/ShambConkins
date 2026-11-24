@@ -31,7 +31,7 @@ const GUESTS=[['DOLORES','#e86a92'],['BIG RON','#3a86ff'],['GLADYS','#ff9f1c'],[
 async function bigWheel(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#1a0a3a'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound(),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({song:'showcase-showdown'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const R=seededRandom(`${s.seed}:bigwheel`),gs=GUESTS[Math.floor(R()*GUESTS.length)];
  // contestants: 0/1 players, 2 the studio guest (played by the game on every phone)
  const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gs[0],guest:true,color:gs[1]}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
@@ -120,7 +120,7 @@ async function bigWheel(s){
    else if(remote(ci)){for(;;){const m=await net.next();if(!m||!s.alive)return null;if(m.sp){startSpin(+m.sp[0]);break;}}}
    await new Promise(r=>{const go=()=>{if(!s.alive||mode==='spun')return r();setTimeout(go,40);};go();});if(!s.alive)return null;
    const res=spin.sim;spin=null;ang=res.end;
-   if(res.travel<N){sfx.buzz();sfx.aww();say('Ooh, it has to go all the way around! Spin it again.',2200,'talk');shake=1;setTimeout(()=>shake=0,350);await wait(1600);mode='pull';continue;}
+   if(res.travel<N){sfx.wrong();say('Ooh, it has to go all the way around! Spin it again.',2200,'talk');shake=1;setTimeout(()=>shake=0,350);await wait(1600);mode='pull';continue;}
    return res.value;}}
  async function turn(ci){cur=ci;const c2=C[ci];banner={big:c2.name.toUpperCase(),small:C.some(o=>o.spins.length)?`TO BEAT: ${bestSoFar()?label(bestSoFar()):'ANYTHING'}`:'FIRST UP!',t:1.6,col:'#fff'};await wait(1600);
   let v=await oneSpin(ci,false);if(v==null)return;c2.spins.push(v);c2.total=v;reactTo(ci,v,false);await wait(1500);
@@ -143,7 +143,7 @@ async function bigWheel(s){
   else{sfx.ding();c2.mood=tot>=80?'win':'normal';banner={big:label(v),small:second?`TOTAL ${label(tot)}`:'',t:1.4,col:'#fff'};if(tot>=85)sfx.applause(1.4);}}
  async function bonusSpin(ci){const c2=C[ci];cur=ci;banner={big:'BONUS SPIN!',small:'5 or 15 wins $10,000 · the dollar wins $25,000',t:2.2,col:'#7dff5a'};await wait(2200);
   const v=await oneSpin(ci,true);if(v==null)return;const win=v===100?25000:v===5||v===15?10000:0;c2.bonus=1000+win;
-  if(win){sfx.jackpot();banner={big:money(win)+'!',small:'BONUS SPIN WINNER!',t:2.6,col:'#ffe23a'};modelPose='clap';say('Unbelievable!',2200,'cheer');}else{sfx.ding();banner={big:label(v),small:'Still $1,000!',t:1.8,col:'#fff'};}await wait(2400);}
+  if(win){sfx.jackpot(true);banner={big:money(win)+'!',small:'BONUS SPIN WINNER!',t:2.6,col:'#ffe23a'};modelPose='clap';say('Unbelievable!',2200,'cheer');}else{sfx.ding();banner={big:label(v),small:'Still $1,000!',t:1.8,col:'#fff'};}await wait(2400);}
  // ---- frame
  s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;
   if(mode==='intro'){introT+=dt;curtain=clamp((introT-.4)/1.4,0,1);}
@@ -153,7 +153,7 @@ async function bigWheel(s){
    while(spin.click<spin.sim.clicks.length&&spin.sim.clicks[spin.click]<=spin.t){spin.click++;sfx.click();}
    if(spin.i>=p.length-1){hurry=false;mode='spun';}}
   draw();});
- s.debug={get mode(){return mode;},C,order,get cur(){return cur;},simSpin,valueAt,spin:(w0=16)=>startSpin(w0),choose:id=>choose(id),set hurry(v){hurry=!!v;},
+ s.debug={snd,get mode(){return mode;},C,order,get cur(){return cur;},simSpin,valueAt,spin:(w0=16)=>startSpin(w0),choose:id=>choose(id),set hurry(v){hurry=!!v;},
   bot:net?()=>{if(!human(cur))return '';if(mode==='pull'){startSpin(10+Math.random()*12);return 'spin';}if(mode==='choose'){choose(C[cur].total<55?'again':'stay');return 'choose';}hurry=true;return '';}:null};
  // ---- the show
  if(!await s.pass(0,net?'THE BIG WHEEL online: three contestants, closest to $1.00 without going over wins.':cpu?`THE BIG WHEEL vs ${names[1]} and a studio contestant: pull the wheel down hard, closest to $1.00 without going over wins.`:'THE BIG WHEEL: two players and a studio contestant. Pull the wheel down hard; closest to $1.00 without going over wins.','Come on down!'))return;

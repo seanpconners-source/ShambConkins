@@ -1,7 +1,8 @@
 // Shared studio for the game-show games (PLINKO, THE BIG WHEEL): the set, the rising curtain, our own host and two show
 // assistants (original designs, drawn here until the owner's pictures arrive via src/data/showSprites.js), contestant name
 // tags with the players' faces, lit-up logos, speech bubbles, and an original game-show sound kit (music bed, crowd, fanfares,
-// pegs, wheel clicker). No real show's music, logos or people.
+// pegs, wheel clicker), with the show's own sound cues from assets/music/tpir-* over it when they're in. No real show's
+// logos or people.
 const SS=require("src/data/showSprites.js");
 const {audioContext}=require("src/audio.js");
 const {store}=require("src/state.js");
@@ -96,9 +97,36 @@ const clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
 function moneyBanner(g,W,H,big,small,a=1,col='#ffe23a'){g.save();g.globalAlpha=a;const fs=Math.min(W,H)*.09,y=H*.4;g.fillStyle='rgba(20,6,46,.82)';g.fillRect(0,y-fs*1.2,W,fs*(small?2.9:2.2));
  g.font=`900 ${Math.min(fs*1.5,W*1.5/Math.max(4,big.length))}px "SC Bangers",Impact,sans-serif`;g.textAlign='center';g.textBaseline='middle';g.lineWidth=fs*.14;g.strokeStyle='#000';g.strokeText(big,W/2,y);g.fillStyle=col;g.fillText(big,W/2,y);
  if(small){g.font=`800 ${fs*.42}px "SC Nunito",sans-serif`;g.fillStyle='#fff';g.fillText(small,W/2,y+fs*1.05);}g.restore();}
-// ---- sound: an original 70s game-show kit (synth brass + bass + drums bed, crowd, fanfares)
-function createShowSound(){const on=()=>!!store.profile?.settings?.sound;let A=null,out=null,musicOn=false,musicT=0,timer=null,noiseB=null;
+// ---- sound. The show's own recordings come first (owner's pick, Nov 24: the Bob Barker era cues from a soundboard,
+// assets/music/tpir-<name>.mp3 -> music:tpir-<name>, fetched the first time a show game opens: pwa LATER 'music:tpir-'),
+// levelled by TPIR_GAIN (beds to ~-20 LUFS, stings by their loudest moment to ~-13). A sound whose recording isn't in
+// (or hasn't decoded yet) plays the original synth kit below instead: brass + bass + drums bed, crowd, fanfares.
+let USERP={};try{USERP=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
+const TPIR_GAIN={'barkers-bargain-bar':0.41,'bell':0.58,'big-winner':0.33,'bumper':0.72,'buzzer-losing-horn-2':0.69,'buzzer-losing-horn':0.46,'buzzer-overbid-2':0.92,'buzzer-overbid':0.92,'buzzer-wrong':0.37,'buzzer':0.57,'check-game':0.38,'cliff-hangers-crash-2':0.52,'cliff-hangers-crash':0.50,'cliff-hangers':0.28,'come-on-down':0.35,'consolation-prize':0.46,'credit-card':0.52,'ding':0.53,'grand-game':0.29,'hurdles-gun-2':1.11,'hurdles-gun':1.02,'hurdles':0.51,'ineligible':0.45,'losing-horn':0.51,'main-street':0.50,'new-car':0.25,'one-away-horn-2':0.51,'one-away-horn':0.35,'pathfinder-bell':0.45,'pathfinder-wrong':0.72,'penny-ante':0.52,'perfect-bid':0.45,'phone-home-game':0.43,'plinko':0.51,'race-game':0.43,'range-game':0.18,'safe-crackers':0.62,'showcase-1':0.42,'showcase-2':0.38,'showcase-3':0.35,'showcase-4':0.23,'showcase-showdown':0.38,'siren':0.44,'super-ball':0.30,'switcharoo':0.46,'theme':0.34,'train-2':0.58,'train-3':0.54,'train':0.55,'tugboat-2':0.69,'tugboat-3':0.64,'tugboat':0.54,'wheel-beep':0.30,'winner':0.48};
+const clipBufs={},clipLoading={};
+function loadClip(a,n){const url=USERP['music:tpir-'+n];if(!url||clipBufs[n]||clipLoading[n]||typeof fetch==='undefined')return;clipLoading[n]=1;
+ fetch(url).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(buf=>{clipBufs[n]=buf;}).catch(()=>{clipLoading[n]=0;});}
+const SHOW_CLIPS=['come-on-down','bell','ding','buzzer','buzzer-wrong','buzzer-losing-horn','losing-horn','big-winner','winner','wheel-beep'];
+// opts.song = the recording looped under play ('plinko', 'showcase-showdown'); opts.clips = more to load
+function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;let A=null,out=null,musicOn=false,musicT=0,timer=null,noiseB=null;
  const ac=()=>{if(!on())return null;A=audioContext();if(!A)return null;if(!out){out=A.createGain();out.gain.value=.55;out.connect(A.destination);}return A;};
+ let clipOut=null,bed=null,bedTimer=null,holdTo=0;const playing=new Set();
+ const want=[...SHOW_CLIPS,...(opts.song?[opts.song]:[]),...(opts.clips||[])];
+ if(on()){const a=audioContext();if(a)want.forEach(n=>loadClip(a,n));}
+ // play recording n now (or `at` s later); max = cut it short with a fade. Returns null if it isn't loaded (= use the synth)
+ function clip(n,o={}){const a=ac(),b=clipBufs[n];if(!a||!b)return null;if(!clipOut){clipOut=a.createGain();clipOut.gain.value=1;clipOut.connect(a.destination);}
+  const t0=a.currentTime+(o.at||0),src=a.createBufferSource(),g=a.createGain(),v=(TPIR_GAIN[n]??.5)*(o.vol??1),len=o.max?Math.min(o.max,b.duration):b.duration;
+  src.buffer=b;g.gain.setValueAtTime(v,t0);if(len<b.duration){g.gain.setValueAtTime(v,t0+len-.45);g.gain.linearRampToValueAtTime(.0001,t0+len);}
+  src.connect(g);g.connect(clipOut);src.start(t0);src.stop(t0+len+.05);playing.add(src);src.onended=()=>playing.delete(src);return {end:t0+len};}
+ // the looped bed: copies overlap by XF seconds with equal fades so the join doesn't click
+ const XF=.6;
+ function bedCopy(t0){const a=ac(),b=clipBufs[opts.song];if(!a||!b||!bed)return;const src=a.createBufferSource(),g=a.createGain(),v=(TPIR_GAIN[opts.song]??.4)*.7,d=b.duration;
+  src.buffer=b;g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v,t0+XF);g.gain.setValueAtTime(v,t0+d-XF);g.gain.linearRampToValueAtTime(.0001,t0+d);
+  if(!clipOut){clipOut=a.createGain();clipOut.connect(a.destination);}src.connect(g);g.connect(clipOut);src.start(t0);src.stop(t0+d+.05);bed.srcs.push({src,g});bed.next=t0+d-XF;
+  if(bed.srcs.length>3)bed.srcs.shift();}
+ function bedStart(t0){const a=ac();if(!a)return false;bed={srcs:[],next:t0};bedCopy(t0);clearInterval(bedTimer);
+  bedTimer=setInterval(()=>{const a2=ac();if(!bed||!a2)return;if(bed.next-a2.currentTime<1.2)bedCopy(bed.next);},250);return true;}
+ function bedStop(){clearInterval(bedTimer);bedTimer=null;const a=A;if(bed&&a){const t=a.currentTime;for(const {src,g} of bed.srcs){try{g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(g.gain.value,t);g.gain.linearRampToValueAtTime(.0001,t+.4);src.stop(t+.45);}catch{}}}bed=null;}
  const noise=()=>{if(noiseB)return noiseB;const n=A.sampleRate,b=A.createBuffer(1,n,n),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;return noiseB=b;};
  function tone(f,dur,{type='square',vol=.08,to=null,at=0,att=.005,dest=null}={}){const a=ac();if(!a)return;const t0=a.currentTime+at,o=a.createOscillator(),gn=a.createGain();o.type=type;o.frequency.setValueAtTime(f,t0);if(to)o.frequency.exponentialRampToValueAtTime(to,t0+dur);
   gn.gain.setValueAtTime(0,t0);gn.gain.linearRampToValueAtTime(vol,t0+att);gn.gain.exponentialRampToValueAtTime(.0008,t0+dur);o.connect(gn);gn.connect(dest||out);o.start(t0);o.stop(t0+dur+.05);}
@@ -124,10 +152,26 @@ function createShowSound(){const on=()=>!!store.profile?.settings?.sound;let A=n
   drumroll:(dur=1.4)=>{for(let i=0;i<Math.round(dur*26);i++)hiss(.03,{vol:.04+.06*i/(dur*26),f:2600,q:1.2,at:i/26});},
   comeOn:()=>{[523,523,659,784,1046].forEach((f,i)=>brass(f,i===4?.7:.12,i*.13,.05));sfx.cheer(2.8,.16);},
   tick:()=>tone(1800,.015,{type:'square',vol:.025})};
+ // the show's recordings over the synth versions (each falls back to the synth when its file isn't in)
+ const syn={...sfx},rec=(n,o)=>clip(n,o);
+ Object.assign(sfx,{
+  click:()=>rec('wheel-beep')||syn.click(),                                     // the Big Wheel's clicker
+  ding:()=>rec('ding')||syn.ding(),
+  buzz:()=>rec('buzzer')||syn.buzz(),
+  slot:v=>{if(v>=10000)return sfx.jackpot(true);if(!v)return rec('losing-horn')?syn.aww(.5):syn.zero();if(v>=1000)return rec('bell')||syn.slot(v);return rec('ding',{vol:.7})||syn.slot(v);},
+  over:()=>rec('buzzer-losing-horn')?syn.aww(.5):syn.over(),
+  dollar:()=>{if(rec('big-winner',{max:7}))return syn.cheer(3,.14);syn.dollar();},
+  jackpot:big=>{if(rec(big?'big-winner':'winner',{max:big?7:6}))return syn.cheer(2.6,.16);syn.jackpot();},
+  fanfare:()=>rec('bell')||syn.fanfare(),
+  // the announcer's "come on down" cue: the bed waits until it's done
+  comeOn:()=>{const c=rec('come-on-down');if(!c)return syn.comeOn();holdTo=c.end;syn.cheer(2.8,.12);if(bed){bedStop();bed=null;if(musicOn&&clipBufs[opts.song])bedStart(holdTo-.4);}},
+  wrong:()=>rec('buzzer-wrong')||(syn.buzz(),syn.aww())});
  // music bed: an original bouncy brass vamp (I-vi-IV-V in C), quiet under the play
  const prog=[[262,330,392],[220,262,330],[175,220,262],[196,247,294]],BPM=126;
  function bar(n){const a=ac();if(!a)return;const b=60/BPM,ch=prog[n%4];for(let k=0;k<4;k++){tone(ch[0]/2,b*.45,{type:'triangle',vol:.06,at:k*b});tone(60,b*.2,{type:'sine',vol:k%2?0:.12,at:k*b,to:40});if(k%2)hiss(.08,{vol:.05,f:3000,q:.7,at:k*b});hiss(.03,{vol:.02,f:8000,q:.7,at:k*b+b/2});}
   if(n%2===0)ch.forEach(f=>brass(f*2,b*.3,b*.5,.016));else ch.forEach(f=>brass(f*2,b*.25,b*1.5,.013));}
- function music(onOff){if(onOff===musicOn)return;musicOn=onOff;clearInterval(timer);if(!onOff||!store.profile?.settings?.music)return;let n=0;bar(n++);timer=setInterval(()=>{if(musicOn)bar(n++);},60/BPM*4*1000);}
- return {sfx,music,stop:()=>{musicOn=false;clearInterval(timer);}};}
+ function music(onOff){if(onOff===musicOn)return;musicOn=onOff;clearInterval(timer);bedStop();if(!onOff||!store.profile?.settings?.music)return;
+  const a=ac();if(a&&opts.song&&clipBufs[opts.song]&&bedStart(Math.max(a.currentTime+.05,holdTo-.4)))return;
+  let n=0;bar(n++);timer=setInterval(()=>{if(musicOn)bar(n++);},60/BPM*4*1000);}
+ return {sfx,music,clip,loaded:n=>!!clipBufs[n],stop:()=>{musicOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
 Object.assign(exports,{drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});
