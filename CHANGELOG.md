@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.99.60
+- Warriors: heads placed by hand (Head Placer); cops stay one size; no black band in the backgrounds; spin-kick art slots (templates sent to GPT).
+
 ## v0.99.59
 
 - **The Warriors, round 2 art:** Sean and Amber run with their own 8-frame run, heroes and every gang swing bats and pipes with their own poses, the Punks wear roller skates in every pose, new bat/pipe/chain/knife/whip pictures, painted street props and graves (bigger now), and the Turnbull AC's battered blue-gray graffiti bus.

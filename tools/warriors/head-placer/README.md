@@ -20,6 +20,12 @@ Owner, Nov 24: heads kept landing behind the neck, so the owner now places them 
 2. Run `python3 -I tools/warriors/head-placer/apply.py <dump>`. This writes `src/data/ddHeads.js`; every pose gets the owner's spot or the default.
 3. Build and check in the game. `drawFighter` in `src/engines/warriorsDD.js` uses `HEADS`.
 
+## Another account (or a fresh copy)
+`python3 -I tools/warriors/head-placer/pack.py <out>` packs the page with every pose starting at the spot the game uses now
+(src/data/ddHeads.js), so nothing placed is lost. Publish `<out>/index.html` as an artifact with `root` = `<out>`, `files` =
+data.json, faces/p1.png, faces/p2.png and every sheets/*.webp, `capabilities` = {"db": {}}. Its db starts empty; locks made
+there are applied with apply.py exactly as above (it fills untouched poses from the published data.json = the game's spots).
+
 ## New sheet art
 
 1. Run `gen.py <pub>`.
