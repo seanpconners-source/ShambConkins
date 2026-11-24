@@ -1,4 +1,4 @@
-# The Price Is Right games (Plinko, The Big Wheel, Cliff Hangers): art for GPT
+# The Price Is Right games (Plinko, The Big Wheel, Cliff Hangers, The Clock Game): art for GPT
 
 Two TV-game-show games: **Plinko** (`plinko-show`) and **The Big Wheel** (`big-wheel`). They share one studio, one host and two
 show assistants. Everything is **our own**: an original host and original assistants (not any real host, model or celebrity),
@@ -53,3 +53,20 @@ host and assistants). Templates: `cliff-*` and `stage-cliff*` in `gameshow-templ
 | `stage-cliff` | 1920x1080 | The Cliff Hangers studio, wide: the show's set with a painted alpine sky backdrop (blue sky, clouds, distant snowy mountains, a green meadow line), bulb-lit set pillars at the sides, a shiny stage floor along the pink line. The mountain prop stands in the left dashed box (keep it calm there), the prize stands and keypad on the right. |
 | `stage-cliff-tall` | 1080x1920 | The same studio for an upright phone: mountain in the top dashed box, prizes below. |
 | `stage-cliff-fold` | 1504x1670 | The same studio for near-square screens (Sean's open Fold). |
+
+## The Clock Game (`clock-game`, inside The Price Is Right)
+
+Lay it out **just like the show's Clock Game**: a giant round clock with a red sweep hand beside the prize, a lit price display
+under the prize, and the host calling HIGHER / LOWER. Same layout as the show, painted fresh in our style. Templates: `clock-*` and
+`stage-clock*` in `gameshow-templates/` (`node tools/gameshow-templates.mjs --only='clock-*,stage-clock*'`).
+
+| Slot | Size | Prompt (after the style text) |
+|---|---|---|
+| `clock-face` | 1000x1000 | The show's big Clock Game clock seen straight on: a chunky round frame in bright game-show colours with chasing bulbs, a white face with 60 black second ticks (long ones every 5) and the numbers 5, 10 ... 60 around it, centre EXACTLY in the middle on the pink dot. NO hand (the game turns its own). Transparent around the clock. |
+| `clock-hand` | 120x520 | The red sweep second hand pointing straight up: a long slim red needle from the PIVOT dot to the TIP, a short tail below, a round black-and-red hub on the pivot. Transparent. |
+| `clock-display` | 900x300 | The price display like the show's: a glossy board with bulbs round the edge and a dark window exactly in the pink box (the game prints $ and the price in red LEDs). Transparent around. |
+| `clock-platform` | 800x500 | A glossy round prize turntable/platform seen from the front, gold top, the prize photo stands on the pink dot (the game draws it). Transparent around. |
+| `clock-logo` | 1400x500 | **CLOCK GAME** as the show's game sign: big lit-up letters in red and gold, maybe a little clock for the O. Transparent around. |
+| `stage-clock` | 1920x1080 | The Clock Game studio, wide: the show's bright set, bulbs and coloured panels, a shiny stage floor along the pink line. The clock stands in the left dashed box (keep it calm), the prize and keypad on the right. |
+| `stage-clock-tall` | 1080x1920 | The same studio for an upright phone: clock in the top dashed box. |
+| `stage-clock-fold` | 1504x1670 | The same studio for near-square screens (Sean's open Fold). |

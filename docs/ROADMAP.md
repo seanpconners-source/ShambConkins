@@ -22,7 +22,7 @@ Goal: a fun, semi-finished game. Fewer bad minigames, a clear New Game menu, a r
 ### Owner's notes, Nov 24 2026 (The Price Is Right)
 - **R68** `[todo]` THE PRICE IS RIGHT: build EVERY pricing game, one at a time, each played like the show and with GPT sprite templates
   "exactly like the show" (owner). One Arcade entry (price-bid-off = tpirShow.js menu); each game = one PRICING_GAMES row + its own id.
-  `[verify]` Plinko, The Big Wheel, Cliff Hangers (Nov 24). Next, in the owner's chosen order after Cliff Hangers: Clock Game, Hi-Lo,
+  `[verify]` Plinko, The Big Wheel, Cliff Hangers, The Clock Game (Nov 24; Clock Game prize photos still to add). Next: Hi-Lo,
   Hole in One (or Two) (owner: reuse the Sitabout mini golf engine for the putt: minigolf/physics.js + render.js), Punch-a-Bunch,
   Three Strikes, Contestants' Row (One Bid) + Showcase, then Shell Game, Safe Crackers, Range Game, Squeeze Play, Lucky Seven,
   Grocery Game, Race Game, Pathfinder, Ten Chances, Bonkers, Switch?... Use the real products in src/data/showPrizes.js (add cheap

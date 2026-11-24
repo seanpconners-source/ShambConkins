@@ -1,4 +1,4 @@
-// Game-show art slots for The Price Is Right games: PLINKO (plinko-show), THE BIG WHEEL (big-wheel), CLIFF HANGERS (cliff-hangers). Every picture is optional:
+// Game-show art slots for The Price Is Right games: PLINKO (plinko-show), THE BIG WHEEL (big-wheel), CLIFF HANGERS (cliff-hangers), THE CLOCK GAME (clock-game). Every picture is optional:
 // assets/gameshow/<slot>.webp|png -> USER_PORTRAITS['show:<slot>'] (tools/build.mjs); a missing one is drawn by the game
 // (src/engines/gameshow/stage.js). Templates: node tools/gameshow-templates.mjs -> docs/art-for-gpt/gameshow-templates,
 // brief docs/art-for-gpt/GAMESHOW-ART.md. The owner later had GPT paint the classic-era show look (host + two assistants as
@@ -20,6 +20,12 @@ const CLIFF_GEOM={w:1600,h:1000,step0:[250,862],step25:[1240,262],edge:[1330,262
 // unit = the game's climber size h for 1 picture px (hat top ~295 px above the feet when drawn at h 250)
 const CLIMBER={w:256,h:320,frames:['stand','walk1','walk2','walk3','walk4','yodel','teeter','fall'],feet:[128,308],unit:250};
 const STAND_GEOM={w:600,h:600,top:[300,250],price:[150,330,450,430]};
+// THE CLOCK GAME: the big clock prop (face only; the game turns the sweep hand round CENTER, one turn = 60 s, the game uses 30), the
+// sweep hand (pointing up, turned round PIVOT), the price display (the game prints the guess / the price in WINDOW), the prize platform.
+const CLOCK_GEOM={w:1000,h:1000,c:[500,500],r:440};
+const HAND_GEOM={w:120,h:520,pivot:[60,460],len:440};
+const DISPLAY_GEOM={w:900,h:300,window:[90,70,810,230]};
+const PLATFORM_GEOM={w:800,h:500,top:[400,340]};
 const SLOTS={
  'stage-plinko':{w:1920,h:1080,what:'the Plinko studio, wide: big colourful 70s/80s game-show set, the board stands in the middle (leave the middle 40% calm)'},
  'stage-plinko-tall':{w:1080,h:1920,what:'the same studio for upright phones'},
@@ -36,6 +42,14 @@ const SLOTS={
  'cliff-climber':{w:2048,h:320,what:'the little mountain climber (the yodeler) in lederhosen and an alpine hat with a feather, 8 poses facing right: STAND, WALK 1-4, YODEL (arms up), TEETER (arms windmilling on the edge), FALL; transparent'},
  'cliff-stand':{w:600,h:600,what:'a small-prize pedestal seen from the front: the prize sits on top (game draws it), a lit price display window on the front (game prints the price)'},
  'cliff-logo':{w:1400,h:500,what:'CLIFF HANGERS in big lit-up game-show letters, transparent'},
+ 'stage-clock':{w:1920,h:1080,what:'the Clock Game studio, wide: the big clock stands on the left 45% (keep it calm there), the prize + price display on the right'},
+ 'stage-clock-tall':{w:1080,h:1920,what:'the same studio for upright phones: the clock stands in the top third'},
+ 'stage-clock-fold':{w:1504,h:1670,what:'the same studio for near-square screens (the open Fold)'},
+ 'clock-face':{w:1000,h:1000,what:'the Clock Game clock seen straight on: a big round clock with a bright frame, white face, 60 second ticks and the numbers 5 to 60; NO hand (the game draws it); centre exactly in the middle; transparent around'},
+ 'clock-hand':{w:120,h:520,what:'the clock sweep hand pointing straight up, red, with a round hub on the pivot dot; transparent'},
+ 'clock-display':{w:900,h:300,what:'the Clock Game price display: a dark lit board under the prize, the game prints the guess and the price in the window'},
+ 'clock-platform':{w:800,h:500,what:'a glossy turntable/platform the prize stands on (the game puts the prize photo on the dot)'},
+ 'clock-logo':{w:1400,h:500,what:'CLOCK GAME (or THE CLOCK GAME) in big lit-up game-show letters, transparent'},
  'plinko-chip':{w:256,h:256,what:'one Plinko chip seen face on (a thick round puck), transparent around'},
  'plinko-logo':{w:1400,h:500,what:'the word PLINKO in big lit-up 70s game-show letters, transparent'},
  'wheel-logo':{w:1400,h:500,what:'THE BIG WHEEL in big lit-up game-show letters, transparent'},
@@ -51,4 +65,4 @@ function picture(name){const url=USER[keyOf(name)];if(!url||typeof Image==='unde
  let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;ver++;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}
 const has=name=>!!USER[keyOf(name)];
 function ready(names=Object.keys(SLOTS),ms=6000){for(const n of names)if(has(n))picture(n);const t0=Date.now();return new Promise(r=>{const go=()=>{if(names.every(n=>!has(n)||imgs.get(n)?.ok)||Date.now()-t0>ms)return r();setTimeout(go,60);};go();});}
-Object.assign(exports,{HOST,MODEL,PLINKO_GEOM,WHEEL_GEOM,CLIFF_GEOM,CLIMBER,STAND_GEOM,SLOTS,picture,has,ready,version:()=>ver});
+Object.assign(exports,{HOST,MODEL,PLINKO_GEOM,WHEEL_GEOM,CLOCK_GEOM,HAND_GEOM,DISPLAY_GEOM,PLATFORM_GEOM,CLIFF_GEOM,CLIMBER,STAND_GEOM,SLOTS,picture,has,ready,version:()=>ver});

@@ -171,7 +171,10 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   applause:(dur=2.2)=>{for(let i=0;i<Math.round(dur*30);i++)hiss(.035,{vol:.06,f:1800+Math.random()*2200,q:2.5,at:Math.random()*dur});},
   drumroll:(dur=1.4)=>{for(let i=0;i<Math.round(dur*26);i++)hiss(.03,{vol:.04+.06*i/(dur*26),f:2600,q:1.2,at:i/26});},
   comeOn:()=>{[523,523,659,784,1046].forEach((f,i)=>brass(f,i===4?.7:.12,i*.13,.05));sfx.cheer(2.8,.16);},
-  tick:()=>tone(1800,.015,{type:'square',vol:.025})};
+  tick:()=>tone(1800,.015,{type:'square',vol:.025}),
+  // the Clock Game host's calls: a quick rising / falling chirp under the HIGHER! / LOWER! callout
+  higher:()=>{tone(523,.09,{type:'square',vol:.05,to:784});tone(784,.12,{type:'square',vol:.05,at:.09,to:1047});},
+  lower:()=>{tone(784,.09,{type:'square',vol:.05,to:523});tone(523,.12,{type:'square',vol:.05,at:.09,to:392});}};
  // the show's recordings over the synth versions (each falls back to the synth when its file isn't in)
  const syn={...sfx},rec=(n,o)=>clip(n,o);
  Object.assign(sfx,{

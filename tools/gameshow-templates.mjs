@@ -11,7 +11,7 @@ const outDir = path.resolve(args.find(a => !a.startsWith('--')) || path.join(roo
 fs.mkdirSync(outDir, {recursive: true});
 const mods = {'src/data/userPortraits.js': 'exports.USER_PORTRAITS={};', 'src/audio.js': 'exports.audioContext=()=>null;', 'src/state.js': 'exports.store={profile:{settings:{}}};',
   'src/utils.js': 'exports.clamp=(v,a,b)=>Math.max(a,Math.min(b,v));exports.seededRandom=()=>Math.random;'};
-for (const f of ['src/data/showSprites.js', 'src/data/showPrizes.js', 'src/bgShape.js', 'src/engines/gameshow/stage.js', 'src/engines/plinkoShow.js', 'src/engines/cliffHangers.js']) mods[f] = fs.readFileSync(path.join(root, f), 'utf8');
+for (const f of ['src/data/showSprites.js', 'src/data/showPrizes.js', 'src/bgShape.js', 'src/engines/gameshow/stage.js', 'src/engines/plinkoShow.js', 'src/engines/cliffHangers.js', 'src/engines/clockGame.js']) mods[f] = fs.readFileSync(path.join(root, f), 'utf8');
 mods['src/engines/cpuKit.js'] = 'exports.isCpu=()=>false;exports.cpuSkill=()=>.5;exports.isOnline=()=>false;';mods['src/engines/fullBleed.js'] = 'exports.fullBleed=()=>({});';mods['src/audio.js'] = 'exports.audioContext=()=>null;exports.holdMusic=()=>{};exports.releaseMusic=()=>{};exports.vibrate=()=>{};';
 const browser = await chromium.launch(browserLaunchOptions());
 const page = await browser.newPage();
@@ -24,7 +24,27 @@ const render = (slot, mode) => page.evaluate(({slot, mode}) => {
   const pink = '#ff2a6a', T = mode === 'template', label = (t, X, Y, size = Math.max(16, W / 45)) => { x.font = `700 ${size}px sans-serif`; x.textBaseline = 'top'; const w = x.measureText(t).width; x.fillStyle = 'rgba(255,255,255,.88)'; x.fillRect(X - 3, Y - 2, w + 6, size + 6); x.fillStyle = pink; x.fillText(t, X, Y); };
   const faded = fn => { x.save(); if (T) x.globalAlpha = .38; fn(); x.restore(); };
   x.strokeStyle = pink; x.lineWidth = 3;
-  const CH = require('src/engines/cliffHangers.js'), G = SS.CLIFF_GEOM;
+  const CH = require('src/engines/cliffHangers.js'), G = SS.CLIFF_GEOM, CK = require('src/engines/clockGame.js');
+  if (slot.startsWith('stage-clock')) { faded(() => ST.drawStage(x, W, H, 'clock', 0));
+    if (T) { const tall = H > W * 1.15, fold = !tall && W < H * 1.15; x.setLineDash([14, 10]);
+      if (tall) { const d = Math.min(W * .6, H * .3); x.strokeRect((W - d) / 2, H * .1, d, d); label('the clock stands here', (W - d) / 2 + 10, H * .1 + 10); x.strokeRect(W * .03, H * .1 + d + 20, W * .94, H * .15); label('prize + price display, keypad below', W * .04, H * .1 + d + 30); }
+      else if (fold) { const d = Math.min(W * .46, H * .36); x.strokeRect(W * .04, H * .12, d, d); label('the clock', W * .05, H * .13); x.strokeRect(W * .52, H * .12, W * .46, d); label('prize + display', W * .53, H * .13); }
+      else { x.strokeRect(W * .01, H * .02, W * .45, H * .82); label('the clock stands here (left 46%): keep it calm', W * .02, H * .03); x.strokeRect(W * .48, H * .1, W * .51, H * .85); label('prize, price display, keypad', W * .49, H * .11); }
+      x.setLineDash([]); label('the floor / stage line', 20, H * .66); x.beginPath(); x.moveTo(0, H * .66); x.lineTo(W, H * .66); x.stroke(); }
+    return c.toDataURL('image/png'); }
+  if (slot === 'clock-face') { const C = SS.CLOCK_GEOM; faded(() => CK.drawFace(x, 0));
+    if (T) { x.beginPath(); x.arc(C.c[0], C.c[1], C.r, 0, 6.28); x.stroke(); x.beginPath(); x.arc(C.c[0], C.c[1], 10, 0, 6.28); x.stroke(); x.beginPath(); x.moveTo(C.c[0], C.c[1]); x.lineTo(C.c[0], C.c[1] - C.r); x.stroke();
+      label('CENTRE: the hand turns round this dot (exact middle)', 20, 20, 22); label('pink circle = how far the hand reaches: ticks + numbers 5..60 around it', 20, 52, 22); label('NO hand in the picture; transparent around the clock', 20, 84, 22); }
+    return c.toDataURL('image/png'); }
+  if (slot === 'clock-hand') { const Hg = SS.HAND_GEOM; faded(() => CK.drawHand(x));
+    if (T) { x.beginPath(); x.arc(Hg.pivot[0], Hg.pivot[1], 8, 0, 6.28); x.stroke(); x.beginPath(); x.moveTo(Hg.pivot[0], Hg.pivot[1]); x.lineTo(Hg.pivot[0], Hg.pivot[1] - Hg.len); x.stroke(); label('PIVOT', 4, Hg.pivot[1] + 14, 14); label('TIP', 4, 4, 14); }
+    return c.toDataURL('image/png'); }
+  if (slot === 'clock-display') { const Dg = SS.DISPLAY_GEOM, [a, b, cc, d] = Dg.window; faded(() => CK.drawDisplay(x, true));
+    if (T) { x.strokeRect(a, b, cc - a, d - b); label('WINDOW: dark, the game prints $ and the price here', a + 6, b + 6, 20); label('transparent around the board', 8, H - 26, 18); }
+    return c.toDataURL('image/png'); }
+  if (slot === 'clock-platform') { const Pg = SS.PLATFORM_GEOM; faded(() => CK.drawPlatform(x));
+    if (T) { x.strokeRect(Pg.top[0] - 210, Pg.top[1] - 320, 420, 300); label('the prize photo stands here (game draws it)', Pg.top[0] - 206, Pg.top[1] - 314, 18); x.beginPath(); x.arc(Pg.top[0], Pg.top[1], 8, 0, 6.28); x.stroke(); label('transparent around the platform', 8, H - 26, 18); }
+    return c.toDataURL('image/png'); }
   if (slot.startsWith('stage-cliff')) { faded(() => ST.drawStage(x, W, H, 'cliff', 0));
     if (T) { const tall = H > W * 1.15, fold = !tall && W < H * 1.15; x.setLineDash([14, 10]);
       if (tall || fold) { const mw = Math.min(W * .98, H * .5 * G.w / G.h), mh = mw * G.h / G.w, my = H * .1; x.strokeRect((W - mw) / 2, my, mw, mh); label('the mountain stands here (keep it calm, sky-ish)', (W - mw) / 2 + 10, my + 10); x.strokeRect(W * .02, my + mh + 20, W * .96, H * .2); label('prize stands + keypad', W * .03, my + mh + 30); }
@@ -58,7 +78,7 @@ const render = (slot, mode) => page.evaluate(({slot, mode}) => {
     return c.toDataURL('image/png'); }
   if (slot === 'plinko-chip') { faded(() => { const r = W * .44; x.fillStyle = '#e8ebf0'; x.beginPath(); x.arc(W / 2, H / 2, r, 0, 6.28); x.fill(); x.strokeStyle = '#8a93a3'; x.lineWidth = r * .1; x.beginPath(); x.arc(W / 2, H / 2, r * .72, 0, 6.28); x.stroke(); });
     if (T) { x.strokeStyle = pink; x.beginPath(); x.arc(W / 2, H / 2, W * .45, 0, 6.28); x.stroke(); label('round chip fills the circle', 6, 6, 16); } return c.toDataURL('image/png'); }
-  if (slot.endsWith('-logo')) { faded(() => ST.drawLogo(x, '__none', slot === 'plinko-logo' ? 'PLINKO' : slot === 'cliff-logo' ? 'CLIFF HANGERS' : 'THE BIG WHEEL', W / 2, H / 2, W * .92, 0)); if (T) label('transparent around the sign', 20, 20, 26); return c.toDataURL('image/png'); }
+  if (slot.endsWith('-logo')) { faded(() => ST.drawLogo(x, '__none', slot === 'plinko-logo' ? 'PLINKO' : slot === 'cliff-logo' ? 'CLIFF HANGERS' : slot === 'clock-logo' ? 'CLOCK GAME' : 'THE BIG WHEEL', W / 2, H / 2, W * .92, 0)); if (T) label('transparent around the sign', 20, 20, 26); return c.toDataURL('image/png'); }
   if (slot === 'wheel-frame') { const G = SS.WHEEL_GEOM, w = G.window; faded(() => { x.fillStyle = '#c9cdd3'; x.beginPath(); x.roundRect(60, 40, W - 120, H - 80, 60); x.fill(); x.clearRect(w[0], w[1], w[2] - w[0], w[3] - w[1]); });
     if (T) { x.strokeRect(w[0], w[1], w[2] - w[0], w[3] - w[1]); label('SEE-THROUGH window: the game draws the turning', w[0] + 10, w[1] + 20, 22); label('sections inside (5 ... 1.00)', w[0] + 10, w[1] + 52, 22); x.beginPath(); x.moveTo(w[0] - 60, (w[1] + w[3]) / 2); x.lineTo(w[0], (w[1] + w[3]) / 2); x.stroke(); label('pointer line (game draws the pointer)', 20, (w[1] + w[3]) / 2 + 10, 20); }
     return c.toDataURL('image/png'); }
