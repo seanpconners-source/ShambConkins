@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.53
+
+- **Plinko and The Big Wheel:** the show's main theme plays over the curtain when the game opens, then fades into the game music. Plinko says "And here comes the first Plinko chip!" on each contestant's first chip.
+- **A bigger audience:** the new applause recording is layered with itself (several copies, each a little different and spread left to right), so the crowd sounds bigger and never the same twice. It cheers at the open, when each contestant steps up, on every Plinko slot (louder for bigger money) and at the win.
+- Every now and then the winner gets Bob Barker's "the winner is... gay" line instead of the usual winner cue.
+- **The Warriors:** the Lizzies are women now (new body art), and the weapons, crates, barrels, rocks, food and hit/dust effects use GPT's pictures.
+
 ## v0.99.52
 
 - **The Warriors art from Drive:** both heroes, the title screen logo and backdrop, the three special-move effects, and the street scenery for every level are now real pictures (the old biome set stands in for the story's areas: forest, cemetery, city streets, subway stations, the Coney boardwalk and beach).

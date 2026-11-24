@@ -122,7 +122,7 @@ async function bigWheel(s){
    const res=spin.sim;spin=null;ang=res.end;
    if(res.travel<N){sfx.wrong();say('Ooh, it has to go all the way around! Spin it again.',2200,'talk');shake=1;setTimeout(()=>shake=0,350);await wait(1600);mode='pull';continue;}
    return res.value;}}
- async function turn(ci){cur=ci;const c2=C[ci];banner={big:c2.name.toUpperCase(),small:C.some(o=>o.spins.length)?`TO BEAT: ${bestSoFar()?label(bestSoFar()):'ANYTHING'}`:'FIRST UP!',t:1.6,col:'#fff'};await wait(1600);
+ async function turn(ci){cur=ci;const c2=C[ci];banner={big:c2.name.toUpperCase(),small:C.some(o=>o.spins.length)?`TO BEAT: ${bestSoFar()?label(bestSoFar()):'ANYTHING'}`:'FIRST UP!',t:1.6,col:'#fff'};sfx.applause(1.5,.45);await wait(1600);
   let v=await oneSpin(ci,false);if(v==null)return;c2.spins.push(v);c2.total=v;reactTo(ci,v,false);await wait(1500);
   if(c2.total===100)return;
   // spin again or stay
@@ -158,9 +158,9 @@ async function bigWheel(s){
  // ---- the show
  if(!await s.pass(0,net?'THE BIG WHEEL online: three contestants, closest to $1.00 without going over wins.':cpu?`THE BIG WHEEL vs ${names[1]} and a studio contestant: pull the wheel down hard, closest to $1.00 without going over wins.`:'THE BIG WHEEL: two players and a studio contestant. Pull the wheel down hard; closest to $1.00 without going over wins.','Come on down!'))return;
  await SS.ready(['stage-wheel','stage-wheel-tall','curtain','wheel-frame','wheel-logo','host','model','model-2','nametag'],5000);
- snd.music(true);sfx.comeOn();mode='intro';introT=0;
+ snd.title(true);snd.music(true);snd.crowd(3.2,.9,{at:.3});mode='intro';introT=0;
  banner={big:'SHOWCASE SHOWDOWN!',small:C.map(o=>o.name.toUpperCase()).join(' · '),t:2.6,col:'#ffe23a'};await wait(2600);
- say('Time to spin the big wheel! Closest to a dollar without going over wins.',2600,'point');introT=Math.max(introT,2.3);await wait(2600);
+ say('Time to spin the big wheel! Closest to a dollar without going over wins.',2600,'point');introT=Math.max(introT,2.3);await wait(2600);snd.title(false);
  for(const ci of order){if(!s.alive)return;await turn(ci);if(!s.alive)return;
   if(C[ci].total===100&&!C[ci].over)await bonusSpin(ci);snd.music(true);}
  if(!s.alive)return;
@@ -171,7 +171,7 @@ async function bigWheel(s){
   for(const ci of top){cur=ci;const v=await oneSpin(ci,true);if(v==null)return;got.push(v);banner={big:label(v),small:C[ci].name.toUpperCase(),t:1.4,col:'#fff'};sfx.ding();await wait(1400);}
   const mx=Math.max(...got);top=top.filter((ci,k)=>got[k]===mx);}
  const w=top[0];mode='over';cur=w;snd.music(false);C[w].mood='win';
- banner={big:`${C[w].name.toUpperCase()} WINS!`,small:'On to the Showcase!',t:3,col:'#ffe23a'};sfx.jackpot();modelPose='clap';say(`${C[w].name}, you're going to the Showcase!`,3000,'cheer');if(w<2)s.react?.(w,'win');
+ banner={big:`${C[w].name.toUpperCase()} WINS!`,small:'On to the Showcase!',t:3,col:'#ffe23a'};if(w<2)sfx.winner();else sfx.jackpot();modelPose='clap';say(`${C[w].name}, you're going to the Showcase!`,3000,'cheer');if(w<2)s.react?.(w,'win');
  await wait(3200);
  const score=i=>(C[i].over?0:C[i].total)+(i===w?200:0)+Math.round(C[i].bonus/100);
  s.finish([score(0),score(1)],`THE BIG WHEEL · ${C.map(o=>`${o.name} ${o.over?'over':label(o.total)}`).join(' · ')} · ${C[w].name} wins`);}

@@ -36,7 +36,7 @@ const HOST_LINES={intro:['Here\'s a game a whole lot of people love to watch...'
 async function plinko(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#14062e'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({song:'plinko'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({song:'plinko',clips:['first-chip']}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const mine=i=>net?i===me:!(cpu&&i===1);
  let W=s.W,H=s.H,t=0,mode='intro',introT=0,cur=0,curtain=0,banner=null,hostSay=null,modelPose='present',hostPose='talk',hurry=false,cheerT=0;
  const P=names.map(()=>({won:0,chips:1,dropped:0,picks:[]}));
@@ -115,7 +115,7 @@ async function plinko(s){
  let pickDone=null,dropDone=null;
  function pickDigit(j){if(!pick||pick.res!=null)return;pick.choice=j;pick.res=j===pick.right;if(net&&mine(cur))net.send({g:[pick.k,j]});const d=pickDone;pickDone=null;d?.();}
  function dropAt(xx){if(mode!=='aim')return;const p=P[cur],n=p.dropped;xx=Math.round(clamp(xx,CHIP_R,BW-CHIP_R));if(net&&mine(cur))net.send({d:[n,xx]});mode='drop';
-  const sim=simChip(xx,`${s.seed}:plinko:${cur}:${n}`);chip={sim,i:0,t:0,pos:sim.path[0],n,hit:0};sfx.drop();hostSay=null;}
+  const sim=simChip(xx,`${s.seed}:plinko:${cur}:${n}`);chip={sim,i:0,t:0,pos:sim.path[0],n,hit:0};sfx.drop();hostSay=null;if(n===0)sfx.firstChip();}
  // ---- one contestant's game
  async function remoteNext(){for(;;){const m=await net.next();if(!m||!s.alive)return null;return m;}}
  async function pricing(i){const p=P[i],R=seededRandom(`${s.seed}:prizes:${i}`),pool=PRIZES.slice();for(let k=pool.length-1;k>0;k--){const j=Math.floor(R()*(k+1));[pool[k],pool[j]]=[pool[j],pool[k]];}
@@ -166,17 +166,17 @@ async function plinko(s){
  // ---- the show
  if(!await s.pass(0,net?'PLINKO online: take turns. Price four small prizes to win chips, then drop them for up to $50,000.':cpu?`PLINKO vs ${names[1]}. Price four small prizes to win chips, then drop them down the board. Most money wins.`:'PLINKO: two contestants. Price four small prizes to win chips, then drop them for up to $50,000. Most money wins.','Come on down!'))return;
  await SS.ready(['stage-plinko','stage-plinko-tall','curtain','plinko-board','plinko-chip','plinko-logo','host','model','model-2','nametag'],5000);
- snd.music(true);sfx.comeOn();
+ snd.title(true);snd.music(true);snd.crowd(3.2,.9,{at:.3});
  mode='intro';introT=0;banner={big:'COME ON DOWN!',small:names.map(n=>n.toUpperCase()).join(' · '),t:2.6,col:'#ffe23a'};await wait(2600);
- say(HOST_LINES.intro[0],2200);await wait(2200);say(HOST_LINES.intro[1],1800,'cheer');modelPose='present';sfx.fanfare();introT=Math.max(introT,2.3);await wait(1800);
+ say(HOST_LINES.intro[0],2200);await wait(2200);say(HOST_LINES.intro[1],1800,'cheer');modelPose='present';sfx.fanfare();introT=Math.max(introT,2.3);await wait(1800);snd.title(false);
  for(let i=0;i<2;i++){if(!s.alive)return;cur=i;if(i===1&&!net&&!cpu&&!board){snd.music(false);if(!await s.pass(1,`${names[1]}, come on down! Your turn at PLINKO.`,'Play'))return;snd.music(true);}
-  banner={big:names[i].toUpperCase(),small:'IT\'S YOUR TURN AT PLINKO!',t:1.8,col:'#fff'};await wait(1800);
+  banner={big:names[i].toUpperCase(),small:'IT\'S YOUR TURN AT PLINKO!',t:1.8,col:'#fff'};sfx.applause(1.8,.55);await wait(1800);
   if(board){P[i].chips=3;}else await pricing(i);
   if(!s.alive)return;banner={big:`${P[i].chips} CHIP${P[i].chips===1?'':'S'}`,small:'Let\'s drop them!',t:1.6,col:'#ffe23a'};await wait(1500);
   landed=[];await drops(i);if(!s.alive)return;
   mode='done';say(HOST_LINES.done(P[i].won),2600,P[i].won?'cheer':'talk');if(P[i].won)sfx.applause(2);await wait(2600);}
  if(!s.alive)return;mode='over';snd.music(false);
- const w=P[0].won===P[1].won?-1:P[0].won>P[1].won?0:1;if(w>=0){banner={big:`${names[w].toUpperCase()} WINS!`,small:`${money(P[w].won)} on the Plinko board`,t:3,col:'#ffe23a'};sfx.jackpot();s.react?.(w,'win');}else banner={big:'A TIE!',small:money(P[0].won),t:3,col:'#fff'};
+ const w=P[0].won===P[1].won?-1:P[0].won>P[1].won?0:1;if(w>=0){banner={big:`${names[w].toUpperCase()} WINS!`,small:`${money(P[w].won)} on the Plinko board`,t:3,col:'#ffe23a'};sfx.winner();s.react?.(w,'win');}else banner={big:'A TIE!',small:money(P[0].won),t:3,col:'#fff'};
  await wait(3000);
  s.finish(P.map(p=>p.won),`PLINKO · ${names[0]} ${money(P[0].won)} – ${money(P[1].won)} ${names[1]}`);}
 Object.assign(exports,{plinko,simChip,VALUES,PEGS});

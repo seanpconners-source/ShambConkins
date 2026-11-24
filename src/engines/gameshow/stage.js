@@ -102,11 +102,11 @@ function moneyBanner(g,W,H,big,small,a=1,col='#ffe23a'){g.save();g.globalAlpha=a
 // levelled by TPIR_GAIN (beds to ~-20 LUFS, stings by their loudest moment to ~-13). A sound whose recording isn't in
 // (or hasn't decoded yet) plays the original synth kit below instead: brass + bass + drums bed, crowd, fanfares.
 let USERP={};try{USERP=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
-const TPIR_GAIN={'barkers-bargain-bar':0.41,'bell':0.58,'big-winner':0.33,'bumper':0.72,'buzzer-losing-horn-2':0.69,'buzzer-losing-horn':0.46,'buzzer-overbid-2':0.92,'buzzer-overbid':0.92,'buzzer-wrong':0.37,'buzzer':0.57,'check-game':0.38,'cliff-hangers-crash-2':0.52,'cliff-hangers-crash':0.50,'cliff-hangers':0.28,'come-on-down':0.35,'consolation-prize':0.46,'credit-card':0.52,'ding':0.53,'grand-game':0.29,'hurdles-gun-2':1.11,'hurdles-gun':1.02,'hurdles':0.51,'ineligible':0.45,'losing-horn':0.51,'main-street':0.50,'new-car':0.25,'one-away-horn-2':0.51,'one-away-horn':0.35,'pathfinder-bell':0.45,'pathfinder-wrong':0.72,'penny-ante':0.52,'perfect-bid':0.45,'phone-home-game':0.43,'plinko':0.51,'race-game':0.43,'range-game':0.18,'safe-crackers':0.62,'showcase-1':0.42,'showcase-2':0.38,'showcase-3':0.35,'showcase-4':0.23,'showcase-showdown':0.38,'siren':0.44,'super-ball':0.30,'switcharoo':0.46,'theme':0.34,'train-2':0.58,'train-3':0.54,'train':0.55,'tugboat-2':0.69,'tugboat-3':0.64,'tugboat':0.54,'wheel-beep':0.30,'winner':0.48};
+const TPIR_GAIN={'applause':0.6,'first-chip':0.92,'gay-winner':4.0,'barkers-bargain-bar':0.41,'bell':0.58,'big-winner':0.33,'bumper':0.72,'buzzer-losing-horn-2':0.69,'buzzer-losing-horn':0.46,'buzzer-overbid-2':0.92,'buzzer-overbid':0.92,'buzzer-wrong':0.37,'buzzer':0.57,'check-game':0.38,'cliff-hangers-crash-2':0.52,'cliff-hangers-crash':0.50,'cliff-hangers':0.28,'come-on-down':0.35,'consolation-prize':0.46,'credit-card':0.52,'ding':0.53,'grand-game':0.29,'hurdles-gun-2':1.11,'hurdles-gun':1.02,'hurdles':0.51,'ineligible':0.45,'losing-horn':0.51,'main-street':0.50,'new-car':0.25,'one-away-horn-2':0.51,'one-away-horn':0.35,'pathfinder-bell':0.45,'pathfinder-wrong':0.72,'penny-ante':0.52,'perfect-bid':0.45,'phone-home-game':0.43,'plinko':0.51,'race-game':0.43,'range-game':0.18,'safe-crackers':0.62,'showcase-1':0.42,'showcase-2':0.38,'showcase-3':0.35,'showcase-4':0.23,'showcase-showdown':0.38,'siren':0.44,'super-ball':0.30,'switcharoo':0.46,'theme':0.34,'train-2':0.58,'train-3':0.54,'train':0.55,'tugboat-2':0.69,'tugboat-3':0.64,'tugboat':0.54,'wheel-beep':0.30,'winner':0.48};
 const clipBufs={},clipLoading={};
 function loadClip(a,n){const url=USERP['music:tpir-'+n];if(!url||clipBufs[n]||clipLoading[n]||typeof fetch==='undefined')return;clipLoading[n]=1;
  fetch(url).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(buf=>{clipBufs[n]=buf;}).catch(()=>{clipLoading[n]=0;});}
-const SHOW_CLIPS=['come-on-down','bell','ding','buzzer','buzzer-wrong','buzzer-losing-horn','losing-horn','big-winner','winner','wheel-beep'];
+const SHOW_CLIPS=['theme','applause','gay-winner','come-on-down','bell','ding','buzzer','buzzer-wrong','buzzer-losing-horn','losing-horn','big-winner','winner','wheel-beep'];
 // opts.song = the recording looped under play ('plinko', 'showcase-showdown'); opts.clips = more to load
 function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;let A=null,out=null,musicOn=false,musicT=0,timer=null,noiseB=null;
  const ac=()=>{if(!on())return null;A=audioContext();if(!A)return null;if(!out){out=A.createGain();out.gain.value=.55;out.connect(A.destination);}return A;};
@@ -115,9 +115,18 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
  if(on()){const a=audioContext();if(a)want.forEach(n=>loadClip(a,n));}
  // play recording n now (or `at` s later); max = cut it short with a fade. Returns null if it isn't loaded (= use the synth)
  function clip(n,o={}){const a=ac(),b=clipBufs[n];if(!a||!b)return null;if(!clipOut){clipOut=a.createGain();clipOut.gain.value=1;clipOut.connect(a.destination);}
-  const t0=a.currentTime+(o.at||0),src=a.createBufferSource(),g=a.createGain(),v=(TPIR_GAIN[n]??.5)*(o.vol??1),len=o.max?Math.min(o.max,b.duration):b.duration;
-  src.buffer=b;g.gain.setValueAtTime(v,t0);if(len<b.duration){g.gain.setValueAtTime(v,t0+len-.45);g.gain.linearRampToValueAtTime(.0001,t0+len);}
-  src.connect(g);g.connect(clipOut);src.start(t0);src.stop(t0+len+.05);playing.add(src);src.onended=()=>playing.delete(src);return {end:t0+len};}
+  const rate=o.rate||1,off=o.off||0,full=(b.duration-off)/rate,t0=a.currentTime+(o.at||0),src=a.createBufferSource(),g=a.createGain(),v=(TPIR_GAIN[n]??.5)*(o.vol??1),len=o.max?Math.min(o.max,full):full,fo=o.fout??.45;
+  src.buffer=b;src.playbackRate.value=rate;if(o.fin){g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v,t0+o.fin);}else g.gain.setValueAtTime(v,t0);
+  if(len<full){g.gain.setValueAtTime(v,Math.max(t0+(o.fin||0),t0+len-fo));g.gain.linearRampToValueAtTime(.0001,t0+len);}
+  let last=g;if(o.pan&&a.createStereoPanner){const pn=a.createStereoPanner();pn.pan.value=o.pan;g.connect(pn);last=pn;}
+  src.connect(g);last.connect(clipOut);src.start(t0,off);src.stop(t0+len+.05);playing.add(src);src.onended=()=>playing.delete(src);return {end:t0+len,src,g};}
+ // THE AUDIENCE: the applause recording layered with itself (owner's pick, Nov 24: 'more audience sounds'). k = how big
+ // (0 polite .. 1 roaring): 1-4 copies, each from another point in the clapping, a little faster/slower and spread left/right,
+ // so it sounds like a bigger house and never the same twice. Returns false when the recording isn't in (= synth applause).
+ function crowd(dur=2,k=.5,o={}){const b=clipBufs.applause;if(!ac()||!b)return false;const n=1+Math.round(k*3),start=o.swell?0:1.1;
+  for(let i=0;i<n;i++){const off=i===0&&o.swell?0:start+Math.random()*Math.max(.1,b.duration-start-dur-1.2);
+   clip('applause',{at:(o.at||0)+i*.05*Math.random(),off,rate:.93+Math.random()*.14,pan:n>1?(i/(n-1)*2-1)*.65:0,vol:(.55+.45*k)/Math.sqrt(n)*1.25,max:dur+.9,fout:.9,fin:o.swell||i===0?0:.18});}
+  return true;}
  // the looped bed: copies overlap by XF seconds with equal fades so the join doesn't click
  const XF=.6;
  function bedCopy(t0){const a=ac(),b=clipBufs[opts.song];if(!a||!b||!bed)return;const src=a.createBufferSource(),g=a.createGain(),v=(TPIR_GAIN[opts.song]??.4)*.7,d=b.duration;
@@ -158,20 +167,34 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   click:()=>rec('wheel-beep')||syn.click(),                                     // the Big Wheel's clicker
   ding:()=>rec('ding')||syn.ding(),
   buzz:()=>rec('buzzer')||syn.buzz(),
-  slot:v=>{if(v>=10000)return sfx.jackpot(true);if(!v)return rec('losing-horn')?syn.aww(.5):syn.zero();if(v>=1000)return rec('bell')||syn.slot(v);return rec('ding',{vol:.7})||syn.slot(v);},
+  slot:v=>{if(v>=10000)return sfx.jackpot(true);if(!v)return rec('losing-horn')?syn.aww(.5):syn.zero();crowd(v>=1000?2.4:v>=500?1.6:1.1,v>=1000?.7:v>=500?.4:.15,{at:.15});if(v>=1000)return rec('bell')||syn.slot(v);return rec('ding',{vol:.7})||syn.slot(v);},
   over:()=>rec('buzzer-losing-horn')?syn.aww(.5):syn.over(),
-  dollar:()=>{if(rec('big-winner',{max:7}))return syn.cheer(3,.14);syn.dollar();},
-  jackpot:big=>{if(rec(big?'big-winner':'winner',{max:big?7:6}))return syn.cheer(2.6,.16);syn.jackpot();},
+  dollar:()=>{if(rec('big-winner',{max:7}))return crowd(4,.9)||syn.cheer(3,.14);syn.dollar();crowd(3,.8);},
+  jackpot:big=>{if(rec(big?'big-winner':'winner',{max:big?7:6}))return crowd(big?4:3,big?1:.8)||syn.cheer(2.6,.16);syn.jackpot();crowd(3,.8);},
   fanfare:()=>rec('bell')||syn.fanfare(),
   // the announcer's "come on down" cue: the bed waits until it's done
   comeOn:()=>{const c=rec('come-on-down');if(!c)return syn.comeOn();holdTo=c.end;syn.cheer(2.8,.12);if(bed){bedStop();bed=null;if(musicOn&&clipBufs[opts.song])bedStart(holdTo-.4);}},
-  wrong:()=>rec('buzzer-wrong')||(syn.buzz(),syn.aww())});
+  wrong:()=>rec('buzzer-wrong')||(syn.buzz(),syn.aww()),
+  // the audience (the applause recording, layered): applause(seconds, how big 0..1)
+  applause:(dur=2.2,k=.45)=>crowd(dur,k)||syn.applause(dur),
+  cheer:(dur=1.6,vol=.13)=>{if(!crowd(dur+.6,Math.min(1,.55+vol*2)))syn.cheer(dur,vol);else syn.cheer(dur*.8,vol*.35);},
+  // the show's winner: big winner cue + roaring house; now and then (1 in 6) Barker's 'the winner is... gay' line instead
+  winner:()=>{if(Math.random()<1/6&&rec('gay-winner')){crowd(5,1,{at:.2});return;}if(rec('winner',{max:6}))return crowd(4.5,1,{at:.2})||syn.cheer(2.6,.16);syn.jackpot();},
+  // Plinko: 'And here comes the first Plinko chip' (owner's clip, trimmed before '...actually any')
+  firstChip:()=>!!rec('first-chip')});
  // music bed: an original bouncy brass vamp (I-vi-IV-V in C), quiet under the play
  const prog=[[262,330,392],[220,262,330],[175,220,262],[196,247,294]],BPM=126;
  function bar(n){const a=ac();if(!a)return;const b=60/BPM,ch=prog[n%4];for(let k=0;k<4;k++){tone(ch[0]/2,b*.45,{type:'triangle',vol:.06,at:k*b});tone(60,b*.2,{type:'sine',vol:k%2?0:.12,at:k*b,to:40});if(k%2)hiss(.08,{vol:.05,f:3000,q:.7,at:k*b});hiss(.03,{vol:.02,f:8000,q:.7,at:k*b+b/2});}
   if(n%2===0)ch.forEach(f=>brass(f*2,b*.3,b*.5,.016));else ch.forEach(f=>brass(f*2,b*.25,b*1.5,.013));}
- function music(onOff){if(onOff===musicOn)return;musicOn=onOff;clearInterval(timer);bedStop();if(!onOff||!store.profile?.settings?.music)return;
+ function music(onOff){if(onOff===musicOn)return;musicOn=onOff;clearInterval(timer);bedStop();if(!onOff||!store.profile?.settings?.music||themeOn)return;
   const a=ac();if(a&&opts.song&&clipBufs[opts.song]&&bedStart(Math.max(a.currentTime+.05,holdTo-.4)))return;
   let n=0;bar(n++);timer=setInterval(()=>{if(musicOn)bar(n++);},60/BPM*4*1000);}
- return {sfx,music,clip,loaded:n=>!!clipBufs[n],stop:()=>{musicOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
+ // TITLE: the show's main theme from the top while the curtain opens (owner: 'play the main theme during the title screen');
+ // title(false) fades it out and lets the bed (or the synth vamp) start. Waits up to 1.5 s for the file to decode.
+ let themeOn=false,themeH=null;
+ async function title(onOff){if(onOff){if(!store.profile?.settings?.music)return;themeOn=true;clearInterval(timer);bedStop();const t0=Date.now();while(!clipBufs.theme&&Date.now()-t0<1500&&themeOn)await new Promise(r=>setTimeout(r,60));
+   if(!themeOn)return;themeH=clip('theme',{vol:1.15,fin:.05});if(!themeH){themeOn=false;const m=musicOn;musicOn=false;if(m)music(true);}return;}
+  if(!themeOn)return;themeOn=false;const a=A,h=themeH;themeH=null;if(h&&a){const t=a.currentTime;try{h.g.gain.cancelScheduledValues(t);h.g.gain.setValueAtTime(h.g.gain.value,t);h.g.gain.linearRampToValueAtTime(.0001,t+1.4);h.src.stop(t+1.5);}catch{}}
+  holdTo=(a?a.currentTime:0)+1;if(musicOn){musicOn=false;music(true);}}
+ return {sfx,music,title,clip,crowd,loaded:n=>!!clipBufs[n],stop:()=>{musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
 Object.assign(exports,{drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});
