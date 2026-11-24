@@ -74,7 +74,7 @@ function soloProgress(s,score,level,label=''){if(s?.solo)s.soloProgress={score:M
 // End a solo run: scores [player, 0]; won = cleared at least one level (or beat the CPU).
 // 1P 'cpu' games that also make sense on your own (owner, Nov 23): the launcher asks Play alone / Vs CPU. Alone = one player,
 // kind 'game', the engine plays a whole game for one; won = a new personal best.
-const SOLO_ALONE_ENGINES=new Set(['bowling','trivia','millionaire']);
+const SOLO_ALONE_ENGINES=new Set(['bowling','trivia','millionaire','fruitmerge']);
 const soloAloneOK=g=>!!g&&soloKind(g)==='cpu'&&SOLO_ALONE_ENGINES.has(g.engine);
 function soloFinish(s,score,level,label,won=level>0){if(!s?.solo||!s.alive)return;soloProgress(s,score,level,label);s.solo.won=!!won;s.finish([Math.max(0,Math.floor(score)||0),0],label);}
 // Between levels: a card with the run so far. Resolves true to keep going (Exit on the card banks the run).

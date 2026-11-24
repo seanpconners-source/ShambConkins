@@ -1,6 +1,8 @@
 // Idiocracy · Brawndo Fruit Merge. Suika-style physics merge, both players at once on their own jar.
 // Drag on your half to move the dropper, lift to drop. Two equal fruits that touch merge into the next one up;
 // two of the biggest (your rival's head) explode for a jackpot. Fruit that sits over the line too long tops you out.
+// 1P 'Play alone' (launcher, solo.js SOLO_ALONE_ENGINES): one jar across the whole screen, no clock, real Suika rules:
+// play until the jar overflows, chasing your best (localStorage sc-brawndo-best). The biggest fruit is your own head.
 // Online (netField): each phone runs its own jar (drag anywhere); the other jar is drawn from snapshots
 // {f:[[lv,x,y]...],aim,next,score,out,over,combo,comboT}; the game ends on both from both final scores.
 const {clamp,seededRandom}=require("src/utils.js");
@@ -18,17 +20,18 @@ async function fruitmerge(s){
  const [c,x]=s.canvas(760,560,{fill:true});s.body.classList.add('drag-arena-body');s.shared=true;s.updateScores();
  const rnd=seededRandom(s.seed+':brawndo'),queue=Array.from({length:600},()=>{const r=rnd();return r<.3?0:r<.55?1:r<.75?2:r<.9?3:4;});
  const fx=makeFx(),shake=makeShake();
- const P=[0,1].map(i=>({i,fruits:[],aim:50,next:0,cool:0,score:0,over:0,out:false,combo:0,comboT:0,merges:0,best:0,flash:0,id:0}));
- let left=DUR,phase='play',endT=0,keysHeld=[{l:0,r:0},{l:0,r:0}];
+ const alone=!s.online&&s.players.length<2,BEST_KEY='sc-brawndo-best',best0=(()=>{try{return +localStorage.getItem(BEST_KEY)||0;}catch{return 0;}})();
+ const P=(alone?[0]:[0,1]).map(i=>({i,fruits:[],aim:50,next:0,cool:0,score:0,over:0,out:false,combo:0,comboT:0,merges:0,best:0,flash:0,id:0}));
+ let left=alone?Infinity:DUR,phase='play',endT=0,keysHeld=[{l:0,r:0},{l:0,r:0}];
  let netEnd=null;const nf=netField(s,{pack:i=>{const p=P[i];return {f:p.fruits.map(f=>[f.lv,+f.x.toFixed(1),+f.y.toFixed(1)]),aim:+p.aim.toFixed(1),next:p.next,score:p.score,out:p.out,over:+p.over.toFixed(2),combo:p.combo,comboT:+p.comboT.toFixed(2)};},
   unpack:(i,d)=>{const p=P[i];if(!Array.isArray(d.f))return;p.fruits=d.f.map(([lv,x,y],k)=>({lv:lv|0,x:+x,y:+y,vx:0,vy:0,age:2,id:k,pop:0}));if(d.out&&!p.out){p.flash=1;fx.pop(L.ox[i]+L.jw/2,L.oy+L.jh*.4,'TOPPED OUT!',{color:'#ff6b6b',size:26,life:1.6});}Object.assign(p,{aim:+d.aim||50,next:d.next|0,score:+d.score||0,out:!!d.out,over:+d.over||0,combo:d.combo|0,comboT:+d.comboT||0});s.setScores(P.map(q=>q.score));}});
- const mine=i=>nf?nf.me:i;
+ const mine=i=>nf?nf.me:alone?0:i;
  s.debug={engine:'fruitmerge',P,get left(){return left;},queue,bot:null};
 
  // ------------------------------------------------------------- layout: each jar fits its half
  const L={};
- function layout(){const W=s.W,H=s.H,half=W/2,top=clamp(H*.12,46,84),pad=clamp(half*.06,6,18),aw=half-pad*2,ah=H-top-pad-8;if(!L.fixed){L.fixed=true;JH=clamp(Math.round(ah/aw*JW),120,240);}const sc=Math.min(aw/JW,ah/JH);
-  Object.assign(L,{W,H,top,sc,jw:JW*sc,jh:JH*sc,ox:[0,1].map(i=>i*half+(half-JW*sc)/2),oy:top+(ah-JH*sc)/2+4});}
+ function layout(){const W=s.W,H=s.H,half=alone?W:W/2,top=clamp(H*.12,46,84),pad=clamp(half*.06,6,18),aw=half-pad*2,ah=H-top-pad-8;if(!L.fixed){L.fixed=true;JH=clamp(Math.round(ah/aw*JW),120,240);}const sc=Math.min(aw/JW,ah/JH);
+  Object.assign(L,{W,H,top,sc,jw:JW*sc,jh:JH*sc,ox:P.map((_,i)=>i*half+(half-JW*sc)/2),oy:top+(ah-JH*sc)/2+4});}
  const toUnit=(i,px)=>(px-L.ox[i])/L.sc;
 
  // ------------------------------------------------------------- input
@@ -46,7 +49,7 @@ async function fruitmerge(s){
   const lv=a.lv+1,mx=(a.x+b.x)/2,my=(a.y+b.y)/2;p.fruits.splice(p.fruits.indexOf(a),1);p.fruits.splice(p.fruits.indexOf(b),1);
   p.combo=p.comboT>0?p.combo+1:1;p.comboT=1.1;p.merges++;
   const sx=L.ox[p.i]+mx*L.sc,sy=L.oy+my*L.sc;
-  if(lv>10){const pts=150;p.score+=pts;fx.confetti(sx,sy,60);fx.pop(sx,sy-20,'HEAD JACKPOT +'+pts,{color:'#ffe36b',size:24});shake.kick(14);sfx.fanfare();vibrate(60);s.react(p.i,'happy');s.react(1-p.i,'sad');}
+  if(lv>10){const pts=150;p.score+=pts;fx.confetti(sx,sy,60);fx.pop(sx,sy-20,'HEAD JACKPOT +'+pts,{color:'#ffe36b',size:24});shake.kick(14);sfx.fanfare();vibrate(60);s.react(p.i,'happy');if(!alone)s.react(1-p.i,'sad');}
   else{const pts=POINTS[lv]*(p.combo>1?Math.min(4,p.combo):1);p.score+=pts;p.best=Math.max(p.best,lv);
    p.fruits.push({lv,x:mx,y:my,vx:(a.vx+b.vx)/2,vy:Math.min(a.vy,b.vy)-25,age:1,id:++p.id,pop:.25});
    fx.spark(sx,sy,8+lv*2,FRUIT[lv][1],180+lv*20);fx.pop(sx,sy-R[lv]*L.sc,(p.combo>1?`x${Math.min(4,p.combo)} `:'')+'+'+pts,{size:clamp(14+lv*2,14,30),color:p.combo>1?'#9dff5c':'#fff'});
@@ -72,7 +75,7 @@ async function fruitmerge(s){
 
  // ------------------------------------------------------------- drawing
  function drawFruit(p,f){const r=R[f.lv]*L.sc*(1+f.pop*.6),px=L.ox[p.i]+f.x*L.sc,py=L.oy+f.y*L.sc,[e,col]=FRUIT[f.lv];
-  if(f.lv===10){x.save();x.fillStyle=col;x.beginPath();x.arc(px,py,r,0,7);x.fill();s.sprite(x,1-p.i,px,py,r*2.05,{exact:true,mood:'sad'});x.strokeStyle='#fff7';x.lineWidth=2;x.beginPath();x.arc(px,py,r,0,7);x.stroke();x.restore();return;}
+  if(f.lv===10){x.save();x.fillStyle=col;x.beginPath();x.arc(px,py,r,0,7);x.fill();s.sprite(x,alone?0:1-p.i,px,py,r*2.05,{exact:true,mood:alone?'silly':'sad'});x.strokeStyle='#fff7';x.lineWidth=2;x.beginPath();x.arc(px,py,r,0,7);x.stroke();x.restore();return;}
   const gr=x.createRadialGradient(px-r*.35,py-r*.4,r*.1,px,py,r);gr.addColorStop(0,'#ffffffaa');gr.addColorStop(.25,col);gr.addColorStop(1,shade(col));x.fillStyle=gr;x.beginPath();x.arc(px,py,r,0,7);x.fill();
   x.font=`${r*1.25}px system-ui`;x.textAlign='center';x.textBaseline='middle';x.fillText(e,px,py+r*.06);}
  function shade(h){const n=parseInt(h.slice(1),16);return `rgb(${(n>>16&255)*.55|0},${(n>>8&255)*.55|0},${(n&255)*.55|0})`;}
@@ -92,15 +95,16 @@ async function fruitmerge(s){
   if(p.over>0&&!p.out)label(x,Math.max(0,2.6-p.over).toFixed(1),ox+w/2,ly-16,18,{fill:'#ff6b6b'});
   if(p.out){x.fillStyle='#000a';rr(x,ox,oy,w,h,10);x.fill();label(x,'TOPPED OUT',ox+w/2,oy+h*.42,clamp(w*.12,14,30),{fill:'#ff6b6b'});label(x,p.score+' pts',ox+w/2,oy+h*.52,clamp(w*.09,12,24));}
   // header
-  const hy=L.top*.5,nx=ox+w-14;label(x,`${s.players[p.i].name}`,ox+4,hy-9,clamp(w*.075,11,18),{align:'left',fill:p.i?'#ff9fc6':'#78b6ff'});label(x,`${p.score}`,ox+4,hy+11,clamp(w*.1,14,26),{align:'left',fill:'#fff'});
+  const hy=L.top*.5,nx=ox+w-14;label(x,alone?`BEST ${Math.max(best0,p.score)}`:`${s.players[p.i].name}`,ox+4,hy-9,clamp(w*.075,11,18),{align:'left',fill:p.i?'#ff9fc6':'#78b6ff'});label(x,`${p.score}`,ox+4,hy+11,clamp(w*.1,14,26),{align:'left',fill:'#fff'});
   if(!p.out){const nl=queue[(p.next+1)%queue.length];label(x,'NEXT',nx-22,hy-9,10,{fill:'#b6ff3a',align:'right'});drawFruit(p,{lv:nl,x:(nx-L.ox[p.i])/L.sc,y:(hy+8-L.oy)/L.sc,pop:0});}
   if(p.combo>1&&p.comboT>0)label(x,`COMBO x${Math.min(4,p.combo)}`,ox+w/2,oy+h-16,clamp(w*.08,12,20),{fill:'#9dff5c'});
  }
 
- s.hint('Both play at once. Drag on your half to move the dropper, lift to drop. Two matching fruits merge into the next size up and score; quick chains multiply. Two of the biggest (your rival’s head) explode for +150. Keep fruit below the dashed line or you top out. Keys: A/D + Space, ←/→ + Enter.');
- if(!await s.pass(0,'BRAWNDO: it’s got electrolytes. Both of you drop fruit into your own jar at the same time. Matching fruits merge into bigger ones. The biggest fruit is your rival’s head; merge two for a jackpot. Don’t let the jar overflow the line.','Both ready — merge!',{countdown:3}))return;
+ if(alone)s.hint('Drag anywhere to move the dropper, lift to drop. Two matching fruits merge into the next size up and score; quick chains multiply. Two of the biggest (your own head) explode for +150. No clock: keep the fruit below the dashed line as long as you can. Keys: A/D or ←/→ + Space.');
+ else s.hint('Both play at once. Drag on your half to move the dropper, lift to drop. Two matching fruits merge into the next size up and score; quick chains multiply. Two of the biggest (your rival’s head) explode for +150. Keep fruit below the dashed line or you top out. Keys: A/D + Space, ←/→ + Enter.');
+ if(!await s.pass(0,alone?`BRAWNDO: it’s got electrolytes. Drop fruit into the jar; matching fruits merge into bigger ones. The biggest fruit is your own head: merge two for a jackpot. No clock: play until the jar overflows.${best0?` Best: ${best0}.`:''}`:'BRAWNDO: it’s got electrolytes. Both of you drop fruit into your own jar at the same time. Matching fruits merge into bigger ones. The biggest fruit is your rival’s head; merge two for a jackpot. Don’t let the jar overflow the line.',alone?'Merge!':'Both ready — merge!',{countdown:3}))return;
  // vs CPU: jar 2 drops onto a matching fruit near the surface when it can, otherwise into the lowest spot
- const cpu=isCpu(s);let cpuT=1.5;
+ const cpu=!alone&&isCpu(s);let cpuT=1.5;
  function cpuThink(dt){const p=P[1];if(p.out||phase!=='play')return;cpuT-=dt;if(cpuT>0||p.cool>0)return;const sk=cpuSkill(s);cpuT=1.25-sk*.75+Math.random()*.4;
   const lv=queue[p.next%queue.length],r=R[lv],top=x=>p.fruits.filter(f=>Math.abs(f.x-x)<R[f.lv]+r).reduce((m,f)=>Math.min(m,f.y-R[f.lv]),JH);
   let best=null,bv=-1e9;for(let ax=r;ax<=JW-r;ax+=4){const surf=top(ax),match=p.fruits.some(f=>f.lv===lv&&Math.abs(f.x-ax)<R[f.lv]+r*.6&&f.y-R[f.lv]<=surf+2);const v=surf*.2+(match?40:0)+(Math.random()-.5)*(1-sk)*40;if(v>bv){bv=v;best=ax;}}
@@ -111,15 +115,16 @@ async function fruitmerge(s){
    nf?.tick(dt);for(const p of P){if(nf&&(p.i===nf.remote||netEnd))continue;p.cool=Math.max(0,p.cool-dt);p.comboT=Math.max(0,p.comboT-dt);const k=keysHeld[p.i];if(k.l||k.r)p.aim=clamp(p.aim+(k.r-k.l)*70*dt,4,JW-4);if(!p.out)physics(p,dt);else for(const f of p.fruits)f.pop=0;}
    if(nf){if(!netEnd&&(left<=0||P.every(p=>p.out))){netEnd='wait';nf.finish(P[nf.me].score);nf.remoteDone().then(v=>{if(v!=null)P[nf.remote].score=+v||0;s.setScores(P.map(q=>q.score));phase='end';endT=1.6;sfx.ding(880);});}}
    else if(left<=0||P.every(p=>p.out)){phase='end';endT=1.6;sfx.ding(880);}
-  }else{endT-=dt;if(endT<=0&&s.alive){const sc=P.map(p=>p.score);s.finish(sc,sc[0]===sc[1]?`Brawndo Fruit Merge ties ${sc[0]}–${sc[1]}.`:`${s.players[sc[0]>sc[1]?0:1].name} wins Brawndo Fruit Merge ${Math.max(...sc)}–${Math.min(...sc)}.`);return;}}
+  }else{endT-=dt;if(endT<=0&&s.alive&&alone){const sc=P[0].score;if(sc>best0){try{localStorage.setItem(BEST_KEY,String(sc));}catch{}}s.finish([sc],`Brawndo Fruit Merge · ${sc} points${sc>best0?' · NEW BEST!':` · best ${best0}`} · biggest fruit ${FRUIT[Math.min(9,P[0].best)][0]||'head'}`);return;}
+   if(endT<=0&&s.alive){const sc=P.map(p=>p.score);s.finish(sc,sc[0]===sc[1]?`Brawndo Fruit Merge ties ${sc[0]}–${sc[1]}.`:`${s.players[sc[0]>sc[1]?0:1].name} wins Brawndo Fruit Merge ${Math.max(...sc)}–${Math.min(...sc)}.`);return;}}
   fx.step(dt);shake.step(dt);
   const W=L.W,H=L.H;x.save();shake.apply(x);
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#07150e');bg.addColorStop(1,'#123d22');x.fillStyle=bg;x.fillRect(-20,-20,W+40,H+40);
   for(const p of P)drawJar(p);
   if(netEnd==='wait'&&phase==='play')label(x,`Waiting for ${s.players[nf.remote].name}…`,W/2,H*.5,clamp(W*.04,14,24),{fill:'#fff'});
-  label(x,phase==='play'?String(Math.ceil(Math.max(0,left))):'TIME',W/2,L.top*.5,clamp(W*.05,16,30),{fill:left<10?'#ff6b6b':'#b6ff3a'});
+  if(!alone)label(x,phase==='play'?String(Math.ceil(Math.max(0,left))):'TIME',W/2,L.top*.5,clamp(W*.05,16,30),{fill:left<10?'#ff6b6b':'#b6ff3a'});
   fx.draw(x);x.restore();
-  s.status(`${Math.ceil(Math.max(0,left))}s · drag your half to aim, lift to drop · merge two heads for +150`);
+  s.status(alone?`${P[0].score} points · best ${Math.max(best0,P[0].score)} · drag to aim, lift to drop`:`${Math.ceil(Math.max(0,left))}s · drag your half to aim, lift to drop · merge two heads for +150`);
  });
 }
 Object.assign(exports,{fruitmerge});
