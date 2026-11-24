@@ -80,6 +80,8 @@ const FOOD={chicken:12,burger:8,pizza:6};
 const SHEET_ALIAS={batReady:'stand',batWind:'swing1',batHit:'swing2',batFollow:'swing2',batBack:'swing2',batLow:'swing2',batOver:'swing1',batSmash:'swing2',block:'stand',bash:'cross',aim:'jab',lobC:'throw1',lob:'toss',skate1:'run1',skate2:'run2',hurtLow:'hurt',charge:'run1',sweep:'kick',taunt:'win'};
 // enemy sheets made to the older 26-pose list draw their own weapon in swing1/swing2 (Furies' bat, Lizzies' whip), while the
 // game draws the held weapon itself: the newer weapon poses fall back to empty-handed ones there, so nothing shows twice
+const PERSON_SHEET={p1:'hero-p1',p2:'hero-p2',cyrus:'cast-cyrus',riff:'foe-riff',rogue:'foe-rogue',orphan:'foe-orphan',fury:'foe-fury',lizzie:'foe-lizzie',punk:'foe-punk',turnbull:'foe-turnbull',cop:'foe-cop',sarge:'foe-cop',riot:'foe-riot',hihat:'gang-hihat',bopper:'gang-bopper'};
+const RUN_CYCLE=['run1','walk2','run2','walk2'];
 const FOE_ALIAS=Object.assign({},SHEET_ALIAS,{batReady:'stand',batWind:'hookC',batHit:'cross',batFollow:'cross',batBack:'hookC',batLow:'cross',batOver:'hookC',batSmash:'cross'});
 // a cell a sheet left empty (older sheets end their last row with blank cells) counts as missing: checked once per cell
 const blankCells=new WeakMap();
@@ -274,7 +276,8 @@ async function warriorsDD(s){
    if(m.seg>=def.seq.length){f.mv=null;f.st=f.grabbed?'grabbing':'idle';f.spinA=0;if(def.special)spCD=.3;}}}
  function poseOf(f){if(f.mv){const sg=f.mv.def.seq[Math.min(f.mv.seg,f.mv.def.seq.length-1)];return sg[0];}
   switch(f.st){case 'walk':{const ph=f.walkPh%4;return f.T?.skate?(Math.floor(f.walkPh*.7)%2?'skate1':'skate2'):['walk1','walk2','walk3','walk2'][Math.floor(ph)];}
-   case 'run':return Math.floor(f.walkPh*1.4)%2?'run2':'run1';case 'air':return f.airAtk==='spin'?'spin':f.airAtk?'jkick':'jump';
+   // run = stride, legs passing, stride, legs passing (the sheets' two run cells are both strides: flipping between them only wiggled the back leg)
+   case 'run':return RUN_CYCLE[Math.floor(f.walkPh*1.1)%4];case 'air':return f.airAtk==='spin'?'spin':f.airAtk?'jkick':'jump';
    case 'hurt':return f.hurtLow?'hurtLow':'hurt';case 'dizzy':case 'grabbed':return 'dizzy';case 'held':return 'hurt';case 'fall':return 'fall';case 'down':case 'dead':return 'down';case 'pit':return 'fall';
    case 'getup':return 'kneel';case 'grabbing':return 'grab';case 'holding':return 'grab';case 'win':return 'win';case 'carry':return 'throw1';
    default:return f.shield>0&&f.ai?'block':f.weapon&&f.weapon.kind!=='knife'?'batReady':Math.sin(t*3+(f.pi||0))>0?'stand':'stand2';}}
@@ -555,17 +558,24 @@ async function warriorsDD(s){
    const al=(1-i/14)*.75;x.strokeStyle=i<3?`rgba(255,255,255,${al})`:`rgba(255,${190-i*6},${90-i*4},${al})`;x.lineWidth=(7-i*.35)*kk;
    x.beginPath();x.moveTo(sx+Math.cos(a1)*rx*dirS,cy+Math.sin(a1)*ry);x.lineTo(sx+Math.cos(a2)*rx*dirS,cy+Math.sin(a2)*ry);x.stroke();}
   x.restore();}
+ // the cell of pose `name` on sheet `sheetName` (an alias when that sheet lacks it or left it blank), or null = draw the body
+ function sheetCell(sheetName,name){const img=sheetName&&DS.picture(sheetName);if(!img)return null;const ok=c=>c&&c.sy+DS.CELL<=img.height&&!blankCell(img,c);
+  let cell=DS.cellOf(sheetName,name);if(!ok(cell)){name=(sheetName.startsWith('hero-')?SHEET_ALIAS:FOE_ALIAS)[name]||name;cell=DS.cellOf(sheetName,name);
+   if(!ok(cell)){name='stand';cell=DS.cellOf(sheetName,name);if(!ok(cell))return null;}}
+  return {img,cell,name};}
  function drawFighter(f){const sx=SX(f.x),sy=SYw(BACK+f.d),kk=k*FIG,blink=(f.st==='dead'&&f.stT>.4&&Math.floor(t*14)%2)||(f.inv>0&&f.side==='hero'&&Math.floor(t*16)%2&&!f.mv);if(blink)return;
   if(sx<-90||sx>s.W+90)return;
-  let name=f.poseName||'stand';const sheet=DS.picture(f.sheet);let cell=null;
-  if(sheet){const ok=c=>c&&c.sy+DS.CELL<=sheet.height&&!blankCell(sheet,c);cell=DS.cellOf(f.sheet,name);if(!ok(cell)){name=(f.sheet.startsWith('foe-')?FOE_ALIAS:SHEET_ALIAS)[name]||name;cell=DS.cellOf(f.sheet,name);if(!ok(cell))cell=null;}}
+  const SCL=sheetCell(f.sheet,f.poseName||'stand'),sheet=SCL?.img,cell=SCL?.cell,name=SCL?.name||f.poseName||'stand';
   let spots;const spinning=f.st==='atk'&&f.mv?.def.spin||f.airAtk==='spin',spc=Math.cos(f.spinA||0);
   // a spin kick turns the body round smoothly (x squashed by the cosine of the turn) instead of flipping every frame
   const face=spinning?(f.airAtk==='spin'?f.baseDir:f.dir)*(spc>=0?1:-1)*Math.max(.2,Math.abs(spc)):f.dir;
   if(spinning)drawSwoosh(f,sx,sy,kk,false);
   x.save();if(f.entering)x.globalAlpha=1-f.entering/.6*.7;
   if(cell){const sc=kk*f.big/DS.UNIT;x.save();x.globalAlpha*=.32;x.fillStyle='#000';x.beginPath();x.ellipse(sx,sy,22*kk*f.big,6*kk,0,0,7);x.fill();x.restore();
-   x.save();x.translate(sx,sy-f.z*kk);x.scale(face*sc,sc);const ft=DS.footOf(name);if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
+   // a running stride is the float: lift the body a touch
+   const lift=f.st==='run'&&(name==='run1'||name==='run2')?3*kk:0;
+   // the passing cell is upright: lean it into the run like the strides
+   x.save();x.translate(sx,sy-f.z*kk-lift);if(f.st==='run'&&name==='walk2')x.rotate(face*.12);x.scale(face*sc,sc);const ft=DS.footOf(name);if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
    const J=BD.joints(f.pose);const tp=p=>({x:sx+p[0]*face*kk*f.big,y:sy-f.z*kk+p[1]*kk*f.big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),wa:f.pose.wa,wl:f.pose.wl};}
   else spots=BD.drawBody(x,f.pose,{x:sx,y:sy,face,k:kk,o:f.o,big:f.big,flash:f.flash*5,z:f.z});
   // the riot shield, a weapon, a carried barrel
@@ -696,8 +706,14 @@ async function warriorsDD(s){
    x.restore();}}
  // ---- people for the cutscenes: a body from body.js and the same face rules as a fighter (players' faces, named
  // characters' pictures, the gangs' drawn heads); g = the canvas to draw on (the crowd is painted into its own)
+ // a story-scene person: drawn from their sheet when it's in (the Warriors crew wear the hero sheets, each gang its own), else the drawn body
+ function personSheet(p){if(p.sheet)return p.sheet;if(p.o==='warrior'){let h=0;for(const ch of String(p.id||''))h=(h*31+ch.charCodeAt(0))|0;return Math.abs(h)%2?'hero-p2':'hero-p1';}return PERSON_SHEET[p.o];}
  function drawPerson(sx,sy,kk,p,g=x){const face=p.face||1,big=p.big||1,pose=BD.P[p.pose]||BD.P.stand;
-  const spots=BD.drawBody(g,pose,{x:sx,y:sy,face,k:kk,o:BD.OUTFIT[p.o]||BD.OUTFIT.thug,big});
+  const SC=sheetCell(personSheet(p),p.pose||'stand');let spots;
+  if(SC){const sc=kk*big/DS.UNIT,ft=DS.footOf(SC.name);g.save();g.globalAlpha*=.3;g.fillStyle='#000';g.beginPath();g.ellipse(sx,sy,22*kk*big,6*kk,0,0,7);g.fill();g.restore();
+   g.save();g.translate(sx,sy);g.scale(face*sc,sc);g.drawImage(SC.img,SC.cell.sx,SC.cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);g.restore();
+   const J=BD.joints(pose),tp=q=>({x:sx+q[0]*face*kk*big,y:sy+q[1]*kk*big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),sheet:1};}
+  else spots=BD.drawBody(g,pose,{x:sx,y:sy,face,k:kk,o:BD.OUTFIT[p.o]||BD.OUTFIT.thug,big});
   const fw=FACE_W*kk*big,nk=spots.neck||spots.head,ux=spots.head.x-nk.x,uy=spots.head.y-nk.y,ul=Math.hypot(ux,uy)||1;
   const isP=p.pi!=null&&p.pi<s.players.length,fid=isP?s.players[p.pi]?.character:p.char;let fm=p.mood||'normal';if(fid&&fm!=='normal'&&!headFacts(fid,fm))fm='normal';
   const sp=!isP&&fid?faceSprite(fid,fm,fw,face):null,fh=(isP||sp)&&fid?faceHeight(fid,fm,fw):fw*1.25,cx=nk.x+ux/ul*fh*FACE_UP,cy=nk.y+uy/ul*fh*FACE_UP;
@@ -712,7 +728,7 @@ async function warriorsDD(s){
  const seenCut=new Set();
  // a story scene before a chapter (not online or on the board: those jump straight into a fight); each one once per game
  function playCut(key){if(online||board||seenCut.has(key))return Promise.resolve();seenCut.add(key);musicOn=false;
-  return DS.ready(CUT.CUT_PICTURES.map(n=>'cut-'+n),1500).then(()=>new Promise(r=>{phase='cut';cuts.start(key,r);}));}
+  return DS.ready([...CUT.CUT_PICTURES.map(n=>'cut-'+n),...Object.keys(DS.SHEETS),...CUT.stagePictures()],3000).then(()=>new Promise(r=>{phase='cut';cuts.start(key,r);}));}
  // ---- title + menus: START / CONTINUE / CHAPTERS / MOVES
  const ui={btns:[],moves:false,
   tap(p){for(const b of ui.btns)if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){b.act();return true;}if(ui.moves){ui.moves=false;return true;}

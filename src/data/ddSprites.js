@@ -22,6 +22,8 @@ const POSES=['stand','stand2','walk1','walk2','walk3','run1','run2','jabC','jab'
 const HERO=POSES.filter(p=>!['block','bash','aim','lobC','lob','skate1','skate2','charge','taunt'].includes(p)),FOE=['stand','stand2','walk1','walk2','walk3','run1','run2','jabC','jab','cross','hookC','hook','kickC','kick','jump','jkick',
  'grab','swing1','swing2','toss','hurt','dizzy','fall','down','kneel','win',
  'batReady','batWind','batHit','batFollow','batBack','batLow','batOver','batSmash','block','bash','aim','lobC','lob','skate1','skate2','hurtLow','charge','crouch','taunt'];
+// the cutscene cast's sheets: only the poses the story scenes use
+const CAST_POSES=['stand','stand2','win','jab','walk1','walk2','walk3','run1','run2','hurt','fall','down','kneel','crouch'];
 const SHEETS={
  'hero-p1':{poses:HERO,what:'Player 1 hero: a street-fighting gang member in a sleeveless denim vest over a blue T-shirt, jeans, boots, fingerless gloves; athletic, cool, badass'},
  'hero-p2':{poses:HERO,what:'Player 2 hero: same build and poses, red T-shirt under a black leather vest, brown cargo pants, boots'},
@@ -34,6 +36,10 @@ const SHEETS={
  'foe-lizzie':{poses:FOE,what:'Lizzie: plum wrap top, dark flared trousers, plum boots, gold belt'},
  'foe-punk':{poses:FOE,what:'Punk: blue denim overalls over a red-and-white striped shirt, roller skates'},
  'foe-rogue':{poses:FOE,what:'Rogue: black shirt under a brown leather vest, dark trousers, boots'},
+ // CUTSCENE CAST (src/engines/dd/cutscenes.js draws them in the story scenes; same 256 px cells, headless, faces RIGHT)
+ 'cast-cyrus':{poses:CAST_POSES,what:'Cyrus, the leader who calls the meeting: long dark tunic over a dark shirt with gold trim and a gold belt, dark trousers; a commanding preacher-like figure. stand = arms at the sides, win = both arms raised addressing the crowd, jab = pointing out at the crowd, fall/down = shot'},
+ 'gang-hihat':{poses:CAST_POSES,what:'a Hi-Hat (Conclave crowd): white long-sleeved shirt with black braces, black trousers, white gloves (mime look below the neck; the game draws the painted face and hat)'},
+ 'gang-bopper':{poses:CAST_POSES,what:'a Bopper (Conclave crowd): purple 70s suit with wide lapels, open purple shirt, gold chain, purple trousers'},
  'foe-riff':{poses:FOE,what:'Riff (on your side at the end): off-white martial-arts style outfit with a dark vest and an amber sash'}};
 // STAGE ART per biome (src/biomes.js kinds): far = skyline/scenery behind (repeats side to side, scrolls slowly),
 // wall = the back wall of the street (repeats), floor = the walkable ground band (repeats, seen from the side at an angle)
@@ -86,4 +92,4 @@ const has=name=>!!USER['ww:'+name];
 function ready(names,ms=4000){for(const n of names)if(has(n))picture(n);const t0=Date.now();return new Promise(r=>{const go=()=>{if(names.every(n=>!has(n)||imgs.get(n)?.ok)||Date.now()-t0>ms)return r();setTimeout(go,60);};go();});}
 // the cell of a pose on a sheet (null if the sheet has no such pose)
 function cellOf(sheet,pose){const d=SHEETS[sheet];if(!d)return null;const i=d.poses.indexOf(pose);if(i<0)return null;return {sx:(i%COLS)*CELL,sy:Math.floor(i/COLS)*CELL};}
-Object.assign(exports,{CELL,COLS,FOOT,FOOTS,footOf,UNIT,POSES,SHEETS,BIOMES,PICTURES,picture,has,ready,cellOf,AREAS,version:()=>ver});
+Object.assign(exports,{CAST_POSES,CELL,COLS,FOOT,FOOTS,footOf,UNIT,POSES,SHEETS,BIOMES,PICTURES,picture,has,ready,cellOf,AREAS,version:()=>ver});

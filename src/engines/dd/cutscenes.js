@@ -78,8 +78,17 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
  function sky(top,bot){const g=x.createLinearGradient(0,0,0,H());g.addColorStop(0,top);g.addColorStop(1,bot);x.fillStyle=g;x.fillRect(0,0,W(),H());}
  function skyline(y,col,seed){x.fillStyle=col;let xx=-20,i=seed;while(xx<W()+20){const w=30+((i*37)%50),h=40+((i*53)%120);x.fillRect(xx,y-h,w,h+2);i++;xx+=w+4;}}
  function windows(y,seed){let xx=-20,i=seed;while(xx<W()){const w=30+((i*37)%50),h=40+((i*53)%120);for(let a=6;a<w-6;a+=9)for(let b=8;b<h-6;b+=12)if(((a*7+b*13+i)%9)===0){x.fillStyle='rgba(255,220,140,.55)';x.fillRect(xx+a,y-h+b,3,4);}i++;xx+=w+4;}}
+ // no painted cut-<bg> yet: build the scene from the stage pictures we have (far sky + back wall + floor, the floor line
+ // under the people's feet, a little parallax with the camera); the first area/biome with art in each list wins
+ function stageBg(bg,camX,z){const names=CUT_STAGE[bg];if(!names)return false;const pick=layer=>{for(const n of names){const im=DS.picture(layer+'-'+n);if(im)return im;}return null;};
+  const far=pick('far'),wall=pick('wall'),floor=pick('floor');if(!wall||!floor)return false;
+  const w=W(),h=H(),u=h/400,gy=h*.8+(z-1)*70*u,ft=Math.min(h*.9,gy-46*u*z),wh=Math.max(h*.2,Math.min(h*.42,150*u*z));
+  const tile=(im,top,ht,par)=>{const k=ht/im.height,tw=im.width*k;let x0=-(((camX*u*z*par)%tw)+tw)%tw;for(;x0<w;x0+=tw)x.drawImage(im,x0,top,tw+1,ht);};
+  if(far){const fh=Math.max(ft-wh*.55,h*.3)*1.08;tile(far,ft-wh*.55-fh+2,fh,.25);}else{sky('#05060e','#1a1430');}
+  tile(wall,ft-wh,wh,.6);tile(floor,ft,Math.max(h-ft,40*u),1);
+  x.fillStyle='rgba(0,0,0,.18)';x.fillRect(0,0,w,h);return true;}
  function drawBg(sh,camX,z){const w=W(),h=H(),u=h/400;
-  if(picBg(sh.bg))return;
+  if(picBg(sh.bg)||stageBg(sh.bg,camX,z))return;
   if(sh.bg==='conclave'||sh.bg==='riffs'){sky('#05060e','#1a1430');skyline(h*.5,'#0c0c18',3);windows(h*.5,3);
    // trees left and right, the park lawn
    x.fillStyle='#0a140c';for(let i=0;i<9;i++){const tx=((i*173-camX*.3)%(w+200)+w+200)%(w+200)-100;x.beginPath();x.ellipse(tx,h*.46,60*u,70*u,0,0,TAU);x.fill();}
@@ -144,14 +153,15 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
    // the Warriors group, a gang, Luther, the Riffs
    const people=[];
    if(sh.warriors){const list=env.solo?['hero','swan','ajax','cochise','cleon']:['hero','hero2','swan','ajax','cochise'];if(sh.bg!=='conclave'||cur.si>=6)list.pop();
-    const base=sh.bg==='conclave'?1000:camX-120;list.forEach((who,i)=>{const C=CAST[who];people.push({x:base+(i-list.length/2)*46,row:i%2,p:{o:C.o||'warrior',pose:sh.warriors==='run'?(Math.floor(cur.t*8+i)%2?'run1':'run2'):'stand',face:sh.warriors==='run'?1:i<2?1:-1,char:C.char,pi:C.pi,id:who,mood:sh.warriors==='run'?'sad':'normal'}});});}
+    const base=sh.bg==='conclave'?1000:camX-120;list.forEach((who,i)=>{const C=CAST[who];people.push({x:base+(i-list.length/2)*46,row:i%2,p:{o:C.o||'warrior',pose:sh.warriors==='run'?['run1','walk2','run2','walk2'][Math.floor(cur.t*10+i)%4]:'stand',face:sh.warriors==='run'?1:i<2?1:-1,char:C.char,pi:C.pi,id:who,mood:sh.warriors==='run'?'sad':'normal'}});});}
    if(sh.gang){const [o,head,n,wpn]=sh.gang;for(let i=0;i<n;i++)people.push({x:camX+120+i*40-(sh.warriors?0:160),row:i%2,p:{o,pose:wpn&&i%2?'batReady':'stand',face:-1,head,id:o+i,mood:'angry',wpn}});}
    if(sh.riffs){for(let i=0;i<7;i++)people.push({x:(sh.bg==='coney'?camX+60:camX-180)+i*42,row:i%2,p:{o:'riff',pose:'stand',face:sh.bg==='coney'?-1:1,head:'riff',id:'riff'+i}});
     if(sh.bg==='riffs')people.push({x:camX,row:1,big:1.15,p:{o:'riff',pose:'stand',face:-1,head:'riff',id:'masai',skin:'#6c4428'}});}
    if(sh.luther){const L=sh.luther;people.push({x:sh.bg==='conclave'?1180:camX+150,row:1,p:{o:'rogue',pose:L==='point'?'jab':L==='down'?'kneel':L===1&&cur.t>1.4?'aim':'stand',face:-1,char:'luther',head:'rogue',id:'luther',mood:L==='down'?'sad':'angry'},gun:L===1&&cur.t>1.4,bottles:L==='bottles'});}
    people.sort((a,b)=>a.row-b.row);
    for(const P of people){const k=S*(P.row?1.5:1.38)*(P.big||1),px=X(P.x),py=gy+(P.row?14:0)*S;if(px<-80||px>w+80)continue;const sp=env.person(px,py,k,P.p);
-    if(P.p.wpn&&sp){x.strokeStyle='#c8944c';x.lineWidth=5*k;x.lineCap='round';x.beginPath();x.moveTo(sp.hand.x,sp.hand.y);x.lineTo(sp.hand.x-24*k,sp.hand.y-30*k);x.stroke();}
+    const wim=P.p.wpn&&DS.picture(P.p.wpn);if(wim&&sp){const L=46*k,a=Math.atan2(-30,-24*(P.p.face||1)),h2=L*wim.height/wim.width;x.save();x.translate(sp.hand.x,sp.hand.y);x.rotate(a);x.drawImage(wim,-L*.12,-h2/2,L,h2);x.restore();}
+    else if(P.p.wpn&&sp){x.strokeStyle='#c8944c';x.lineWidth=5*k;x.lineCap='round';x.beginPath();x.moveTo(sp.hand.x,sp.hand.y);x.lineTo(sp.hand.x-24*k,sp.hand.y-30*k);x.stroke();}
     if(P.gun&&sp){x.fillStyle='#141418';x.fillRect(sp.hand.x-14*k,sp.hand.y-4*k,14*k,6*k);}
     if(P.bottles&&sp){for(let b=0;b<3;b++){x.fillStyle='rgba(90,140,90,.9)';x.fillRect(sp.hand.x-4*k+b*5*k,sp.hand.y+2*k+(Math.floor(cur.t*3)%3===b?-2*k:0),4*k,13*k);}}}
    if(sh.spot){const lx=X(sh.spot),ly=gy-90*S,g2=x.createRadialGradient(lx,ly,40*S,lx,ly,Math.max(w,h)*.7);g2.addColorStop(0,'rgba(0,0,0,0)');g2.addColorStop(.35,'rgba(0,0,0,.55)');g2.addColorStop(1,'rgba(0,0,0,.85)');x.fillStyle=g2;x.fillRect(0,0,w,h);
@@ -191,4 +201,8 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
  function tap(px,py){if(!cur)return false;const h=H();if(px<120&&py<h*.1){finish();return true;}if(cur.t>.4)nextShot();return true;}
  return {start,draw,tap,get active(){return !!cur;},skip:finish};}
 const CUT_PICTURES=['conclave','riffs','street','lizzies','park','subway','restroom','dawn','coney','radio'];
-Object.assign(exports,{makeCuts,CUTS,CAST,GANGS,CUT_PICTURES});
+// stage art standing in for a cut backdrop until its painted one comes: story area first, then the old biome set
+const CUT_STAGE={conclave:['conclave','forest'],riffs:['gothic'],street:['tenement','elstreet','nyc'],lizzies:['apartment'],park:['riverside','park','forest'],
+ subway:['station','platform','gotham'],restroom:['restroom'],dawn:['trainDawn'],coney:['boardwalk','beach']};
+const stagePictures=()=>[...new Set(Object.values(CUT_STAGE).flat())].flatMap(n=>['far-'+n,'wall-'+n,'floor-'+n]);
+Object.assign(exports,{makeCuts,CUTS,CAST,GANGS,CUT_PICTURES,CUT_STAGE,stagePictures});

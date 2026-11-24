@@ -33,6 +33,9 @@ key poses, so each must be a clear, strong, readable pose. Rules for every cell:
 | `foe-punk.png` | 2048 x 1536 | 45 | Punk: blue denim overalls over a red-and-white striped shirt, roller skates |
 | `foe-rogue.png` | 2048 x 1536 | 45 | Rogue: black shirt under a brown leather vest, dark trousers, boots |
 | `foe-riff.png` | 2048 x 1536 | 45 | Riff (fights on YOUR side at the very end): off-white martial-arts style outfit, dark vest, amber sash |
+| `cast-cyrus.png` | 2048 x 512 | 14 (cast list) | **Cutscenes**: Cyrus, the leader who calls the meeting: long dark tunic over a dark shirt with gold trim and belt, dark trousers. `win` = both arms raised to the crowd, `jab` = pointing out at the crowd, `fall`/`down` = shot |
+| `gang-hihat.png` | 2048 x 512 | 14 | **Cutscenes** (Conclave crowd): Hi-Hat: white long-sleeved shirt, black braces, black trousers, white gloves |
+| `gang-bopper.png` | 2048 x 512 | 14 | **Cutscenes** (Conclave crowd): Bopper: purple 70s suit, wide lapels, open purple shirt, gold chain |
 
 **No weapons in any cell** (the game draws every bat, pipe, nightstick, chain and gun in the front hand and swings it itself),
 except the riot shield in `block`/`bash`. Bosses use their gang's sheet, drawn bigger by the game.
@@ -40,6 +43,10 @@ Hero sheets: the 40 poses below in order (1-40), then `batReady, batWind, batHit
 batSmash, hurtLow, sweep`. Enemy sheets: `stand, stand2, walk1, walk2, walk3, run1, run2, jabC, jab, cross, hookC, hook, kickC,
 kick, jump, jkick, grab, swing1, swing2, toss, hurt, dizzy, fall, down, kneel, win`, then `batReady, batWind, batHit, batFollow,
 batBack, batLow, batOver, batSmash, block, bash, aim, lobC, lob, skate1, skate2, hurtLow, charge, crouch, taunt`.
+Cast sheets (`cast-`/`gang-`): `stand, stand2, win, jab, walk1, walk2, walk3, run1, run2, hurt, fall, down, kneel, crouch`.
+**Still missing and most wanted (Nov 24): `foe-cop` and `foe-riot`** (every cop in the game is still drawn), then the cast sheets.
+The cutscenes draw everyone from these sheets (the Warriors crew wear the hero sheets, each gang its own sheet), so a sheet
+shows up in the story scenes too.
 The **templates** (`<sheet>-template.png`) show every cell with its pose name, the face circle and the feet dot; the
 **references** (`<sheet>-reference.png`) show how the game draws them today.
 
@@ -140,7 +147,7 @@ See each `<name>-template.png` for size and anchor: `bat`, `pipe`, `chain`, `whi
 `fx-twister` (spinning wind), `fx-fury` (speed-line burst), `logo` (THE WARRIORS / COME OUT TO PLAY, transparent) and
 `title-bg` (1920 x 1080 night street, two heroes back to back, faces turned away or out of frame).
 
-## 4. Story cutscene backdrops (10 pictures, 1920x1080, NO people)
+## 4. Story cutscene backdrops (10 pictures, 1920x1080, NO people; templates `cut-<name>-template.png`)
 The game draws the people (the gangs, Cyrus, the Warriors with the players' faces) over these, so leave the lower 45%
 open (empty floor, lawn, sand or platform), keep the horizon about 40-50% down, night (or dawn) light, our own drawing
 of the place, no logos, no text except the subway sign:

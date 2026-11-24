@@ -22,7 +22,7 @@ const sheets = await page.evaluate(() => Object.keys(require('src/data/ddSprites
 for (const sheet of sheets) for (const mode of ['template', 'reference']) save(sheet + '-' + mode, await page.evaluate(({sheet, mode}) => {
   const DS = require('src/data/ddSprites.js'), BD = require('src/engines/dd/body.js'), poses = DS.SHEETS[sheet].poses, C = DS.CELL, rows = Math.ceil(poses.length / DS.COLS);
   const c = document.getElementById('c'); c.width = C * DS.COLS; c.height = C * rows; const x = c.getContext('2d'); x.clearRect(0, 0, c.width, c.height);
-  const o = BD.OUTFIT[sheet === 'hero-p1' ? 'p1' : sheet === 'hero-p2' ? 'p2' : sheet.replace('foe-', '')] || BD.OUTFIT.thug, pink = '#ff2a6a';
+  const o = BD.OUTFIT[sheet === 'hero-p1' ? 'p1' : sheet === 'hero-p2' ? 'p2' : sheet.replace(/^(foe|cast|gang)-/, '')] || BD.OUTFIT.thug, pink = '#ff2a6a';
   poses.forEach((p, i) => {const cx = (i % DS.COLS) * C, cy = Math.floor(i / DS.COLS) * C, ft = DS.footOf(p), fx = cx + ft[0], fy = cy + ft[1];
     if (mode === 'template') {x.strokeStyle = 'rgba(255,42,106,.45)'; x.lineWidth = 2; x.strokeRect(cx + 1, cy + 1, C - 2, C - 2);}
     x.save(); if (mode === 'template') x.globalAlpha = .3;
