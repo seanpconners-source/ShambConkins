@@ -132,10 +132,22 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
  function djPic(){const w=W(),h=H();for(const n of SHAPE.order(w,h,DJ_PICS)){const im=DS.picture(n);if(im)return {im,n,shape:n.slice(3)};}return null;}
  function djPlace(P,t){const w=W(),h=H(),G=DJD.DJ.guide[P.shape],[iw,ih]=G.size,k=Math.max(w/iw,h/ih)*(1.02+Math.min(t,12)*.003),[fx,fy]=G.face;
   return {k,ox:clamp(w*.5-fx*k,w-iw*k,0),oy:clamp(h*.4-fy*k,h-ih*k,0)};}
+ // the DJ in shadow (owner: like the film, her face lost in the dark, only the lit mouth clear): a diagonal shadow over the face
+ // and the left of the room (the window), a small pool of light on the lips; worked out once per shape at 1/4 size and
+ // drawn with the picture's own transform
+ const shadeCache={};
+ function djShade(shape){if(shadeCache[shape])return shadeCache[shape];const G=DJD.DJ.guide[shape],S=DJD.DJ.shade||{face:.82,room:.35,deg:12,left:1},R=4;
+  const [iw,ih]=G.size,w=Math.ceil(iw/R),h=Math.ceil(ih/R),cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d'),im=g.createImageData(w,h),d=im.data;
+  const [bx,by,bw,bh]=G.mouth,mx=(bx+bw/2)/R,my=(by+bh/2)/R,mr=bw*.81/R,tn=Math.tan(S.deg*Math.PI/180);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const edge=my-mr*.55-(x-mx)*tn,above=clamp((edge-y)/(mr*1.1)+.5,0,1),left=clamp((mx-mr*3.2-x)/(mr*2.2),0,1)*S.left;
+   const dark=S.room+(S.face-S.room)*Math.max(above,left),pool=Math.pow(clamp(1-Math.hypot((x-mx)/(mr*1.5),(y-my)/(mr*.85)),0,1),1.2);d[(y*w+x)*4+3]=Math.round(255*dark*(1-pool));}
+  g.putImageData(im,0,0);return shadeCache[shape]=cv;}
  function drawDJPic(t){const P=djPic();if(!P)return false;const {k,ox,oy}=djPlace(P,t),G=DJD.DJ.guide[P.shape],box=DJD.DJ.box[P.shape]||{};
   x.drawImage(P.im,ox,oy,G.size[0]*k,G.size[1]*k);
   const frame=(n)=>{const b=box[n],im=b&&DS.picture(P.n+'-'+n);if(im)x.drawImage(im,ox+b[0]*k,oy+b[1]*k,b[2]*k,b[3]*k);};
   const m=djMouth();if(m)frame(m);if(t%3.7<.13)frame('blink');
+  // the shadow settles over her as the shot opens
+  x.save();x.globalAlpha=Math.min(1,.35+t/.8);x.drawImage(djShade(P.shape),ox,oy,G.size[0]*k,G.size[1]*k);x.restore();
   return true;}
  // the radio DJ: lips at the microphone, in the dark (our own drawing; the painted DJ replaces it when it's in)
  function drawDJ(t){const w=W(),h=H(),u=Math.min(w/470,h/400),cx=w/2,cy=h*.46,talk={small:.4,ee:.5,oo:.7,ah:1}[djMouth()]||.08;

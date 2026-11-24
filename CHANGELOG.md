@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.57
+
+- **Boulder Run keeps getting harder:** speed used to top out after about 3 minutes and the course stopped changing. Now it keeps speeding up for about 8 minutes (to about a third faster than the old top speed). Later stretches also bring more corners and T-junctions, double-lane blocks, and fewer harmless stumbles, with more traps that end your run. The spacing grows with your speed, so every jump stays possible.
+- **Warriors, 96th Street:** a new stage. The cops are waiting on the platform and you run for it: the screen keeps moving, the cops come from behind and cut in ahead. Fox runs with you until a cop drags him to the edge of the platform as a train comes in. The subway stages also no longer borrow a city-street picture.
+- **The radio DJ talks:** a full-screen painted DJ whose lips move with the words, and who blinks, on wide screens, the Fold and upright phones. Her face falls into deep shadow like in the film, with only her mouth in the light, and the window behind her is dark.
+- **New art:** all 16 Flappy Disaster ground strips, and Penalty Shootout's full set (strikers, keepers, stadium in three shapes, goal, net, ad boards, ball, trophy, logo, title screens). Penalty Shootout waits for its pictures the first time it opens.
+
 ## v0.99.56
 
 - **Warriors heads sit on the bodies:** faces used to be placed from the old drawn skeleton, not the new sprite art, so they floated above necks, beside bodies lying on the ground, and off falling or dizzy fighters. Every frame of every fighter sheet now has its real neck measured from the art, and the face sits on it and turns with the body (on its side when someone is knocked flat, hanging forward when dizzy). Faces still turn to look the way the body faces. Cutscene people use the same fix.

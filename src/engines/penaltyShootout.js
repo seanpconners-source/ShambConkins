@@ -420,6 +420,8 @@ async function penalty(s){
  // ---------------------------------------------------------------- start
  s.hint('Swipe the ball at the goal: the swipe\'s angle aims, a longer swipe lifts it, a faster swipe hits it harder (too hard flies over), a curved swipe bends it. In goal: swipe or tap the way you dive. 2 players on one phone: the striker swipes from the bottom, the keeper swipes in the goal. Keys: arrows/WASD aim + space shoots; keeper ←/→/↑/↓.');
  layout();setScene({D:11});resetKick();phase='menu';
+ // the art is fetched the first time the game opens: wait for it (max 6 s) so the first round isn't played on the drawn stand-ins
+ await PS.ready([...Object.keys(PS.SHEETS),...Object.keys(PS.PICTURES)],6000);if(!s.alive)return;
  if(solo1){const pick=await menu();if(!s.alive)return;mode=pick.m;if(mode!=='shootout')s.solo.kind='levels';
   if(mode==='challenge')return challenge(pick.from);if(mode==='tournament')return tournament();}
  else if(!on&&!cpuGame){phase='wait';if(!await s.pass(0,`Both of you hold the phone. ${M.names[0]} shoots first: swipe the ball at the goal from the bottom. The keeper swipes (or taps) in the goal to dive. ${M.kicks} kicks each, then sudden death.`,'Both ready',{countdown:3}))return;}
