@@ -28,11 +28,9 @@ function simChip(x0,seed){const R=seededRandom(seed),DT=1/240,G=2300,out=[],hits
   if(y>=FLOOR-CHIP_R){y=FLOOR-CHIP_R;if(n%4===0)out.push([x,y,t]);break;}
   if(n%4===0)out.push([x,y,t]);}
  const slot=clamp(Math.floor(x/100),0,8);return {path:out,hits,slot,dur:t};}
-// small prizes with honest little prices (one digit shown right, one wrong)
-const PRIZES=[['🥛','Fight Milk, a gallon',14],['🍖','A whole Rum Ham',38],['⚡','Brawndo, the case',28],['🍩','A dozen Lard Lad donuts',19],['🧃','Slurm, six pack',23],
- ['🎳','Bowling shoes (used, sprayed)',36],['🕶️','Gas-station sunglasses',12],['🧸','A Teddy Ruxpin knock-off',47],['🍳','A waffle iron',59],['🧴','Cucumber face mask set',26],
- ['🎲','Fuzzy dice for the car',15],['🦆','A rubber duck pool float',33],['🍿','Popcorn maker',64],['🪥','Electric toothbrush',42],['📻','Clock radio',29],['🧢','Paddy\'s Pub trucker cap',17],
- ['🍷','Boxed wine, the good one',24],['🎮','Off-brand game controller',31],['🪴','Ficus (plastic)',22],['🧦','Six pairs of novelty socks',18],['🥫','Bachelor Chow, a flat',27],['🔦','Big camping flashlight',35]];
+// the four small prizes: real products at their real US retail price (src/data/showPrizes.js, photos assets/prizes)
+const SP=require("src/data/showPrizes.js");
+const PRIZES=SP.PRIZES.map(([id,name,price,em])=>[em,name,price,id]);
 const HOST_LINES={intro:['Here\'s a game a whole lot of people love to watch...','It\'s PLINKO!'],price:'One digit in each price is right. Pick the right one and win a Plinko chip!',
  drop:'Drag it along the top and let it go. Right down the middle is ten thousand dollars!',big:'TEN THOUSAND DOLLARS!',zero:'Ohhh, nothing on that one.',done:n=>n?`You won ${money(n)}!`:'Oh, I\'m sorry. Better luck next time.'};
 async function plinko(s){
@@ -97,7 +95,10 @@ async function plinko(s){
  let priceBtns=[];
  function drawPricing(g){const fs=L.fs,cw=Math.min(W*.86,fs*22),ch=fs*13,cx=W/2,cy=L.wide?H*.55:H*.55,x0=cx-cw/2,y0=cy-ch/2;priceBtns=[];
   g.fillStyle='rgba(20,6,46,.92)';g.beginPath();g.roundRect(x0,y0,cw,ch,16);g.fill();g.strokeStyle='#ffd75a';g.lineWidth=3;g.stroke();
-  txtC(g,`PRIZE ${pick.k+1} OF 4`,cx,y0+fs*1.1,fs*.8,'#ffd75a');g.font=`${fs*3.6}px serif`;g.textAlign='center';g.textBaseline='middle';g.fillText(pick.em,cx,y0+fs*3.6);txtC(g,pick.name.toUpperCase(),cx,y0+fs*6.2,fs*.95,'#fff');
+  txtC(g,`PRIZE ${pick.k+1} OF 4`,cx,y0+fs*1.1,fs*.8,'#ffd75a');const ph=pick.id&&SP.prizePhoto(pick.id);g.textAlign='center';g.textBaseline='middle';
+  if(ph){const bh=fs*3.4,bw=Math.min(cw*.62,bh*1.6),k=Math.min(bw/ph.width,bh/ph.height),w=ph.width*k,h=ph.height*k,px=cx-w/2,py=y0+fs*3.75-h/2;
+   g.fillStyle='#fff';g.beginPath();g.roundRect(px-5,py-5,w+10,h+10,8);g.fill();g.drawImage(ph,px,py,w,h);}
+  else{g.font=`${fs*3.6}px serif`;g.fillText(pick.em,cx,y0+fs*3.6);}txtC(g,pick.name.toUpperCase(),cx,y0+fs*6.2,fs*.95,'#fff');
   const bw=fs*4.4,gap=fs*1.4;pick.digits.forEach((d,j)=>{const bx=cx+(j?gap/2:-gap/2-bw),by=y0+fs*7.4,on=pick.res!=null&&j===pick.right,chosen=pick.choice===j;
    g.fillStyle=on?'#2fa84f':chosen&&pick.res!=null?'#c8102e':'#fff8dc';g.beginPath();g.roundRect(bx,by,bw,fs*4.2,10);g.fill();g.strokeStyle=chosen?'#ffe23a':'#c8102e';g.lineWidth=chosen?5:3;g.stroke();
    g.font=`900 ${fs*3.2}px "SC Bangers",Impact,sans-serif`;g.fillStyle=on||chosen&&pick.res!=null?'#fff':'#c8102e';g.fillText(String(d),bx+bw/2,by+fs*2.2);priceBtns.push({x:bx,y:by,w:bw,h:fs*4.2,j});});
@@ -119,11 +120,12 @@ async function plinko(s){
  async function remoteNext(){for(;;){const m=await net.next();if(!m||!s.alive)return null;return m;}}
  async function pricing(i){const p=P[i],R=seededRandom(`${s.seed}:prizes:${i}`),pool=PRIZES.slice();for(let k=pool.length-1;k>0;k--){const j=Math.floor(R()*(k+1));[pool[k],pool[j]]=[pool[j],pool[k]];}
   mode='price';say(HOST_LINES.price,3200,'point');modelPose='present';
-  for(let k=0;k<4;k++){const [em,name,price]=pool[k],T=Math.floor(price/10),O=price%10,tensRight=R()<.5;
+  for(let k=0;k<4;k++)SP.prizePhoto(pool[k][3]);
+  for(let k=0;k<4;k++){const [em,name,price,id]=pool[k],T=Math.floor(price/10),O=price%10,tensRight=R()<.5;
    // the price shown as two digits: one of them is right, the other is a wrong digit in its place
    let wrong;do{wrong=Math.floor(R()*10);}while(tensRight?wrong===O:(wrong===T||wrong===0));
    const digits=tensRight?[T,wrong]:[wrong,O],right=tensRight?0:1;
-   pick={k,em,name,price,digits,right,choice:null,res:null};
+   pick={k,em,name,price,id,digits,right,choice:null,res:null};
    if(cpuTurn()){await wait(1300);const sk=cpuSkill(s);pickDigit(R()<.55+.35*sk?right:1-right);}
    else if(!mine(i)){const m=await remoteNext();if(!m)return;if(m.g)pickDigit(+m.g[1]);}
    else await new Promise(r=>{pickDone=r;});

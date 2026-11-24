@@ -222,6 +222,12 @@ if (fs.existsSync(showDir)) for (const f of fs.readdirSync(showDir)) {
   const m = f.match(/^([a-z0-9-]+)\.(webp|png)$/i), ext = m && m[2].toLowerCase();
   if (m) drop('show:' + m[1].toLowerCase(), MIME[ext], ext, path.join(showDir, f));
 }
+// Real prize photos (Plinko's small prizes, src/data/showPrizes.js): assets/prizes/<id>.(webp|png|jpg) -> prize:<id>.
+const prizeDir = path.join(root, 'assets/prizes');
+if (fs.existsSync(prizeDir)) for (const f of fs.readdirSync(prizeDir)) {
+  const m = f.match(/^([a-z0-9-]+)\.(webp|png|jpg)$/i), ext = m && m[2].toLowerCase();
+  if (m) drop('prize:' + m[1].toLowerCase(), MIME[ext] || 'image/jpeg', ext, path.join(prizeDir, f));
+}
 // Strands & Ladders art (owner's GPT pictures): assets/strands/<slot>.(webp|png) -> strands:<slot> (slots in src/data/strandsArt.js).
 const strDir = path.join(root, 'assets/strands');
 if (fs.existsSync(strDir)) for (const f of fs.readdirSync(strDir)) {
