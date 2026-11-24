@@ -3,7 +3,7 @@
 // Stage 1, the next time the game starts on her phone: `give` joins BOTH rosters (so either player slot can pick them).
 // Stage 2, when she leaves Characters (or starts a New Game) with every `pair` character among players 1 and 2: `then`
 // joins too, with its own message. Each stage happens once (profile.gifts[id] = 'given' → 'done'). Everyone else unlocks
-// these characters the normal way. Pure data + rules here; app.js shows the dialogs.
+// these characters the normal way. A gift with no `then` is done after stage 1. Pure data + rules here; app.js shows the dialogs.
 const {characterIdentity}=require("src/characters.js");
 const GIFTS=[
  {id:'lydia-crew',who:/^\s*lyd(ia)?\b/i,give:['uss-lydia','houston'],pair:['uss-lydia','houston'],then:['ezra'],
@@ -12,16 +12,19 @@ const GIFTS=[
  // Hannah (owner, Nov 12): her saved name is "Hannah". Hannah joins at start; picking Hannah as player 1 OR 2 brings Carson (owner: the hello must NOT hint at Carson).
  {id:'hannah-lab',who:/^\s*hannah\b/i,give:['uss-hannah'],pair:['uss-hannah'],then:['uss-carson'],
   hello:{title:'Hey Hannah!',body:'Welcome back to the lab! Hannah just joined your roster. Have fun!'},
-  reveal:{title:'Somebody followed you out of the lab',body:'Hannah’s on the team — and look who came along. Carson joins your roster!'}}
+  reveal:{title:'Somebody followed you out of the lab',body:'Hannah’s on the team — and look who came along. Carson joins your roster!'}},
+ // Zach Godsey (owner, Nov 24): his saved name is "Zach". Zach joins at start; one stage only (no `then`)
+ {id:'zach-lab',who:/^\s*zach\b/i,give:['uss-zach'],
+  hello:{title:'Hey Zach!',body:'Fresh out of the Unlimited Savory Systems lab: Zach just joined your roster. Pick him on Characters and have fun!'}}
 ];
 const has=(profile,id)=>[...profile.shared,...Object.values(profile.rosters||{}).flat()].some(c=>characterIdentity(c)===characterIdentity(id));
 const add=(profile,ids)=>{const out=[];for(const id of ids)if(!profile.shared.some(c=>characterIdentity(c)===characterIdentity(id))){profile.shared.push(id);out.push(id);}return out;};
 const matches=(g,names)=>names.some(n=>typeof n==='string'&&g.who.test(n));
 // Stage 1 at start-up: gifts for this phone not given yet → [{gift, added:[ids]}] (profile changed; save it)
 function startGifts(profile,names){const out=[];profile.gifts||={};
- for(const g of GIFTS){if(profile.gifts[g.id]||!matches(g,names))continue;profile.gifts[g.id]='given';out.push({gift:g,added:add(profile,g.give)});}return out;}
+ for(const g of GIFTS){if(profile.gifts[g.id]||!matches(g,names))continue;profile.gifts[g.id]=g.then?.length?'given':'done';out.push({gift:g,added:add(profile,g.give)});}return out;}
 // Stage 2 when the picks are set: picked = the two character ids → [{gift, added}] for gifts whose pair is now picked
 function pickGifts(profile,picked){const out=[],ids=picked.map(id=>characterIdentity(id));
- for(const g of GIFTS){if(profile.gifts?.[g.id]!=='given')continue;if(!g.pair.every(id=>ids.includes(characterIdentity(id))))continue;
+ for(const g of GIFTS){if(profile.gifts?.[g.id]!=='given'||!g.then?.length)continue;if(!g.pair.every(id=>ids.includes(characterIdentity(id))))continue;
   profile.gifts[g.id]='done';out.push({gift:g,added:add(profile,g.then)});}return out;}
 Object.assign(exports,{GIFTS,startGifts,pickGifts,has});

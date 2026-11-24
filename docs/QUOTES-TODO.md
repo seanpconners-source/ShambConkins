@@ -4,7 +4,7 @@ Every quote in the game must be something the character really said (owner, Nov 
 game shows no quote for them and Tapper customers stay quiet. Add lines to `src/data/characterQuotes.js` (QUOTES, id → line or list)
 only from a real source (the show/film/game, or an interview for real people). Wikiquote had no page or no line for the 'open' ones.
 
-## Your own people (owner supplies the lines) (17)
+## Your own people (owner supplies the lines) (18)
 
 - Home: Dad · Chris Conners (`chris-parent`)
 - Home: KC (`kc`)
@@ -23,6 +23,7 @@ only from a real source (the show/film/game, or an interview for real people). W
 - Unlimited Savory Systems: Hannah (`uss-hannah`)
 - Unlimited Savory Systems: Lydia (`uss-lydia`)
 - Unlimited Savory Systems: Steve (`uss-steve`)
+- Unlimited Savory Systems: Zach (`uss-zach`)
 
 ## Never speak on screen (left quiet on purpose) (23)
 

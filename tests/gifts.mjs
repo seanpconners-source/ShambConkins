@@ -24,6 +24,12 @@ check(!G.pickGifts(p,['houston','uss-lydia']).length,'stage 2 happens once');
  const r2=G.pickGifts(h,['amber','uss-hannah']);check(r2.length===1&&r2[0].added.join()==='uss-carson'&&P.availableCharacters(h,'Sean').includes('uss-carson'),'Hannah as player 2: Carson joins both rosters');
  check(!G.pickGifts(h,['uss-hannah','sean']).length,'Carson only once');
  const l=prof();G.startGifts(l,['Hannah']);check(G.pickGifts(l,['uss-hannah','sean']).length===1,'Hannah as player 1 works too');}
+// Zach's gift: Zach joins at start, once; no second stage
+{let z=prof();check(!G.startGifts(z,['Zachary','Amber']).length,'"Zachary" is not Zach');
+ for(const n of ['Zach','zach','Zach G']){const q=prof();const g=G.startGifts(q,['Sean',n]);check(g.length===1&&g[0].gift.id==='zach-lab'&&g[0].added.join()==='uss-zach'&&q.gifts['zach-lab']==='done',`the name "${n}" gets Zach`);}
+ z=prof();G.startGifts(z,['Zach']);check(P.availableCharacters(z,'Sean').includes('uss-zach')&&P.availableCharacters(z,'Amber').includes('uss-zach'),'Zach joins both rosters');
+ check(!G.startGifts(z,['Zach']).length&&!G.pickGifts(z,['uss-zach','sean']).length,'Zach only once, no second stage');
+ check(!!character('uss-zach')&&CATALOG.characters.some(c=>c.id==='uss-zach')&&character('uss-zach').name==='Zach','uss-zach is in the catalog as "Zach"');}
 // the gift state survives a save/load
 {const m=new Map();globalThis.localStorage??={getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k)};
  try{P.saveProfile(p);const q=P.loadProfile();check(q.gifts?.['lydia-crew']==='done'&&q.shared.includes('ezra'),'gift state and Ezra are kept in the save');}catch(e){check(false,'save/load: '+e.message);}}
