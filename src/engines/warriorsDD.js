@@ -651,8 +651,8 @@ async function warriorsDD(s){
    const J=BD.joints(f.pose);const tp=p=>({x:sx+p[0]*face*kk*f.big,y:sy-f.z*kk+p[1]*kk*f.big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),wa:f.pose.wa,wl:f.pose.wl};
    const cn=SCL.strip&&NECKS[SCL.strip]?.['r'+SCL.fr]?cellNeck(SCL.strip,'r'+SCL.fr,sx,sy-f.z*kk-lift,face,sc,rot):cellNeck(f.sheet,name,sx,sy-f.z*kk-lift,face,sc,rot);if(cn){spots.neck=cn.neck;spots.head=cn.head;if(cn.hand)spots.hand=cn.hand;spots.measured=1;}}
   else spots=BD.drawBody(x,f.pose,{x:sx,y:sy,face,k:kk,o:f.o,big:f.big,flash:f.flash*5,z:f.z});
-  // the riot shield, a weapon, a carried barrel
-  if(f.shield>0&&!['fall','down','dead'].includes(f.st)){const hx=spots.hand.x+face*4*kk,hy=spots.hand.y;x.fillStyle='rgba(160,190,220,.45)';x.strokeStyle='#2c3448';x.lineWidth=2;x.beginPath();x.roundRect(hx-4*kk,hy-34*kk,8*kk,52*kk,3*kk);x.fill();x.stroke();}
+  // the riot shield (the riot sheet paints its own in block/bash), a weapon, a carried barrel
+  if(f.shield>0&&!['fall','down','dead'].includes(f.st)&&!(cell&&(name==='block'||name==='bash'))){const hx=spots.hand.x+face*4*kk,hy=spots.hand.y;x.fillStyle='rgba(160,190,220,.45)';x.strokeStyle='#2c3448';x.lineWidth=2;x.beginPath();x.roundRect(hx-4*kk,hy-34*kk,8*kk,52*kk,3*kk);x.fill();x.stroke();}
   if(spinning)drawSwoosh(f,sx,sy,kk,true);
   if(f.weapon)drawWeapon(f.weapon.kind,spots,face,kk,f);
   if(f.carry){const im=DS.picture(f.carry.kind);const w=(f.carry.kind==='barrel'?30:26)*kk;if(im)x.drawImage(im,spots.head.x-w/2,spots.head.y-w*1.5,w,w*im.height/im.width);else{x.fillStyle=f.carry.kind==='barrel'?'#7c4c1c':'#8c8c8c';x.beginPath();x.roundRect(spots.head.x-w/2,spots.head.y-w*1.6,w,w*1.1,5);x.fill();}}
