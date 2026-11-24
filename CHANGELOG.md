@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.99.58
+
+- **Zach joins the game:** Zach from Unlimited Savory Systems, with his own normal, sad and happy pictures. You can meet him at the lab, and a surprise waits for a friend.
+- **The Warriors get their full look:** every story area and every cutscene now has its own painted backdrop, and the cops, riot cops (with their shields), Cyrus, the Hi-Hats and the Boppers have their own art. Subway cars fill the screen, and the tunnel and stations rush past the windows.
+- **Warriors, bigger and harder:** pick a chapter on a 70s-style subway map that shows the ride between chapters. Later chapters are longer, with more and tougher enemies. One locked character per chapter shows up as a challenger, and beating him unlocks him. Gang members wear real faces, the streets have props (graves, hydrants, newsstands, phone booths and more), weapons sit in the fist, and the run and the heads look right. 13 Warriors characters join the cast.
+- **71 new characters:** from Joe Dirt, The Waterboy, Tim and Eric, Mad Max, The Mask, Midsommar, Godzilla and more, most with real quotes.
+- **Flappy Disaster:** each stage is ready for its own obstacle art.
+
 ## v0.99.57
 
 - **Boulder Run keeps getting harder:** speed used to top out after about 3 minutes and the course stopped changing. Now it keeps speeding up for about 8 minutes (to about a third faster than the old top speed). Later stretches also bring more corners and T-junctions, double-lane blocks, and fewer harmless stumbles, with more traps that end your run. The spacing grows with your speed, so every jump stays possible.
