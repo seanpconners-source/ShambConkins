@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.49
+
+- **The Warriors, story mode:** the beat 'em up now follows the film in 10 chapters: the Conclave with cops closing in, the Turnbull AC's bus, the Orphans' turf, the Baseball Furies in Riverside Park, the Lizzies, the Punks in the station, a subway station escape from the cops, a ride on the moving train (stations rush past, an oncoming train, swaying straps), and Coney Island against the Rogues, with the Riffs arriving at the end. Story cards between areas, a tally after each, an ending, and CONTINUE/CHAPTERS on the title.
+- **The Warriors, fighting:** hits land on stunned enemies and with weapons; the bat is a real swing (wind-up, hit, follow-through) with a three-swing combo; punches and kicks chain into combos and juggles; specials work every time and only use your meter when they actually start; fighters are smaller so you see more of the street. New enemies: riot shields, gunmen with a warning line, molotov throwers, skaters and chargers with a warning mark.
+- **Fruit Ninja:** every game is set in a random Crappy Crush world or Flappy Disaster stage, with its background, and its own items and characters as the fruit (characters are worth more).
+- **Brawndo Fruit Merge:** 1 player can now play alone (one big jar, no clock, until it overflows; your best is saved) as well as against the CPU.
+
 ## v0.99.48
 
 - **Judgment Day Chase (new):** the Terminator freeway chase is rebuilt as a fast top-down chase in five Terminator 2 stages: the Harley through the Galleria and the storm drain (tow truck boss), the T-1000 on foot, Pescadero at night (his police bike), Cyberdyne in the SWAT van (the helicopter) and the liquid nitrogen tanker. The T-800 aims and shoots by himself while you drive; tap M79 for a grenade, hold NITRO to boost. You have health instead of one-hit deaths, a warning arrow shows before anything comes from behind, and you repair after a few calm seconds. Ram cops into walls, skim past traffic and chain kills for points; pick upgrade cards at the weapons rig and Sarah's stash. Cutscenes, slow motion on takedowns, night stages lit by headlights and sirens, and a steel-mill finale. 1 player = the whole run with 2 continues, then an endless harder loop; 2 players take turns stage by stage.
