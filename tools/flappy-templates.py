@@ -54,7 +54,32 @@ def ground():
         d.text((W / 2, 44 + i * 34), l, fill=(70, 70, 80), font=f, anchor='mm')
     return im
 
+def pipe_body():
+    W, H = 192, 256
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, W - 1, H - 1], outline=PINK, width=2)
+    d.rectangle([32, 0, 159, H - 1], fill=(206, 214, 222, 255), outline=(150, 160, 170, 255), width=2)
+    for y in (2, H - 3): d.line([(32, y), (159, y)], fill=PINK, width=3)
+    f = font(13)
+    for i, l in enumerate(['pipe-<stage>', '192 x 256', 'BODY of the', 'obstacle', 'solid middle', '128 px', 'REPEATS top', 'to bottom:', 'top edge joins', 'bottom edge', 'sides 0-32 /', '160-192 = small', 'overhangs only,', 'else transparent']):
+        d.text((96, 22 + i * 16), l, fill=(60, 60, 70, 255), font=f, anchor='mm')
+    return im
+
+def pipe_end():
+    W, H = 192, 160
+    im = Image.new('RGBA', (W, H), (0, 0, 0, 0)); d = ImageDraw.Draw(im)
+    d.rectangle([0, 0, W - 1, H - 1], outline=PINK, width=2)
+    d.rectangle([32, 40, 159, H - 1], fill=(206, 214, 222, 255), outline=(150, 160, 170, 255), width=2)
+    d.rectangle([8, 0, 183, 44], fill=(186, 196, 206, 255), outline=(150, 160, 170, 255), width=2)
+    d.line([(0, 2), (W, 2)], fill=PINK, width=4)
+    f = font(11)
+    for i, l in enumerate(['pipe-<stage>-end', '192 x 160', 'top = GAP edge', 'cap: full width', 'body: middle', '128 px, joins', 'the body below', 'top obstacle:', 'game flips it']):
+        d.text((96, 54 + i * 12), l, fill=(60, 60, 70, 255), font=f, anchor='mm')
+    return im
+
 if __name__ == '__main__':
+    pipe_body().save(os.path.join(OUT, 'pipe-template.png'))
+    pipe_end().save(os.path.join(OUT, 'pipe-end-template.png'))
     os.makedirs(OUT, exist_ok=True)
     bg().save(os.path.join(OUT, 'bg-template.png'))
     ground().save(os.path.join(OUT, 'ground-template.png'))

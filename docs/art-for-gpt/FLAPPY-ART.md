@@ -41,11 +41,37 @@ make the SCENERY behind the pipes and the GROUND strip under them, for every sta
 | 15 | BRAIN FREEZE | `bg-arctic.png` + `ground-arctic.png` | `ref-arctic.jpg` | a bright arctic: icy blue sky, snowy mountains, glaciers, icebergs, a little igloo. Ground: packed snow with a blue ice crust. |
 | 16 | DISCO INFERNO | `bg-disco.png` + `ground-disco.png` | `ref-disco.jpg` | a 70s disco: dark purple club, a giant mirror ball, coloured spotlight beams, a crowd in silhouette. Ground: a lit-up dance floor of coloured glowing squares. |
 
+## Obstacles (the pipes): 2 pictures per stage, 32 in all
+The flappy pipes get their own pictures too (owner, Nov 24). Per stage:
+- `pipe-<stage>.png`, **192 x 256**: the BODY. It repeats top to bottom, so the top and bottom edges must join seamlessly. The solid obstacle is the middle **128 px** (x 32-160); the 32 px each side is see-through except small overhangs (bolts, fur, leaves). Transparent background.
+- `pipe-<stage>-end.png`, **192 x 160**: the END piece at the gap. Its **top edge is the gap edge** (the bird flies past it); it may use the full 192 px width (a rim or cap), and its bottom joins onto the body. Transparent background.
+- Draw both for the BOTTOM obstacle (end at the top, body going down). The game flips them upside down for the top obstacle, so nothing that would look wrong flipped (no text).
+- Same lighting and style as that stage's background. Templates: `pipe-template.png` + `pipe-end-template.png`.
+
+| Stage | Body (`pipe-<stage>.png`) | End (`pipe-<stage>-end.png`) |
+|---|---|---|
+| classic | a classic green pipe: glossy green tube with a darker edge and a light streak | the same pipe's wider green rim lip at the open end |
+| meat | a frosted grey steel post with a dark edge | the post end with two steel meat hooks and a hanging red cut of meat (the top obstacle shows it upside down: hooks hanging into the gap) |
+| fuzzy | a pink plush fur column with a darker pink edge | a fluffy pink pom-pom cap with a little heart |
+| pokemon | a stack of round bushy cartoon trees (one tree per 128 px, each a round green crown) | the last round tree crown of the stack |
+| hell | a column of dark red rock with bones stacked up it | a horned skull on the end |
+| space | a grey steel space-station girder with diagonal cross bracing | the girder end with a cap plate and a red beacon light |
+| sea | a thick twisting stalk of dark green kelp | kelp fronds spreading out at the end |
+| office | a stack of grey metal filing-cabinet drawers with handles | the top of the cabinet with a desk lamp and loose papers (our own office, no logos) |
+| grave | stacked grey stone tomb blocks | a weathered tombstone with a cross on top |
+| vapor | a white marble Greek column with fluting, pastel pink/cyan light | a marble column capital (top piece) with a pastel glow |
+| candy | a red-and-white diagonal striped candy cane stick | the candy cane's rounded end with a shine |
+| upside | a black column wrapped in red fleshy vines | torn vine ends and floating ash spores at the end |
+| sewer | a mossy green sewer pipe with rust bands | the pipe's open mouth dripping glowing green ooze |
+| vegas | a dark marquee column lined with gold light bulbs | a neon marquee sign top with bulbs (made-up words or none) |
+| arctic | a pale blue ice pillar with frost and cracks | the ice pillar end with hanging icicles |
+| disco | a column of glowing coloured disco-floor squares | a mirror ball cap with sparkles |
+
 ## Hand back
-Upload the 32 PNGs to Drive with an UPLOADS-GPT note and a manifest (file, size, bytes, SHA256) as usual; files under 80 KB in an
+Upload the 32 background PNGs and the 32 obstacle PNGs to Drive with an UPLOADS-GPT note and a manifest (file, size, bytes, SHA256) as usual; files under 80 KB in an
 identically named ZIP. Claude imports them losslessly to `assets/flappy/<file>.webp`.
 
 ## For Claude
 Slots in `src/data/flappySprites.js` (STAGE_ART); `flappyDisaster.js` draws `bg-<id>` (or `bg-<id>-tall` / `-fold`, picked by src/bgShape.js for the screen shape) tiled from the top to FLOOR at .25 parallax and
-`ground-<id>` tiled under FLOOR with the pipes; each stage's drawn bg()/ground() stays as the fallback. Templates
+`ground-<id>` tiled under FLOOR with the pipes; each stage's drawn bg()/ground() stays as the fallback. `pipe-<id>` + `pipe-<id>-end` (both needed) replace the drawn pipes: 96 units wide (PIPE_W 72 + overhangs), end at the gap, body tiled away from it; the top pipe is the same drawing flipped. Templates
 `python3 tools/flappy-templates.py`; references = screenshots of the drawn stages at 1100x620 (localStorage sc-flappy-stage forces one).

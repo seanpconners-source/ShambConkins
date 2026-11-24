@@ -170,7 +170,7 @@ async function flappy(s){
  const [c,x]=s.canvas(680,420,{fill:true});const fb=fullBleed(s,{bg:'#000'});
  const online=!!s.online,solo=!!s.solo&&!online,nP=solo?1:2;
  const rnd=seededRandom((s.seed||1)+':flappy-stage'),forced=(()=>{try{return localStorage.getItem('sc-flappy-stage');}catch{return null;}})(),stage=STAGES.find(t=>t.id===forced)||STAGES[Math.floor(rnd()*STAGES.length)];
- await FS.ready(['bg-'+stage.id,'bg-'+stage.id+'-tall','bg-'+stage.id+'-fold','ground-'+stage.id],3000);   // the stage's pictures (when GPT's art is in)
+ await FS.ready(['bg-'+stage.id,'bg-'+stage.id+'-tall','bg-'+stage.id+'-fold','ground-'+stage.id,'pipe-'+stage.id,'pipe-'+stage.id+'-end'],3000);   // the stage's pictures (when GPT's art is in)
  const pipeAt=course(s.seed||1),names=s.players.map(p=>p.name||'Player'),scores=[0,0],best=(()=>{try{return +localStorage.getItem('sc-flappy-best')||0;}catch{return 0;}})();
  let k=1,vw=680,t=0,phase='intro',phaseT=0,cur=0,shake=0,flash=0;
  const B={y:FLOOR*.45,vy:0,travel:0,score:0,dead:false,wing:0,next:0,started:false,deadT:0};
@@ -225,6 +225,14 @@ async function flappy(s){
   s.sprite(x,i,0,0,r*2.05,{exact:true,mood:dead?'sad':vy<-200?'happy':undefined});x.restore();}
  // a picture that repeats side to side: y0..y0+h tall, scrolled by off (world units)
  // mirror = every other copy flipped, so any picture joins without a seam (GPT's backgrounds aren't always seamless)
+ // the stage's obstacle pictures (pipe-<id> body tiled from the gap outwards + pipe-<id>-end at the gap; the top one flipped).
+ // Pictures are 2 px per unit: 192 px = 96 units, centred on the 64-unit column the bird collides with.
+ function pipePics(st){return FS.picture('pipe-'+st.id)&&FS.picture('pipe-'+st.id+'-end');}
+ function pipePic(st,px,y0,y1,top){const body=FS.picture('pipe-'+st.id),end=FS.picture('pipe-'+st.id+'-end'),k=96/body.width,bw=96,bh=body.height*k,eh=end.height*(96/end.width),X=px+PIPE_W/2-bw/2;
+  x.save();if(top){x.translate(0,y1);x.scale(1,-1);}else x.translate(0,y0);
+  const len=y1-y0;x.beginPath();x.rect(X-2,0,bw+4,len+2);x.clip();
+  for(let y=eh*.6;y<len;y+=bh)x.drawImage(body,X,y,bw,bh+.5);
+  x.drawImage(end,X,0,bw,eh);x.restore();}
  function tile(img,y0,h,off,mirror=false){const tw=h*img.width/img.height,o=((off%(tw*2))+tw*2)%(tw*2);let X=-o,k=0;for(;X<vw;X+=tw,k++){if(mirror&&k%2){x.save();x.translate(X+tw,y0);x.scale(-1,1);x.drawImage(img,0,0,tw+.5,h);x.restore();}else x.drawImage(img,X,y0,tw+.5,h);}}
  function draw(){layout();x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,s.W,s.H);
   const sh=shake>0?(Math.random()-.5)*shake*22:0;x.setTransform(k,0,0,k,sh*k,0);
@@ -235,7 +243,8 @@ async function flappy(s){
   const bgPic=BG.pick(s.W,s.H,{wide:'bg-'+stage.id,tall:'bg-'+stage.id+'-tall',fold:'bg-'+stage.id+'-fold'},FS.picture),gPic=FS.picture('ground-'+stage.id);
   if(bgPic)tile(bgPic,0,FLOOR,tr*.25,true);else{sky(x,vw,stage.sky[0],stage.sky[1]);stage.bg(x,vw,tr,t);}
   for(let i=Math.max(0,Math.floor(sc)-3);i<sc+8;i++){const p=pipeAt(i),px=p.x-tr;if(px>vw+40)break;if(px<-PIPE_W-20)continue;const gy=gapY(p,tr),h=p.gap/2;
-   if(stage.pipe){stage.pipe.call(stage,x,px,-220,gy-h,true,t,s);stage.pipe.call(stage,x,px,gy+h,FLOOR,false,t,s);}else{column(x,px,-220,gy-h,true,stage,t);column(x,px,gy+h,FLOOR,false,stage,t);}}
+   if(pipePics(stage)){pipePic(stage,px,-220,gy-h,true);pipePic(stage,px,gy+h,FLOOR,false);}
+   else if(stage.pipe){stage.pipe.call(stage,x,px,-220,gy-h,true,t,s);stage.pipe.call(stage,x,px,gy+h,FLOOR,false,t,s);}else{column(x,px,-220,gy-h,true,stage,t);column(x,px,gy+h,FLOOR,false,stage,t);}}
   if(gPic)tile(gPic,FLOOR,GROUND,tr);else stage.ground(x,vw,tr,t);
   // weather
   if(stage.snow||stage.spore||stage.ember||stage.bubble||stage.paper)for(let i=0;i<34;i++){const X=(hash(i)*vw*1.3-tr*.6*(stage.bubble?.2:1)+t*(stage.snow?20:0))%(vw*1.3),Y=stage.ember||stage.bubble?FLOOR-((t*(30+hash(i+5)*40)+hash(i+3)*FLOOR)%FLOOR):((t*(30+hash(i+5)*30)+hash(i+3)*FLOOR)%FLOOR);
