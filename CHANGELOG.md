@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.61
+
+- **The Price Is Right, all in one place:** Plinko and The Big Wheel now live inside one Arcade entry, The Price Is Right. The curtain goes up while the show's theme plays and you pick a pricing game from the title screen. (The old "Come On Down!" episode is retired; its art is the new entry's look.)
+- **New pricing game: Cliff Hangers.** Guess the prices of three small prizes; every dollar you're off sends the little yodeler one step up the mountain. Past step 25 he goes over the cliff. Make it and win a real grand prize.
+- **New pricing game: The Clock Game.** Thirty seconds on the big clock to price two real prizes exactly while the host calls "Higher!" or "Lower!". Win both for a $1,000 bonus.
+- Each pricing game keeps its own high score and scoreboard. Both new games play against the CPU, on one phone, online and on the board.
+
 ## v0.99.60
 - Warriors: heads placed by hand (Head Placer); cops stay one size; no black band in the backgrounds; spin-kick art slots (templates sent to GPT).
 
