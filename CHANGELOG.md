@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.99.54
+
+- **The Warriors run properly:** the run used to flip between two near-identical stride pictures (a wiggle with the leg out). Now it's stride, legs passing, stride, legs passing, with a little lift and lean.
+- **Cutscenes use the real sprites:** the Warriors crew wear the hero art, every gang wears its own (Riffs, Rogues, Luther, Orphans, Furies with their bats, Turnbulls, Punks, Lizzies), in the scenes and in the Conclave crowd. The backdrops are built from the stage art until their own painted ones arrive.
+- Templates for the art still missing (cops, riot cops, Cyrus, Hi-Hats, Boppers, cutscene backdrops) went to GPT.
+
 ## v0.99.53
 
 - **Plinko and The Big Wheel:** the show's main theme plays over the curtain when the game opens, then fades into the game music. Plinko says "And here comes the first Plinko chip!" on each contestant's first chip.
