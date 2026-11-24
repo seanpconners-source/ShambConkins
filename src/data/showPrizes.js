@@ -26,10 +26,14 @@ const PRIZES=[
  ['silly-putty','Silly Putty, 6 eggs',12,'🥚'],['koosh','Koosh ball',10,'🔴'],['nintendo-controller','Nintendo Switch Pro Controller',75,'🎮'],
  ['spam','Spam, a case of 12 cans',50,'🥫'],['twinkies','Twinkies, 4 boxes',24,'🧁'],['rice-a-roni','Rice-A-Roni, 12 boxes',25,'🍚'],
  ['heinz','Heinz ketchup, 6 big bottles',30,'🍅'],['camp-stove','Backpacking camp stove',40,'🔥']];
+// GRAND PRIZES for the pricing games that play for one big prize (Cliff Hangers): real products, US starting price / list price
+// checked Nov 24 2026 (Sea-Doo's US page: 2026 Spark from $6,999; MotoHunt/Autotrader: 2026 Vespa Primavera 50 base MSRP $4,449;
+// onepeloton.com: Bike+ $2,695 list). Photo slot = the same prize:<id> (assets/prizes/<id>.webp) when one is added.
+const GRAND_PRIZES=[['sea-doo-spark','a Sea-Doo Spark personal watercraft',6999,'🚤'],['vespa-primavera','a Vespa Primavera 50 scooter',4449,'🛵'],['peloton-bike-plus','a Peloton Bike+',2695,'🚴']];
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 const imgs=new Map();
 // the prize's photo once it has loaded (null until then / when missing: draw the emoji)
 function prizePhoto(id){const url=USER['prize:'+id];if(!url||typeof Image==='undefined')return null;let e=imgs.get(id);
  if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(id,e);}return e.ok?e.img:null;}
 const hasPhoto=id=>!!USER['prize:'+id];
-Object.assign(exports,{PRIZES,PRICES_AS_OF,prizePhoto,hasPhoto});
+Object.assign(exports,{GRAND_PRIZES,PRIZES,PRICES_AS_OF,prizePhoto,hasPhoto});

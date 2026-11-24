@@ -12,6 +12,7 @@ function cover(g,img,W,H){const k=Math.max(W/img.width,H/img.height),w=img.width
 // the studio behind everything; kind 'plinko' | 'wheel'
 function drawStage(g,W,H,kind,t){const pic=require("src/bgShape.js").pick(W,H,{tall:`stage-${kind}-tall`,wide:`stage-${kind}`,fold:`stage-${kind}-fold`},SS.picture);
  if(pic){cover(g,pic,W,H);return;}
+ if(kind==='cliff')return drawAlpine(g,W,H,t);
  const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,kind==='wheel'?'#1a0a3a':'#2a0a2e');bg.addColorStop(.62,kind==='wheel'?'#3a1666':'#5a1240');bg.addColorStop(.63,'#1a1410');bg.addColorStop(1,'#060504');g.fillStyle=bg;g.fillRect(0,0,W,H);
  // big round bulb discs and colour stripes like a 70s set
  const fy=H*.63,cols=['#ff4fa0','#ffb12b','#2fd0ff','#7dff5a','#b05cff','#ff5a3c'];
@@ -25,6 +26,16 @@ function drawStage(g,W,H,kind,t){const pic=require("src/bgShape.js").pick(W,H,{t
  const fl=g.createLinearGradient(0,fy,0,H);fl.addColorStop(0,'#3a2c1c');fl.addColorStop(1,'#0c0805');g.fillStyle=fl;g.fillRect(0,fy+4,W,H-fy);
  g.globalAlpha=.12;g.fillStyle='#ffe9a8';for(let i=0;i<7;i++){g.beginPath();g.ellipse(W*(i+.5)/7,fy+(H-fy)*.25,W*.05,(H-fy)*.1,0,0,TAU);g.fill();}g.globalAlpha=1;
  g.fillStyle='#000';for(let i=0;i<40;i++){const x=W*(i+.5)/40,y=H-2+Math.sin(i*2.3)*3,r=W/40*.62;g.beginPath();g.arc(x,y,r,Math.PI,0);g.fill();}}
+// Cliff Hangers' set (drawn until stage-cliff art arrives): a painted alpine sky backdrop framed by bulb-lit set pieces, stage floor
+function drawAlpine(g,W,H,t){const fy=H*.66,sky=g.createLinearGradient(0,0,0,fy);sky.addColorStop(0,'#2a6fc0');sky.addColorStop(1,'#bfe4ff');g.fillStyle=sky;g.fillRect(0,0,W,fy);
+ g.fillStyle='rgba(255,255,255,.85)';for(let i=0;i<6;i++){const cx=((i*.21+t*.004)%1.2-.1)*W,cy=H*(.08+.07*(i%3)),r=Math.min(W,H)*.05;g.beginPath();g.arc(cx,cy,r,0,TAU);g.arc(cx+r*1.1,cy+r*.2,r*.8,0,TAU);g.arc(cx-r*1.1,cy+r*.25,r*.7,0,TAU);g.fill();}
+ g.fillStyle='#d8e8f6';g.beginPath();g.moveTo(0,fy);for(let i=0;i<=8;i++)g.lineTo(W*i/8,fy-H*(.12+.1*((i*7)%3)/2));g.lineTo(W,fy);g.fill();
+ g.fillStyle='#3f7a46';g.beginPath();g.moveTo(0,fy);for(let i=0;i<=12;i++)g.lineTo(W*i/12,fy-H*(.03+.025*((i*5)%3)));g.lineTo(W,fy);g.fill();
+ // bulb-lit frame pillars at the sides and a marquee across the top
+ const pw=Math.max(14,W*.035);for(const x0 of [0,W-pw]){g.fillStyle='#5a1a6a';g.fillRect(x0,0,pw,fy);for(let y=pw*.6;y<fy;y+=pw*.9){const on=(Math.floor(y/pw)+Math.floor(t*6))%3===0;g.fillStyle=on?'#fff3b0':'#8a6a2a';g.beginPath();g.arc(x0+pw/2,y,pw*.22,0,TAU);g.fill();}}
+ const n=Math.round(W/22);for(let i=0;i<n;i++){const on=(i+Math.floor(t*8))%4<2;g.fillStyle=on?'#fff3b0':'#6e5420';g.beginPath();g.arc(W*(i+.5)/n,Math.max(6,H*.012),Math.max(2,W/n*.22),0,TAU);g.fill();}
+ const fl=g.createLinearGradient(0,fy,0,H);fl.addColorStop(0,'#3a2c1c');fl.addColorStop(1,'#0c0805');g.fillStyle=fl;g.fillRect(0,fy,W,H-fy);
+ g.globalAlpha=.12;g.fillStyle='#ffe9a8';for(let i=0;i<7;i++){g.beginPath();g.ellipse(W*(i+.5)/7,fy+(H-fy)*.25,W*.05,(H-fy)*.1,0,0,TAU);g.fill();}g.globalAlpha=1;}
 // the curtain going up (open 0 = shut, 1 = gone)
 function drawCurtain(g,W,H,open,t){if(open>=1)return;const y=-H*open*open*1.05,pic=SS.picture('curtain');g.save();g.translate(0,y);
  if(pic)cover(g,pic,W,H);else{const n=Math.ceil(W/38);for(let i=0;i<n;i++){const x=i*W/n,gr=g.createLinearGradient(x,0,x+W/n,0);gr.addColorStop(0,'#6a0a1e');gr.addColorStop(.5,'#c8183a');gr.addColorStop(1,'#5a0618');g.fillStyle=gr;g.fillRect(x,0,W/n+1,H);}

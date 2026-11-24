@@ -1,4 +1,4 @@
-# Plinko + The Big Wheel: art for GPT
+# The Price Is Right games (Plinko, The Big Wheel, Cliff Hangers): art for GPT
 
 Two TV-game-show games: **Plinko** (`plinko-show`) and **The Big Wheel** (`big-wheel`). They share one studio, one host and two
 show assistants. Everything is **our own**: an original host and original assistants (not any real host, model or celebrity),
@@ -36,3 +36,20 @@ our own logos (no real show logo), our own studio set. The look: a big, bright 1
 | `model` | 1536x1024 | Show assistant 1, full body, three poses (PRESENT with an open arm, WAVE, CLAP): an original character, glamorous, in a sparkly sequinned evening gown. Feet on the dot. Transparent. |
 | `model-2` | 1536x1024 | Show assistant 2: a different original person and gown colour, same three poses. Transparent. |
 | `nametag` | 512x256 | A contestant's price-tag-shaped name tag (white card, red border, a hole with a string), BLANK (the game writes the name). Transparent around. |
+
+## Cliff Hangers (`cliff-hangers`, inside The Price Is Right)
+
+Lay it out **just like the show's Cliff Hangers**: a big painted alpine mountain prop with a trail climbing from the bottom left to
+a flat ledge at the top right that ends in a sheer cliff, and a little yodeling mountain climber in lederhosen who walks up it one
+step per dollar. Same layout and characters as the show, painted fresh in our style (the classic-era show look GPT used for the
+host and assistants). Templates: `cliff-*` and `stage-cliff*` in `gameshow-templates/` (`node tools/gameshow-templates.mjs --only='cliff-*,stage-cliff*'`).
+
+| Slot | Size | Prompt (after the style text) |
+|---|---|---|
+| `cliff-mountain` | 1600x1000 | The Cliff Hangers mountain prop seen straight on, like the show's: snowy grey-blue alpine peaks behind, a big brown rocky climbing face in front with a pale trail running EXACTLY along the template's pink line from STEP 0 (bottom left, among pine trees) up to STEP 25, then a short flat snowy ledge to the CLIFF EDGE and a sheer vertical cliff face down the right side. Keep the dashed band under the trail plain rock: the game puts the 26 step ticks and the numbered signs 0, 5, 10, 15, 20, 25 there. NO numbers or text in the picture. Transparent around the mountain. |
+| `cliff-climber` | 2048x320 | The show's little mountain climber (the yodeler): a cheerful small man in brown lederhosen with braces, white shirt, knee socks, hiking boots, a green Tyrolean hat with a feather, a small backpack and a walking stick. 8 poses, one per 256x320 box, feet on the pink dot, facing RIGHT (up the mountain): STAND, WALK 1-4 (a full walking cycle), YODEL (arms up, mouth open), TEETER (on the edge, arms windmilling), FALL (upright, arms and legs flailing; the game spins him as he drops). Same size in every box (head near the top of the box). Transparent. |
+| `cliff-stand` | 600x600 | A small-prize pedestal like the show's prize tables: a glossy purple/gold podium with a round top (the game stands the prize photo on the pink dot), a dark lit price display window on the front exactly in the pink box (the game prints the guess and the price in it), a row of bulbs below. Transparent around. |
+| `cliff-logo` | 1400x500 | **CLIFF HANGERS** as the show's game sign: chunky letters in icy blue and white with chasing bulbs, maybe a little snowcap on the letters. Transparent around. |
+| `stage-cliff` | 1920x1080 | The Cliff Hangers studio, wide: the show's set with a painted alpine sky backdrop (blue sky, clouds, distant snowy mountains, a green meadow line), bulb-lit set pillars at the sides, a shiny stage floor along the pink line. The mountain prop stands in the left dashed box (keep it calm there), the prize stands and keypad on the right. |
+| `stage-cliff-tall` | 1080x1920 | The same studio for an upright phone: mountain in the top dashed box, prizes below. |
+| `stage-cliff-fold` | 1504x1670 | The same studio for near-square screens (Sean's open Fold). |

@@ -15,6 +15,7 @@ const {fullBleed}=require("src/engines/fullBleed.js");
 const TAU=Math.PI*2;
 // the pricing games: id (= its own game id, for scores), card title, its show-art logo slot, one line, the engine
 const PRICING_GAMES=[
+ {id:'cliff-hangers',title:'CLIFF HANGERS',logo:'cliff-logo',sub:'Every dollar off is a step: don\'t let him fall off the mountain',col:'#2a7ab8',run:s=>require("src/engines/cliffHangers.js").cliffHangers(s)},
  {id:'plinko-show',title:'PLINKO',logo:'plinko-logo',sub:'Price small prizes for chips, drop them for up to $50,000',col:'#1b4fd0',run:s=>require("src/engines/plinkoShow.js").plinko(s)},
  {id:'big-wheel',title:'THE BIG WHEEL',logo:'wheel-logo',sub:'Spin! Closest to $1.00 without going over',col:'#c8102e',run:s=>require("src/engines/bigWheel.js").bigWheel(s)}];
 const BG='keyart:price-bid-off',LOGO='keyart:price-bid-off-logo';

@@ -19,14 +19,21 @@ async function play(which){
  const picked=await page.evaluate(()=>window.ShambConkins.store.session?.debug?.chosen??-1);check(games[picked]===which,'a real tap on its card picks '+which);
  await page.waitForFunction(()=>{const d=window.ShambConkins.store.session?.debug;return d&&!d.menu&&d.mode;},null,{timeout:15000});
  await page.waitForTimeout(2500);await page.screenshot({path:screenshotPath(`tpir-${which}-${tag}.png`)});
+ if(which==='cliff-hangers'){ // real taps on the keypad: type a guess that's off, then watch him climb
+  await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.mode==='guess'&&window.ShambConkins.store.session.debug.keys.length,null,{timeout:30000});
+  const q=await page.evaluate(()=>{const D=window.ShambConkins.store.session.debug;return D.P[D.cur].prizes[D.pk];}),g=String(Math.max(1,q.price-7));
+  const ks=await page.evaluate(()=>window.ShambConkins.store.session.debug.keys);for(const ch of [...g,'OK']){const k=ks.find(k=>k.l===ch);await page.mouse.click(box.x+k.x+k.w/2,box.y+k.y+k.h/2);await page.waitForTimeout(120);}
+  await page.waitForTimeout(3200);await page.screenshot({path:screenshotPath(`tpir-cliff-climb-${tag}.png`)});
+  const st=await page.evaluate(()=>{const D=window.ShambConkins.store.session.debug;return {steps:D.P[0].steps,guess:D.P[0].prizes[0].guess,pos:D.climber.pos};});
+  check(st.guess===+g&&st.pos>0,`keypad guess $${g} on a $${q.price} prize: climber at ${st.pos.toFixed(1)} of ${q.price-+g}`);}
  const t0=Date.now();let end='';
  while(Date.now()-t0<240000){const st=await page.evaluate(()=>{const S=window.ShambConkins.store,d=document.getElementById('dialog');if(d.open&&!S.session)return {done:d.innerText.replace(/\s+/g,' ').slice(0,160)};const D=S.session?.debug;if(!D)return {};
-   D.hurry=true;if(D.price&&D.price.res==null){D.pick(0);}else if(D.mode==='aim'){D.drop();}else if(D.mode==='pull'){D.spin(14);}else if(D.mode==='choose'){D.choose('stay');}return {mode:D.mode};});
+   D.hurry=true;if(D.mode==='guess'&&D.P&&D.guess){const q=D.P[D.cur].prizes[D.pk];D.guess(Math.max(1,q.price+Math.round((Math.random()-.5)*20)));}else if(D.price&&D.price.res==null){D.pick(0);}else if(D.mode==='aim'){D.drop();}else if(D.mode==='pull'){D.spin(14);}else if(D.mode==='choose'){D.choose('stay');}return {mode:D.mode};});
   if(st.done){end=st.done;break;}await page.waitForTimeout(250);}
- check(/\$|wins|WIN|tie/i.test(end),`${which} plays to the result card: `+end.slice(0,100));
+ check(/\$|wins|WIN|tie|takes it|beats/i.test(end),`${which} plays to the result card: `+end.slice(0,100));
  const best=await page.evaluate(id=>window.ShambConkins.store.profile.soloBest?.[id]||null,which);check(best!==null,`the result is filed under ${which}`);
  await page.evaluate(()=>{const d=document.getElementById('dialog');if(d.open)d.close();});
  }
-await play('plinko-show');await play('big-wheel');
+await play('cliff-hangers');await play('plinko-show');await play('big-wheel');
 check(!errors.length,'no page errors '+errors.slice(0,3).join(' | '));
 await browser.close();console.log(bad?`${bad} problem(s)`:'TPIR OK');process.exit(bad?1:0);
