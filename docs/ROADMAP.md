@@ -344,8 +344,8 @@ Order to be set by the triage. Current candidates:
 - **D5** `[verify]` (Nov 2 night: floating stick per half + tap/2nd finger/BOMB button, smooth walking with corner sliding, Bomberman bodies; arena look unchanged) Bomberman: controls too hard; SNES Super Bomberman style with character heads.
 - **D6** `[verify]` (Nov 2 night: classic ghost AI + waves + frightened, 75% ghost speed, arcade maze/ghosts/sounds; heads stay as the chompers) Pac-Maze Duel: much closer to classic Pac-Man (maze feel, ghost behavior, power pellets, speeds, sounds).
 - **D7** `[todo]` TowerFall Arrow Arena: confusing, not fun; proper competitive archery game.
-- **D8** `[todo]` Rocky boxing: two-player Punch-Out!! style.
-- **D9** `[todo]` (soon; Nov 18) Raiders Boulder Run: huge revamp, a lot more like the real Temple Run. Guy body = Indiana Jones, girl body = Lara Croft (Tomb Raider).
+- **D8** `[verify]` (v0.99.45: Fight Night = Punch-Out style career, 2P, online) Rocky boxing: two-player Punch-Out!! style.
+- **D9** `[verify]` (v0.99.26-31: 3D Temple Run with Indy + Lara, zones, chasers) (soon; Nov 18) Raiders Boulder Run: huge revamp, a lot more like the real Temple Run. Guy body = Indiana Jones, girl body = Lara Croft (Tomb Raider).
 - **D10** `[todo]` South Park Dodgeball: decent; move toward Super Dodge Ball (NES).
 - **D11** `[verify]` (Nov 4: reworked rather than removed: real Punto Banco with the squeeze, see G1) Baccarat: rework a lot or remove.
 
