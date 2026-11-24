@@ -24,7 +24,7 @@ only from a real source (the show/film/game, or an interview for real people). W
 - Unlimited Savory Systems: Lydia (`uss-lydia`)
 - Unlimited Savory Systems: Steve (`uss-steve`)
 
-## Never speak on screen (left quiet on purpose) (21)
+## Never speak on screen (left quiet on purpose) (23)
 
 - Alien: Xenomorph (`xeno`)
 - Battle Royale: Kazuo Kiriyama (`kiriyama`)
@@ -47,8 +47,10 @@ only from a real source (the show/film/game, or an interview for real people). W
 - Vanderpump Rules: Giggy (`vpr-giggy`)
 - Walkabout Mini Golf: Lost Ball (`walkabout-ball`)
 - Walkabout Mini Golf: Mini Golf Skeleton (`walkabout-skeleton`)
+- Son of the Mask: Alvey Avery (`alvey-avery`)
+- Godzilla: Godzilla (`godzilla`)
 
-## No verified line found yet (160)
+## No verified line found yet (173)
 
 - *NSYNC: Chris · *NSYNC (`nsync-chris`)
 - *NSYNC: JC · *NSYNC (`nsync-jc`)
@@ -210,3 +212,17 @@ only from a real source (the show/film/game, or an interview for real people). W
 - Vanderpump Rules: Tom Schwartz (`vpr-tom-schwartz`)
 - Ween: Dean Ween (`ref-deanween`)
 - Ween: Gene Ween (`ref-geneween`)
+- The Dirty Dozen: Robert Jefferson (`dd-jefferson`)
+- The Dirty Dozen: Pedro Jiminez (`dd-jiminez`)
+- The Dirty Dozen: Glenn Gilpin (`dd-gilpin`)
+- The Dirty Dozen: Roscoe Lever (`dd-lever`)
+- The Dirty Dozen: Seth Sawyer (`dd-sawyer`)
+- The Dirty Dozen: Milo Vladek (`dd-vladek`)
+- The Dirty Dozen: Tassos Bravos (`dd-bravos`)
+- The Eric Andre Show: Eric André (`eric-andre`)
+- Psycho Goreman: Psycho Goreman (`psycho-goreman`)
+- Who Charted?: Howard Kremer (`howard-kremer`)
+- Who Charted?: Kulap Vilaysack (`kulap-vilaysack`)
+- YouTube: Mullet Reviews (`mullet-reviews`)
+- YouTube: Shoenice (`shoenice`)
+
