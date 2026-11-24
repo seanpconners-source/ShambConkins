@@ -568,7 +568,6 @@
   "src/data/flappySprites.js",
   "src/engines/warriorsDD.js",
   "src/engines/dd/body.js",
-  "src/engines/dd/stages.js",
   "src/data/ddSprites.js",
   "src/engines/penaltyShootout.js",
   "src/engines/pk/art.js",
@@ -584,7 +583,9 @@
   "src/data/tchaseSprites.js",
   "src/engines/terminatorChase.js",
   "src/engines/tchase/sound.js",
-  "src/engines/tchase/cut.js"
+  "src/engines/tchase/cut.js",
+  "src/engines/dd/story.js",
+  "src/engines/dd/scenes.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

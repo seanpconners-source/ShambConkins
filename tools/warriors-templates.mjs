@@ -11,7 +11,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outDir = path.resolve(process.argv[2] || path.join(root, 'docs/art-for-gpt/warriors-templates'));
 fs.mkdirSync(outDir, {recursive: true});
 const mods = {'src/data/userPortraits.js': 'exports.USER_PORTRAITS={};', 'src/utils.js': 'exports.clamp=(v,a,b)=>Math.max(a,Math.min(b,v));exports.seededRandom=()=>Math.random;'};
-for (const f of ['src/data/ddSprites.js', 'src/engines/dd/body.js', 'src/engines/dd/stages.js']) mods[f] = fs.readFileSync(path.join(root, f), 'utf8');
+for (const f of ['src/data/ddSprites.js', 'src/engines/dd/body.js', 'src/engines/dd/story.js', 'src/engines/dd/scenes.js']) mods[f] = fs.readFileSync(path.join(root, f), 'utf8');
 const browser = await chromium.launch(browserLaunchOptions());
 const page = await browser.newPage();
 await page.setContent('<canvas id=c></canvas>');
