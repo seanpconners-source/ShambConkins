@@ -219,7 +219,7 @@ async function warriorsDD(s){
   for(let ai=0;ai<CH[n].areas.length;ai++){const res=await playArea(n,ai);if(!s.alive)return 'quit';if(res!=='clear')return res;}
   return 'clear';}
  async function playArea(n,ai){areaNo=ai;A=SY_.buildArea(n,ai,seed);
-  const want=['far-','wall-','floor-'].map(p=>p+A.kind).concat(SC.FALLBACK[A.kind]?['far-','wall-','floor-'].map(p=>p+SC.FALLBACK[A.kind]):[]);
+  const want=['far-','wall-','floor-'].map(p=>p+A.kind).concat(SC.FALLBACK[A.kind]&&!DS.has('far-'+A.kind)?['far-','wall-','floor-'].map(p=>p+SC.FALLBACK[A.kind]):[]);
   want.push(...new Set(A.blocks.map(b=>'prop-'+b.kind)));if(A.events.some(e=>e.kind==='bus'))want.push('bus');want.push('run-p1','run-p2');
   await DS.ready(want,2500);
   cam={x:0,lockA:-1e9,lockB:1e9};F=[];shots=[];fx=[];fires=[];wave=-1;waveQ=[];bossOn=false;bossF=null;target=null;bus=null;lurch=0;riffsIn=false;bossT=0;
@@ -809,7 +809,7 @@ async function warriorsDD(s){
  const seenCut=new Set();
  // a story scene before a chapter (not online or on the board: those jump straight into a fight); each one once per game
  function playCut(key){if(online||board||seenCut.has(key))return Promise.resolve();seenCut.add(key);musicOn=false;
-  return DS.ready([...CUT.CUT_PICTURES.map(n=>'cut-'+n),...Object.keys(DS.SHEETS),...CUT.stagePictures(),...CUT.djPictures()],3000).then(()=>new Promise(r=>{phase='cut';cuts.start(key,r);}));}
+  return DS.ready([...CUT.CUT_PICTURES.map(n=>'cut-'+n),...Object.keys(DS.SHEETS),...CUT.stagePictures(DS),...CUT.djPictures()],3000).then(()=>new Promise(r=>{phase='cut';cuts.start(key,r);}));}
  // ---- title + menus: START / CONTINUE / CHAPTERS / MOVES
  const ui={btns:[],moves:false,
   tap(p){for(const b of ui.btns)if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){b.act();return true;}if(ui.moves){ui.moves=false;return true;}

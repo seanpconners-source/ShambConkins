@@ -168,11 +168,20 @@ function drawTrainSide(g,X,y,B,t,open){const L=380,h=B-y+6;rect(g,'#9ca4a8',X,y-
  for(let k=0;k<6;k++){rect(g,'#ffe8a0',X+14+k*60,y-h*.7,34,h*.28);}
  for(let k=0;k<3;k++){const dx=X+44+k*120,o=open?14:0;rect(g,'#2c3034',dx-o,y-h*.82,18,h*.8);rect(g,'#2c3034',dx+18+o,y-h*.82,18,h*.8);if(open){rect(g,'#ffe8a0',dx+4,y-h*.8,28,h*.76);}}
  g.font='900 10px "SC Nunito",sans-serif';g.fillStyle='#fff';g.textAlign='left';g.fillText('CONEY ISLAND',X+8,y-h*.78);}
+// wall picture band top (fraction of BACK); a train's back wall is the whole car side
+const WALL_TOP={train:.03,trainDawn:.03};
+// how fast the view outside a moving train scrolls (world units per second at parallax .25: x4 on screen)
+const RUSH={train:3200,trainDawn:1400};
+// the connecting doors at the car ends (enemies come through them), drawn over a wall picture
+function carDoors(g,c){const y0=c.B*.08,wy=c.B*.22;for(const dx of c.A.doors||[]){const X=dx-c.cam;if(X<-60||X>c.vw+60)continue;rect(g,'#5c6468',X-22,y0,44,c.B-y0);rect(g,'#2c3034',X-14,y0+12,28,c.B-y0-12);rect(g,'#0c0c10',X-8,wy+4,16,22);g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1.5;g.strokeRect(X-22,y0,44,c.B-y0);}}
 // draw an area's backdrop (far + wall + floor): pictures first, else the drawn painter
 function drawArea(g,A,camX,vw,BACK,FRONT,t){const c={A,cam:camX,vw,B:BACK,F:FRONT,t},P=K[A.kind]||K.elstreet;
  const far=pic(A.kind,'far'),wall=pic(A.kind,'wall'),floor=pic(A.kind,'floor');
- if(far&&!A.moving)tilePic(g,far,camX,.25,vw,-40,BACK*.8+40);else P.far(g,c);
- if(wall)tilePic(g,wall,camX,1,vw,BACK*.46,BACK*.54);else P.wall(g,c);
+ // a moving train: the tunnel / the dawn city outside rushes past the windows by the clock
+ if(far)tilePic(g,far,camX+(A.moving?t*(RUSH[A.kind]||600):0),.25,vw,-40,BACK*.8+40);else P.far(g,c);
+ // the wall band; a subway car interior fills it from the ceiling down (WALL_TOP)
+ const wt=WALL_TOP[A.kind]??.46;
+ if(wall){tilePic(g,wall,camX,1,vw,BACK*wt,BACK*(1-wt));if(A.moving)carDoors(g,c);}else P.wall(g,c);
  if(floor)tilePic(g,floor,camX,1,vw,BACK,FRONT-BACK+60);else P.floor(g,c);
  // pits: open graves, a trench in the rail yard
  for(const [a,b,d0,d1] of A.pits||[]){const X0=a-camX,X1=b-camX;if(X1<-30||X0>vw+30)continue;const y0=BACK+Math.max(0,d0),y1=Math.min(FRONT,BACK+d1),sk=(y1-y0)/(FRONT-BACK)*18;

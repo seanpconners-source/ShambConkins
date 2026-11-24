@@ -241,5 +241,6 @@ const CUT_PICTURES=['conclave','riffs','street','lizzies','park','subway','restr
 const CUT_STAGE={conclave:['conclave','forest'],riffs:['gothic'],street:['tenement','elstreet','nyc'],lizzies:['apartment'],park:['riverside','park','forest'],
  subway:['station','platform','gotham'],restroom:['restroom'],dawn:['trainDawn'],coney:['boardwalk','beach']};
 const djPictures=()=>Object.values(DJ_PICS).flatMap(n=>[n,...DJD.DJ.frames.map(f=>n+'-'+f)]);
-const stagePictures=()=>[...new Set(Object.values(CUT_STAGE).flat())].flatMap(n=>['far-'+n,'wall-'+n,'floor-'+n]);
+// only for backdrops whose painted cut-<bg> isn't in the build
+const stagePictures=(DS)=>[...new Set(Object.entries(CUT_STAGE).filter(([bg])=>!DS.has('cut-'+bg)).flatMap(([,v])=>v))].flatMap(n=>['far-'+n,'wall-'+n,'floor-'+n]);
 Object.assign(exports,{makeCuts,CUTS,CAST,GANGS,CUT_PICTURES,CUT_STAGE,stagePictures,djPictures});

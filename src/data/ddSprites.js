@@ -113,9 +113,11 @@ const MAP_TAGS={conclave:'THE CONCLAVE: a gold sunburst patch',turnbull:"TURNBUL
  furies:'BASEBALL FURIES: a baseball bat crossed with a baseball',lizzies:'LIZZIES: a pink lipstick kiss tag',union:'UNION SQUARE: a station sign stencil',punks:'PUNKS: a roller skate tag',ride:'THE RIDE HOME: a dawn sun tag',coney:'CONEY ISLAND: a Ferris wheel tag'};
 for(const [id,w] of Object.entries(MAP_TAGS))PICTURES['map-tag-'+id]={w:512,h:192,what:`${w}, written out in big hand-painted letters (only the words given), transparent background`};
 const imgs=new Map();let ver=0;
-function picture(name){const url=USER['ww:'+name];if(!url||typeof Image==='undefined')return null;
+// the build lowercases file names (far-trainDawn.webp -> ww:far-traindawn)
+const key=name=>'ww:'+name.toLowerCase();
+function picture(name){const url=USER[key(name)];if(!url||typeof Image==='undefined')return null;
  let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;ver++;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}
-const has=name=>!!USER['ww:'+name];
+const has=name=>!!USER[key(name)];
 function ready(names,ms=4000){for(const n of names)if(has(n))picture(n);const t0=Date.now();return new Promise(r=>{const go=()=>{if(names.every(n=>!has(n)||imgs.get(n)?.ok)||Date.now()-t0>ms)return r();setTimeout(go,60);};go();});}
 // the cell of a pose on a sheet (null if the sheet has no such pose)
 function cellOf(sheet,pose){const d=SHEETS[sheet];if(!d)return null;const i=d.poses.indexOf(pose);if(i<0)return null;return {sx:(i%COLS)*CELL,sy:Math.floor(i/COLS)*CELL};}
