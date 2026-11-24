@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.59
+
+- **The Warriors, round 2 art:** Sean and Amber run with their own 8-frame run, heroes and every gang swing bats and pipes with their own poses, the Punks wear roller skates in every pose, new bat/pipe/chain/knife/whip pictures, painted street props and graves (bigger now), and the Turnbull AC's battered blue-gray graffiti bus.
+- **Subway map art:** the chapter map is now a worn New York City subway poster on a grimy tiled station wall, with a painted gang tag at every stop.
+- **Flappy Disaster:** all 16 stages have their own painted obstacles (meat hooks, fur, hedges, bone pillars, girders, kelp, filing cabinets, gravestones, candy canes, disco tiles and more).
+- **Fix:** the Warriors chapter card no longer glitches while the first area loads.
+
 ## v0.99.58
 
 - **Zach joins the game:** Zach from Unlimited Savory Systems, with his own normal, sad and happy pictures. You can meet him at the lab, and a surprise waits for a friend.
