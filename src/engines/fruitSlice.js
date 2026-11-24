@@ -31,27 +31,37 @@ function fruitSwipeStep(drag,p,now,W,H){
 }
 // Normalized launch positions and ballistic heights keep both turns fair on any screen.
 function fruitCourse(seed,count=45){const random=seededRandom(seed),gravity=1.9;return Array.from({length:count},(_,i)=>{const peak=[.14,.36,.58][i%3]+random()*.14;return {time:i*.65,x:.14+random()*.72,vx:(random()-.5)*.2,vy:-Math.sqrt(2*gravity*(1.07-peak)),peak,gravity,kind:Math.floor(random()*6),bomb:random()<.14};});}
-// The "fruit" is the opponent's head: whole heads fly up looking smug, sliced heads split into two sad, squished halves.
-function drawHeadHalf(s,x,player,cx,cy,size,side,angle,squish){x.save();x.translate(cx,cy);x.rotate(angle);x.scale(1+squish*.18,1-squish*.22);x.beginPath();x.rect(side<0?-size:0,-size,size,size*2);x.clip();s.sprite(x,player,0,0,size,{exact:true,mood:'sad'});
+// The "fruit" is whatever lives in this game's world (src/engines/fruitThemes.js: a Crappy Crush world or a Flappy Disaster
+// stage picked from the seed, its items and its characters' heads); a sliced one splits into two squished halves.
+function drawHalf(x,draw,cx,cy,size,side,angle,squish){x.save();x.translate(cx,cy);x.rotate(angle);x.scale(1+squish*.18,1-squish*.22);x.beginPath();x.rect(side<0?-size:0,-size,size,size*2);x.clip();draw(x,0,0,size);
  x.strokeStyle='#ffffffcc';x.lineWidth=Math.max(2,size*.05);x.beginPath();x.moveTo(0,-size*.42);x.lineTo(0,size*.42);x.stroke();x.restore();}
 async function fruitslice(s){
  const[c,x]=s.canvas(680,380,{fill:true});s.body.classList.add('drag-arena-body');
  const course=fruitCourse(s.seed),scores=[0,0],colors=['#ff5d73','#ffb347','#ff3b3b','#ffe066','#7ee081','#f78fb3'],moods=['happy','silly','thinking','normal','walking','happy'];
  let actor=0,phase='slice',clock=0,fruits=[],pieces=[],trail=[],drag=null,next=0,bombs=0,combo=0,shake=0,popups=[];
+ // this game's world (both turns the same): background + the things that fly up
+ let TH=null,theme=null,objs=[],HF=null;try{TH=require("src/engines/fruitThemes.js");theme=TH.pickTheme(s.online?s.seed:s.seed+':'+Math.random());/* a new world every game; online from the shared seed so both phones match */objs=TH.objectsOf(theme);HF=require("src/headFacts.js");}catch{}
+ const orng=seededRandom(String(s.seed)+':fruit-objs'),objOf=course.map(()=>objs.length?objs[Math.floor(orng()*objs.length)]:null);
+ const isChar=o=>o?.type==='char';
+ // draw one flying thing centred at (cx,cy) about `size` tall; false when its picture isn't ready
+ function drawObj(o,mood,g,cx,cy,size){if(!o||!TH)return false;
+  if(o.type==='item'){const im=TH.itemImg(o.id);if(!im)return false;const sc=size*1.05/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*sc,h=im.naturalHeight*sc;g.drawImage(im,cx-w/2,cy-h/2,w,h);return true;}
+  const sp=HF?.faceSprite(o.id,mood,size*.62,1)||HF?.faceSprite(o.id,'normal',size*.62,1);if(!sp)return false;g.drawImage(sp.cv,cx+sp.x,cy+sp.y);return true;}
+ const itemMood=['happy','silly','thinking','normal','angry','happy'];
  const radius=()=>clamp(Math.min(s.W,s.H)*.085,22,46),target=()=>1-actor;
  function clear(){if(drag)s.release({pointerId:drag.id});drag=null;combo=0;}
  function swipe(a,b){
   if(s.paused||phase!=='slice')return;trail.push({x:b.x/s.W,y:b.y/s.H,age:0});
   for(const f of fruits){if(f.cut||sliceDistance({x:f.x*s.W,y:f.y*s.H},a,b)>radius()+3)continue;f.cut=true;
    if(f.bomb){bombs++;scores[actor]=Math.max(0,scores[actor]-25);combo=0;shake=.35;s.react?.(actor,'sad');s.react?.(target(),'happy');sound('lose');popups.push({x:f.x,y:f.y,text:'-25',color:'#ff8a5c',age:0});for(let j=0;j<16;j++)pieces.push({x:f.x,y:f.y,vx:Math.cos(j)*.3,vy:Math.sin(j)*.45,age:0,color:j%2?'#efbc64':'#ff5a36',spark:true});}
-   else{combo++;const gain=10+(combo>=3?5:0);scores[actor]+=gain;sound(combo>=3?'pickup':'tap');s.react?.(target(),'sad');if(combo>=3)s.react?.(actor,'happy');
+   else{combo++;const o=f.o||objs[f.kind%Math.max(1,objs.length)],gain=(isChar(o)?15:10)+(combo>=3?5:0);scores[actor]+=gain;sound(combo>=3?'pickup':'tap');s.react?.(target(),'sad');if(combo>=3)s.react?.(actor,'happy');
     const angle=Math.atan2(b.y-a.y,b.x-a.x)+Math.PI/2;popups.push({x:f.x,y:f.y,text:combo>=3?`+${gain} COMBO x${combo}`:`+${gain}`,color:combo>=3?'#ffe066':'#fff',age:0});
-    for(const side of [-1,1])pieces.push({x:f.x,y:f.y,vx:f.vx+side*.16,vy:f.vy-.25,age:0,side,head:true,angle,spin:side*(2.5+f.kind*.3)});
+    for(const side of [-1,1])pieces.push({x:f.x,y:f.y,vx:f.vx+side*.16,vy:f.vy-.25,age:0,side,head:true,o,angle,spin:side*(2.5+f.kind*.3)});
     for(let j=0;j<10;j++)pieces.push({x:f.x,y:f.y,vx:Math.cos(j*2.4)*(.12+j*.015),vy:Math.sin(j*2.4)*.3-.15,age:0,color:colors[f.kind],spark:true});}
    s.setScores(scores);
   }
  }
- async function end(){if(phase!=='slice')return;phase='handoff';clear();if(actor===1)return s.finish(scores,'Fruit Ninja · identical waves of opponent heads, alternating human turns.');actor=1;clock=0;fruits=[];pieces=[];trail=[];popups=[];next=0;bombs=0;if(await s.pass(1,`${s.players[0].name} scored ${scores[0]}. Now it is your turn to slice ${s.players[0].name}'s flying heads: same waves, thirty seconds. Avoid the bombs.`))phase='slice';}
+ async function end(){if(phase!=='slice')return;phase='handoff';clear();if(actor===1)return s.finish(scores,'Fruit Ninja · identical waves of opponent heads, alternating human turns.');actor=1;clock=0;fruits=[];pieces=[];trail=[];popups=[];next=0;bombs=0;if(await s.pass(1,`${s.players[0].name} scored ${scores[0]}. Now it is your turn${theme?' in '+theme.name:''}: same waves, thirty seconds. Avoid the bombs.`))phase='slice';}
  function inputMove(p){
   const segment=fruitSwipeStep(drag,p,performance.now(),s.W,s.H);
   if(segment.reset)combo=0;
@@ -64,33 +74,40 @@ async function fruitslice(s){
  s.resetOnPause?.(clear);s.cleanup(clear);s.on(window,'blur',clear);s.on(window,'resize',clear);
  // Space is one discrete slice per key press, never an open-ended keyboard combo.
  s.on(document,'keydown',ev=>{if(ev.key===' '&&!ev.repeat&&!s.paused&&phase==='slice'){ev.preventDefault();clear();const f=fruits.find(f=>!f.cut&&!f.bomb);if(f)swipe({x:f.x*s.W-35,y:f.y*s.H},{x:f.x*s.W+35,y:f.y*s.H});combo=0;}});
- s.hint('Thirty seconds each on identical waves of your opponent’s flying heads. Swipe to slice them in half (+10); three heads in one swipe is a combo (+15 each). Bombs cost 25 and three bombs end your turn. Space slices one head.');
+ s.hint(theme?`Every game is a new world: this one is ${theme.name}. Thirty seconds each on identical waves. Swipe to slice: items +10, characters +15, three in one swipe is a combo (+5 each). Bombs cost 25 and three bombs end your turn. Space slices one.`:'Thirty seconds each on identical waves of your opponent’s flying heads. Swipe to slice them in half (+10); three heads in one swipe is a combo (+15 each). Bombs cost 25 and three bombs end your turn. Space slices one head.');
  s.frame(dt=>{
   if(drag?.stroke){
    const now=performance.now();
    if(now-drag.stroke.start>SWIPE_LIMITS.maxStrokeMs||now-drag.stroke.last>SWIPE_LIMITS.maxGapMs){drag.stroke=null;combo=0;}
   }
-  if(phase==='slice'){clock+=dt;while(next<course.length&&course[next].time<=clock)fruits.push({...course[next++],y:1.07,cut:false});
+  if(phase==='slice'){clock+=dt;while(next<course.length&&course[next].time<=clock){fruits.push({...course[next],o:objOf[next],y:1.07,cut:false});next++;}
    for(const f of fruits){f.x+=f.vx*dt;f.y+=f.vy*dt+.5*f.gravity*dt*dt;f.vy+=f.gravity*dt;if(f.x<.06||f.x>.94){f.x=clamp(f.x,.06,.94);f.vx*=-.7;}}
    fruits=fruits.filter(f=>!f.cut&&f.y<1.15);if(clock>=30||bombs>=3)void end();
   }
   for(const p of pieces){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=1.5*dt;p.age+=dt;}pieces=pieces.filter(p=>p.age<(p.head?1.3:.8));trail.forEach(p=>p.age+=dt);trail=trail.filter(p=>p.age<.22);popups.forEach(p=>p.age+=dt);popups=popups.filter(p=>p.age<.8);shake=Math.max(0,shake-dt);
   const W=s.W,H=s.H,r=radius(),head=r*2.35;x.save();if(shake>0)x.translate((Math.random()-.5)*shake*30,(Math.random()-.5)*shake*30);
-  x.fillStyle='#523c29';x.fillRect(-20,-20,W+40,H+40);x.strokeStyle='#806449';x.lineWidth=3;for(let i=0;i<W;i+=W/9){x.beginPath();x.moveTo(i,0);x.lineTo(i,H);x.stroke();}
-  x.fillStyle='#fae7b5';x.font=`bold ${clamp(W*.028,12,19)}px Georgia`;x.textAlign='center';x.fillText(`TASKMASTER · ${s.players[target()].name.toUpperCase()} HEAD BUFFET`,W/2,25);
+  const bg=TH&&theme?TH.background(theme,W,H):null;
+  if(bg){const sc=Math.max((W+40)/bg.width,(H+40)/bg.height);x.drawImage(bg,(W-bg.width*sc)/2,(H-bg.height*sc)/2,bg.width*sc,bg.height*sc);x.fillStyle='rgba(0,0,0,.18)';x.fillRect(-20,-20,W+40,H+40);}
+  else{x.fillStyle=theme?.tint?.[1]||'#523c29';x.fillRect(-20,-20,W+40,H+40);x.strokeStyle=theme?.tint?.[0]||'#806449';x.lineWidth=3;for(let i=0;i<W;i+=W/9){x.beginPath();x.moveTo(i,0);x.lineTo(i,H);x.stroke();}}
+  x.fillStyle='#fae7b5';x.font=`bold ${clamp(W*.028,12,19)}px Georgia`;x.textAlign='center';x.strokeStyle='#000a';x.lineWidth=4;const ttl=theme?`FRUIT NINJA · ${theme.name.toUpperCase()}`:`TASKMASTER · ${s.players[target()].name.toUpperCase()} HEAD BUFFET`;const ty=W<600?62:25,mw=W<600?W*.92:W-300,tw=x.measureText?.(ttl)?.width||0;if(tw>mw)x.font=`bold ${clamp(W*.028,12,19)*mw/tw}px Georgia`;x.strokeText(ttl,W/2,ty);x.fillText(ttl,W/2,ty);
   for(const p of pieces)if(p.spark){x.globalAlpha=Math.max(0,1-p.age/.8);circle(x,p.x*W,p.y*H,Math.max(2,r*.12),p.color);x.globalAlpha=1;}
   for(const f of fruits){if(f.bomb){circle(x,f.x*W+3,f.y*H+5,r,'#0003');x.font=`${r*1.9}px Arial`;x.textAlign='center';x.textBaseline='alphabetic';x.fillText('💣',f.x*W,f.y*H+r*.55);continue;}
-   circle(x,f.x*W+4,f.y*H+6,r*.9,'#0003');x.strokeStyle=colors[f.kind];x.lineWidth=Math.max(3,r*.12);x.beginPath();x.arc(f.x*W,f.y*H,r*1.02,0,Math.PI*2);x.stroke();
-   s.sprite(x,target(),f.x*W,f.y*H,head,{exact:true,mood:moods[f.kind]});}
-  for(const p of pieces)if(p.head){x.globalAlpha=Math.max(0,1-Math.max(0,p.age-.7)/.6);drawHeadHalf(s,x,target(),p.x*W,p.y*H,head,p.side,p.angle+p.spin*p.age,Math.min(1,p.age*4));x.globalAlpha=1;}
+   const o=f.o||objs[f.kind%Math.max(1,objs.length)];circle(x,f.x*W+4,f.y*H+6,r*.9,'#0003');
+   if(drawObj(o,itemMood[f.kind],x,f.x*W,f.y*H,head))continue;
+   x.strokeStyle=colors[f.kind];x.lineWidth=Math.max(3,r*.12);x.beginPath();x.arc(f.x*W,f.y*H,r*1.02,0,Math.PI*2);x.stroke();
+   if(!objs.length)s.sprite(x,target(),f.x*W,f.y*H,head,{exact:true,mood:moods[f.kind]});else circle(x,f.x*W,f.y*H,r*.9,colors[f.kind]);}
+  for(const p of pieces)if(p.head){x.globalAlpha=Math.max(0,1-Math.max(0,p.age-.7)/.6);drawHalf(x,(g,cx,cy,sz)=>{if(!drawObj(p.o,'sad',g,cx,cy,sz)){if(objs.length)circle(g,cx,cy,sz*.4,'#e8e0c0');else s.sprite(g,target(),cx,cy,sz,{exact:true,mood:'sad'});}},p.x*W,p.y*H,head,p.side,p.angle+p.spin*p.age,Math.min(1,p.age*4));x.globalAlpha=1;}
   for(const p of popups){x.globalAlpha=1-p.age/.8;x.fillStyle=p.color;x.font=`bold ${clamp(r*.7,14,28)}px system-ui`;x.textAlign='center';x.textBaseline='alphabetic';x.strokeStyle='#0008';x.lineWidth=4;x.strokeText(p.text,p.x*W,p.y*H-r-p.age*40);x.fillText(p.text,p.x*W,p.y*H-r-p.age*40);x.globalAlpha=1;}
   if(trail.length>1){x.strokeStyle=actor===0?'#99e5ff':'#ffb6d8';x.lineCap='round';x.lineWidth=7;x.beginPath();x.moveTo(trail[0].x*W,trail[0].y*H);for(const p of trail.slice(1))x.lineTo(p.x*W,p.y*H);x.stroke();x.strokeStyle='#fff';x.lineWidth=2.5;x.stroke();}
   x.restore();
   s.sprite(x,actor,clamp(W*.08,30,60),56,clamp(Math.min(W,H)*.16,50,80),{exact:true,mood:combo>=3?'win':bombs&&shake>0?'sad':'thinking'});
   s.status(`${s.players[actor].name} · ${Math.ceil(Math.max(0,30-clock))}s · bombs ${bombs}/3 · score ${scores[actor]}${combo>=3?' · COMBO!':''}`);
-  s.debug={actor,phase,fruits:fruits.map(f=>({...f,x:f.x*W,y:f.y*H,radius:r})),normalizedFruits:fruits,course,swipe,clock,scores,bombs,end,pieces};
+  s.debug={theme,objs,actor,phase,fruits:fruits.map(f=>({...f,x:f.x*W,y:f.y*H,radius:r})),normalizedFruits:fruits,course,swipe,clock,scores,bombs,end,pieces};
  });
- await s.pass(0,`Fruit Ninja, except the fruit is ${s.players[1].name}’s head. Swipe to slice. Thirty seconds each, identical waves, combos, and dangerous bombs.`);
+ // load this world's pictures before the first turn (up to 3 s), so nothing flies up as a placeholder
+ if(TH&&theme&&typeof setTimeout!=='undefined'){const t0=Date.now();await new Promise(r=>{const go=()=>{TH.background(theme,s.W,s.H);let ok=0;for(const o of objs)if(o.type==='item'?TH.itemImg(o.id):HF?.faceSprite(o.id,'normal',40,1))ok++;
+   if(ok>=objs.length||Date.now()-t0>3000)return r();setTimeout(go,80);};go();});}
+ await s.pass(0,theme?`Fruit Ninja in ${theme.name}: slice what flies up (characters are worth more). Thirty seconds each, identical waves, combos, and dangerous bombs.`:`Fruit Ninja, except the fruit is ${s.players[1].name}’s head. Swipe to slice. Thirty seconds each, identical waves, combos, and dangerous bombs.`);
 }
 
 Object.assign(exports,{sliceDistance,fruitCourse,fruitSwipeStep,SWIPE_LIMITS,fruitslice});
