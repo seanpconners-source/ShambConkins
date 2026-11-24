@@ -8,6 +8,8 @@
 // makeCuts(env) -> {start(key,done), draw(), tap(x,y), active}; env = {x (2d ctx), s (session), W(), H(), person(sx,sy,kk,p),
 // portrait(who,cx,cy,size) , sfx, noise, snd, DS, BD, names, solo}. person p = {o outfit, pose, face ±1, head, char, pi, mood, big}.
 const TAU=Math.PI*2;
+const SHAPE=require("src/bgShape.js"),DJD=require("src/data/warriorsDJ.js");
+const DJ_PICS={wide:'dj-wide',tall:'dj-tall',fold:'dj-fold'};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=q=>q<.5?2*q*q:1-Math.pow(-2*q+2,2)/2;
 // who speaks: name, colour, and how their face is drawn
 const CAST={
@@ -59,6 +61,10 @@ const CUTS={
 
 function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
  const W=()=>env.W(),H=()=>env.H();
+ // screen geometry for a camera zoom z: u = scene unit (sized by the height on wide screens, by the width on tall phones so
+ // nobody is cut off), sq = sideways squeeze on narrow screens (people keep their size, the spacing between them shrinks so a
+ // shot shows the same people as on a wide screen), gy = the ground line (80% down on wide screens, the scene band centred on tall ones)
+ function geom(z){const w=W(),h=H(),u=Math.min(h/400,w/470),sq=Math.min(1,w/(u*860));return {w,h,u,sq,S:u*z,gy:h/2+120*u+(z-1)*70*u};}
  function start(key,done){const shots=CUTS[key];if(!shots){done();return;}cur={shots,si:0,t:0,li:0,done,crowd:null,last:performance.now(),fired:new Set(),typed:0};}
  function finish(){const d=cur?.done;cur=null;d?.();}
  function nextShot(){if(!cur)return;cur.si++;cur.t=0;cur.fired=new Set();if(cur.si>=cur.shots.length)finish();}
@@ -66,12 +72,12 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
  // drawn once per screen height at a fixed scale CS and stretched to the camera's zoom (a cache per zoom step would
  // repaint ~150 bodies every frame of a zoom)
  const CROWD_ROWS=[[-150,.4],[-112,.48],[-66,.56],[-18,.66]],CROWD_H=280,CROWD_GROUND=262;
- function crowdCanvas(CS,cheer,panic){const key=`${H()}:${cheer}:${panic}`;cur.crowdCache=cur.crowdCache||{};if(cur.crowdCache[key])return cur.crowdCache[key];
-  const cv=document.createElement('canvas');cv.width=Math.ceil(WW*CS);cv.height=Math.ceil(CROWD_H*CS);const g=cv.getContext('2d');let n=0;
+ function crowdCanvas(CS,cheer,panic,sq){const key=`${H()}:${W()}:${cheer}:${panic}`;cur.crowdCache=cur.crowdCache||{};if(cur.crowdCache[key])return cur.crowdCache[key];
+  const cv=document.createElement('canvas');cv.width=Math.ceil(WW*CS*sq);cv.height=Math.ceil(CROWD_H*CS);const g=cv.getContext('2d');let n=0;
   for(let r=0;r<CROWD_ROWS.length;r++){const [yy,k0]=CROWD_ROWS[r],step=44*k0;
-   for(let xx=20+(r%2)*step/2;xx<WW-20;xx+=step){if(Math.abs(xx-STAGE_X)<150)continue;n++;const gi=Math.min(GANGS.length-1,Math.floor(xx/WW*GANGS.length)),G=GANGS[gi],
+   for(let xx=20+(r%2)*step/2/sq;xx<WW-20;xx+=step/sq){if(Math.abs(xx-STAGE_X)<150*Math.max(sq,.7)/sq)continue;n++;const gi=Math.min(GANGS.length-1,Math.floor(xx/WW*GANGS.length)),G=GANGS[gi],
      face=panic?((n*7)%3?-1:1):xx<STAGE_X?1:-1,pose=panic?(n%2?'run1':'run2'):cheer?'win':'stand';
-    env.person(xx*CS,(CROWD_GROUND+yy)*CS,k0*CS*1.45,{o:G[1],pose,face,head:G[2],id:'c'+n+gi,mood:cheer?'win':panic?'sad':'normal'},g);}}
+    env.person(xx*CS*sq,(CROWD_GROUND+yy)*CS,k0*CS*1.45,{o:G[1],pose,face,head:G[2],id:'c'+n+gi,mood:cheer?'win':panic?'sad':'normal'},g);}}
   return cur.crowdCache[key]=cv;}
  // ---- backdrops
  function picBg(name){const im=DS.picture('cut-'+name);if(!im)return false;const w=W(),h=H(),k=Math.max(w/im.width,h/im.height);x.drawImage(im,(w-im.width*k)/2,(h-im.height*k)/2,im.width*k,im.height*k);return true;}
@@ -82,19 +88,19 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
  // under the people's feet, a little parallax with the camera); the first area/biome with art in each list wins
  function stageBg(bg,camX,z){const names=CUT_STAGE[bg];if(!names)return false;const pick=layer=>{for(const n of names){const im=DS.picture(layer+'-'+n);if(im)return im;}return null;};
   const far=pick('far'),wall=pick('wall'),floor=pick('floor');if(!wall||!floor)return false;
-  const w=W(),h=H(),u=h/400,gy=h*.8+(z-1)*70*u,ft=Math.min(h*.9,gy-46*u*z),wh=Math.max(h*.2,Math.min(h*.42,150*u*z));
-  const tile=(im,top,ht,par)=>{const k=ht/im.height,tw=im.width*k;let x0=-(((camX*u*z*par)%tw)+tw)%tw;for(;x0<w;x0+=tw)x.drawImage(im,x0,top,tw+1,ht);};
+  const {w,h,u,sq,gy}=geom(z),ft=Math.min(h*.9,gy-46*u*z),wh=Math.max(h*.2,Math.min(h*.42,150*u*z));
+  const tile=(im,top,ht,par)=>{const k=ht/im.height,tw=im.width*k;let x0=-(((camX*u*z*sq*par)%tw)+tw)%tw;for(;x0<w;x0+=tw)x.drawImage(im,x0,top,tw+1,ht);};
   if(far){const fh=Math.max(ft-wh*.55,h*.3)*1.08;tile(far,ft-wh*.55-fh+2,fh,.25);}else{sky('#05060e','#1a1430');}
   tile(wall,ft-wh,wh,.6);tile(floor,ft,Math.max(h-ft,40*u),1);
   x.fillStyle='rgba(0,0,0,.18)';x.fillRect(0,0,w,h);return true;}
- function drawBg(sh,camX,z){const w=W(),h=H(),u=h/400;
+ function drawBg(sh,camX,z){const {w,h,u,sq}=geom(z);
   if(picBg(sh.bg)||stageBg(sh.bg,camX,z))return;
   if(sh.bg==='conclave'||sh.bg==='riffs'){sky('#05060e','#1a1430');skyline(h*.5,'#0c0c18',3);windows(h*.5,3);
    // trees left and right, the park lawn
    x.fillStyle='#0a140c';for(let i=0;i<9;i++){const tx=((i*173-camX*.3)%(w+200)+w+200)%(w+200)-100;x.beginPath();x.ellipse(tx,h*.46,60*u,70*u,0,0,TAU);x.fill();}
    x.fillStyle='#121c14';x.fillRect(0,h*.5,w,h*.5);
    // flood lights glow over the stage
-   const sx=w/2+(STAGE_X-camX)*u*z;for(const d of [-1,1]){const lx=sx+d*150*u*z;x.fillStyle='#2a2a30';x.fillRect(lx-2*u*z,h*.12,4*u*z,h*.4);
+   const sx=w/2+(STAGE_X-camX)*u*z*sq;for(const d of [-1,1]){const lx=sx+d*150*u*z*sq;x.fillStyle='#2a2a30';x.fillRect(lx-2*u*z,h*.12,4*u*z,h*.4);
     const gl=x.createRadialGradient(lx,h*.13,2,lx,h*.13,120*u*z);gl.addColorStop(0,'rgba(255,248,220,.95)');gl.addColorStop(1,'rgba(255,248,220,0)');x.fillStyle=gl;x.beginPath();x.arc(lx,h*.13,120*u*z,0,TAU);x.fill();
     x.fillStyle='rgba(255,248,220,.08)';x.beginPath();x.moveTo(lx,h*.13);x.lineTo(sx-60*u*z,h*.6);x.lineTo(sx+60*u*z,h*.6);x.closePath();x.fill();}
    return;}
@@ -117,8 +123,20 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
    else{x.fillStyle='rgba(40,30,40,.85)';x.fillRect(0,h*.15,w,h*.06);x.fillRect(0,h*.62,w,h*.38);for(let i=0;i<6;i++){x.fillStyle='rgba(255,230,190,.35)';x.fillRect(i*w/6+10,h*.24,w/6-20,h*.32);}}
    return;}
   if(sh.bg==='radio'){x.fillStyle='#08060a';x.fillRect(0,0,w,h);}}
- // the radio DJ: lips at the microphone, in the dark (our own drawing)
- function drawDJ(t){const w=W(),h=H(),u=Math.min(w,h)/400,cx=w/2,cy=h*.46,talk=Math.abs(Math.sin(t*14))*.8+.2;
+ // the mouth for this moment of the DJ's line (null = closed): ~12 mouth changes a second, each from the letter being typed then
+ function djMouth(){const sh=cur.shots[cur.si];let ln=null;for(const L of sh.lines||[])if(cur.t>=L[0])ln=L;if(!ln||ln[1]!=='dj')return null;
+  const age=cur.t-ln[0],text=ln[2];if(age*38>=text.length+1)return null;const ci=Math.min(text.length-1,Math.floor(Math.floor(age*12)*38/12));return DJD.viseme(text[ci]);}
+ // the painted DJ (ww:dj-<shape> + mouth/blink frames): placed so the face sits 40% down, a slow push-in over the shot
+ function djPic(){const w=W(),h=H();for(const n of SHAPE.order(w,h,DJ_PICS)){const im=DS.picture(n);if(im)return {im,n,shape:n.slice(3)};}return null;}
+ function djPlace(P,t){const w=W(),h=H(),G=DJD.DJ.guide[P.shape],[iw,ih]=G.size,k=Math.max(w/iw,h/ih)*(1.02+Math.min(t,12)*.003),[fx,fy]=G.face;
+  return {k,ox:clamp(w*.5-fx*k,w-iw*k,0),oy:clamp(h*.4-fy*k,h-ih*k,0)};}
+ function drawDJPic(t){const P=djPic();if(!P)return false;const {k,ox,oy}=djPlace(P,t),G=DJD.DJ.guide[P.shape],box=DJD.DJ.box[P.shape]||{};
+  x.drawImage(P.im,ox,oy,G.size[0]*k,G.size[1]*k);
+  const frame=(n)=>{const b=box[n],im=b&&DS.picture(P.n+'-'+n);if(im)x.drawImage(im,ox+b[0]*k,oy+b[1]*k,b[2]*k,b[3]*k);};
+  const m=djMouth();if(m)frame(m);if(t%3.7<.13)frame('blink');
+  return true;}
+ // the radio DJ: lips at the microphone, in the dark (our own drawing; the painted DJ replaces it when it's in)
+ function drawDJ(t){const w=W(),h=H(),u=Math.min(w/470,h/400),cx=w/2,cy=h*.46,talk={small:.4,ee:.5,oo:.7,ah:1}[djMouth()]||.08;
   const gl=x.createRadialGradient(cx,cy,10,cx,cy,260*u);gl.addColorStop(0,'rgba(120,20,40,.5)');gl.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gl;x.fillRect(0,0,w,h);
   x.fillStyle='#c8506c';x.beginPath();x.ellipse(cx,cy,150*u,60*u,0,0,TAU);x.fill();
   x.fillStyle='#e01848';x.beginPath();x.moveTo(cx-120*u,cy);x.quadraticCurveTo(cx-60*u,cy-44*u,cx,cy-24*u);x.quadraticCurveTo(cx+60*u,cy-44*u,cx+120*u,cy);x.quadraticCurveTo(cx,cy-6*u*talk,cx-120*u,cy);x.fill();
@@ -130,18 +148,18 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
   x.fillStyle=Math.floor(t*2)%2?'#ff2c3c':'#8c1c24';x.beginPath();x.roundRect(w*.06,h*.08,120*u,34*u,6);x.fill();x.fillStyle='#fff';x.font=`900 ${18*u}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText('ON AIR',w*.06+60*u,h*.08+17*u);}
  // ---- one frame
  function draw(){if(!cur)return;const now=performance.now(),dt=Math.min(.05,(now-cur.last)/1000);cur.last=now;cur.t+=dt;
-  const sh=cur.shots[cur.si],w=W(),h=H(),u=h/400,q=ease(clamp(cur.t/sh.dur,0,1)),cam=sh.cam||[700,1.4,700,1.4],camX=cam[0]+(cam[2]-cam[0])*q,z=cam[1]+(cam[3]-cam[1])*q;
+  const sh=cur.shots[cur.si],q=ease(clamp(cur.t/sh.dur,0,1)),cam=sh.cam||[700,1.4,700,1.4],camX=cam[0]+(cam[2]-cam[0])*q,z=cam[1]+(cam[3]-cam[1])*q,{w,h,u,sq,S,gy}=geom(z);
   for(const [at,what] of sh.at||[])if(cur.t>=at&&!cur.fired.has(at+what)){cur.fired.add(at+what);sound(what);}
   x.save();drawBg(sh,camX,z);
-  if(sh.bg==='radio'){drawDJ(cur.t);}
+  if(sh.bg==='radio'){if(!drawDJPic(cur.t))drawDJ(cur.t);}
   else{// scene space: unit u*z, scene x camX at the screen centre
-   const S=u*z,X=xx=>w/2+(xx-camX)*S,gy=h*.8+(z-1)*70*u;
+   const X=xx=>w/2+(xx-camX)*S*sq;
    if(sh.bg==='conclave'){// the stage and the crowd
     const sx=X(STAGE_X),ST=70;   // the stage: a wooden platform ST units high, steps, red bunting
     const cheer=(sh.cheer||[]).some(([a,b])=>cur.t>=a&&cur.t<b),bob=cheer?Math.abs(Math.sin(cur.t*9))*4*S:0;
-    if(sh.crowd){const CS=u*1.6,cv=crowdCanvas(CS,cheer,!!sh.panic);x.drawImage(cv,X(0),gy-CROWD_GROUND*S-bob,WW*S,CROWD_H*S);}
-    x.fillStyle='#3a2a1c';x.fillRect(sx-120*S,gy-ST*S,240*S,ST*S);x.fillStyle='#5c4430';x.fillRect(sx-120*S,gy-ST*S,240*S,8*S);
-    x.fillStyle='rgba(200,40,40,.9)';for(let i=0;i<6;i++){x.beginPath();x.moveTo(sx-120*S+i*40*S,gy-(ST-8)*S);x.quadraticCurveTo(sx-100*S+i*40*S,gy-(ST-26)*S,sx-80*S+i*40*S,gy-(ST-8)*S);x.fill();}
+    if(sh.crowd){const CS=u*1.6,cv=crowdCanvas(CS,cheer,!!sh.panic,sq);x.drawImage(cv,X(0),gy-CROWD_GROUND*S-bob,WW*S*sq,CROWD_H*S);}
+    const SW=S*Math.max(sq,.7);x.fillStyle='#3a2a1c';x.fillRect(sx-120*SW,gy-ST*S,240*SW,ST*S);x.fillStyle='#5c4430';x.fillRect(sx-120*SW,gy-ST*S,240*SW,8*S);
+    x.fillStyle='rgba(200,40,40,.9)';for(let i=0;i<6;i++){x.beginPath();x.moveTo(sx-120*SW+i*40*SW,gy-(ST-8)*S);x.quadraticCurveTo(sx-100*SW+i*40*SW,gy-(ST-26)*S,sx-80*SW+i*40*SW,gy-(ST-8)*S);x.fill();}
     x.fillStyle='#2a1e14';for(let i=0;i<3;i++)x.fillRect(sx-30*S+i*4*S,gy-(i+1)*ST/3*S,60*S-i*8*S,4*S);
     if(sh.cyrus){const down=sh.cyrus==='down';env.person(sx,gy-ST*S,1.25*S,{o:'cyrus',pose:down?'down':cheer?'win':(Math.floor(cur.t*1.3)%2?'win':'stand'),face:1,head:'cyrus',id:'cyrus',mood:down?'sad':'normal',skin:'#7c5034'});
      if(!down){x.strokeStyle='#e8c84c';x.lineWidth=2*S;x.beginPath();x.arc(sx+2*S,gy-ST*S-70*1.25*S,9*S,.2,Math.PI-.2);x.stroke();}}
@@ -185,7 +203,9 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
  function speech(L,age){const w=W(),h=H(),C=CAST[L[1]]||CAST.hero,fs=clamp(Math.min(w,h)*.042,12,22),bh=fs*4.6,bw=Math.min(w*.94,fs*34),bx=(w-bw)/2,by=h-h*.08-bh-6;
   x.fillStyle='rgba(8,6,12,.9)';x.beginPath();x.roundRect(bx,by,bw,bh,10);x.fill();x.strokeStyle=C.col;x.lineWidth=2;x.stroke();
   const ps=bh*.8;x.save();x.beginPath();x.roundRect(bx+8,by+(bh-ps)/2,ps,ps,8);x.fillStyle='#1c1820';x.fill();x.clip();
-  if(C.dj){x.fillStyle='#e01848';x.beginPath();x.ellipse(bx+8+ps/2,by+bh/2,ps*.36,ps*.16,0,0,TAU);x.fill();}
+  const DP=C.dj&&djPic();
+  if(DP){const G=DJD.DJ.guide[DP.shape],sc=DP.im.width/G.size[0],[fx,fy,rx,ry]=G.face,r=Math.max(rx,ry)*1.15*sc;x.drawImage(DP.im,fx*sc-r,fy*sc-r,r*2,r*2,bx+8,by+(bh-ps)/2,ps,ps);}
+  else if(C.dj){x.fillStyle='#e01848';x.beginPath();x.ellipse(bx+8+ps/2,by+bh/2,ps*.36,ps*.16,0,0,TAU);x.fill();}
   else env.portrait({...C,id:L[1]},bx+8+ps/2,by+(bh-ps)/2+ps*.55,ps*.62);
   x.restore();
   const name=C.name||(env.names[C.pi||0]||'YOU').toUpperCase(),tx=bx+16+ps,typed=Math.min(L[2].length,Math.floor(age*38));
@@ -199,10 +219,11 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
   else sfx[what]?.();}catch{}}
  // tap: SKIP in the corner skips the whole scene, a tap elsewhere moves to the next shot
  function tap(px,py){if(!cur)return false;const h=H();if(px<120&&py<h*.1){finish();return true;}if(cur.t>.4)nextShot();return true;}
- return {start,draw,tap,get active(){return !!cur;},skip:finish};}
+ return {start,draw,tap,get active(){return !!cur;},skip:finish,next:nextShot,info:()=>cur&&{si:cur.si,n:cur.shots.length,dur:cur.shots[cur.si]?.dur,bg:cur.shots[cur.si]?.bg}};}
 const CUT_PICTURES=['conclave','riffs','street','lizzies','park','subway','restroom','dawn','coney','radio'];
 // stage art standing in for a cut backdrop until its painted one comes: story area first, then the old biome set
 const CUT_STAGE={conclave:['conclave','forest'],riffs:['gothic'],street:['tenement','elstreet','nyc'],lizzies:['apartment'],park:['riverside','park','forest'],
  subway:['station','platform','gotham'],restroom:['restroom'],dawn:['trainDawn'],coney:['boardwalk','beach']};
+const djPictures=()=>Object.values(DJ_PICS).flatMap(n=>[n,...DJD.DJ.frames.map(f=>n+'-'+f)]);
 const stagePictures=()=>[...new Set(Object.values(CUT_STAGE).flat())].flatMap(n=>['far-'+n,'wall-'+n,'floor-'+n]);
-Object.assign(exports,{makeCuts,CUTS,CAST,GANGS,CUT_PICTURES,CUT_STAGE,stagePictures});
+Object.assign(exports,{makeCuts,CUTS,CAST,GANGS,CUT_PICTURES,CUT_STAGE,stagePictures,djPictures});

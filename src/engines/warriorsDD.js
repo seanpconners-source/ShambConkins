@@ -728,7 +728,7 @@ async function warriorsDD(s){
  const seenCut=new Set();
  // a story scene before a chapter (not online or on the board: those jump straight into a fight); each one once per game
  function playCut(key){if(online||board||seenCut.has(key))return Promise.resolve();seenCut.add(key);musicOn=false;
-  return DS.ready([...CUT.CUT_PICTURES.map(n=>'cut-'+n),...Object.keys(DS.SHEETS),...CUT.stagePictures()],3000).then(()=>new Promise(r=>{phase='cut';cuts.start(key,r);}));}
+  return DS.ready([...CUT.CUT_PICTURES.map(n=>'cut-'+n),...Object.keys(DS.SHEETS),...CUT.stagePictures(),...CUT.djPictures()],3000).then(()=>new Promise(r=>{phase='cut';cuts.start(key,r);}));}
  // ---- title + menus: START / CONTINUE / CHAPTERS / MOVES
  const ui={btns:[],moves:false,
   tap(p){for(const b of ui.btns)if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){b.act();return true;}if(ui.moves){ui.moves=false;return true;}

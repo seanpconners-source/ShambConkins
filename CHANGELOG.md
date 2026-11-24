@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.99.55
+
+- **Warriors cutscenes fit every screen:** on an upright phone the scenes were zoomed in so far that people were cut off at the sides. Now the whole shot fits: the camera sizes itself by the screen's width on tall screens and the scene sits in the middle, with the Warriors, the gangs, Cyrus's stage and the Conclave crowd all in view (also on the open Fold and sideways).
+- **Stage backgrounds blend:** the middle layer (buildings, fences, trees) used to end in a hard straight line against the sky layer behind it. All 18 now have see-through tops: the sky is cut out above roofs and fences, and what's left fades softly into the far scenery.
+- **The radio DJ, ready to talk:** the DJ shots can now show a full-screen painted DJ whose mouth moves with the words (closed, small, "ah", "ee", "oo", plus blinking), for wide, upright and Fold screens. The pictures are being made; until they arrive the drawn lips stay, now moving with the actual letters. Templates went to GPT.
+
 ## v0.99.54
 
 - **The Warriors run properly:** the run used to flip between two near-identical stride pictures (a wiggle with the leg out). Now it's stride, legs passing, stride, legs passing, with a little lift and lean.

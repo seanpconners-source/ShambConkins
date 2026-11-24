@@ -115,7 +115,7 @@ The **templates** (`<sheet>-template.png`) show every cell with its pose name, t
 | File | Size | What |
 |---|---|---|
 | `far-<area>.png` | 2048 x 512 | the sky and the far scenery behind; scrolls slowly; **repeats side to side** (right edge joins the left edge) |
-| `wall-<area>.png` | 1024 x 320 | the back edge of the floor (shop fronts, fence, tiled wall, the subway car's side...), bottom edge = where the walkable floor starts; repeats side to side |
+| `wall-<area>.png` | 1024 x 320 | the back edge of the floor (shop fronts, fence, tiled wall, the subway car's side...), bottom edge = where the walkable floor starts; repeats side to side. **Transparent above the top of what it shows** (no sky in it: the far picture shows through, roofs/fences/trees end in their own outline, not a straight line); PNG with alpha |
 | `floor-<area>.png` | 1024 x 512 | the walkable ground seen from the side at an angle like a brawler; repeats side to side |
 No people, no text other than our own signs, no logos. Keep the floor fairly even (fighters stand on all of it).
 `ref-<area>.png` in the templates folder shows how the game draws each place now (the layout to match).
@@ -162,10 +162,33 @@ of the place, no logos, no text except the subway sign:
 - `cut-coney.png`: Coney Island beach at dawn: the big Ferris wheel, boardwalk, ocean.
 - `cut-radio.png`: a dark radio studio: one microphone, an ON AIR light.
 
+## 5. The radio DJ (full-screen, talking; 3 shapes x 6 pictures = 18)
+The DJ shots between chapters show the DJ full screen, and the game makes her talk by swapping the mouth while the
+subtitles type out. She is OUR OWN DJ character (a woman at a 1970s late-night radio station: headphones, big hair or a
+headscarf, hoop earrings, a mic on a boom arm close to her mouth) and **not a likeness of any actor**. Night studio: ON AIR
+light lit red, a window on the city at night with rain, records, a mixing desk, warm low light. No text except ON AIR.
+
+Templates: `dj-wide-template.png` (1920 x 1080), `dj-tall-template.png` (1080 x 1920, phones upright),
+`dj-fold-template.png` (1504 x 1670, the open Fold). Put her FACE in the pink oval, EYES in the blue box, MOUTH in the
+pink box, facing us. The hatched bottom part is covered by the subtitle box; the top and bottom bars are covered by black.
+`dj-mouths-reference.png` shows the frames.
+
+For each shape make the main picture first, then 5 copies of THAT SAME picture where only the mouth changes (or only the
+eyes for blink). Same camera, same light, same everything else: use image editing on the main picture, don't redraw it.
+| File | Mouth |
+|---|---|
+| `dj-<shape>.png` | closed (the main picture) |
+| `dj-<shape>-small.png` | a little open (m, n, t, d, s) |
+| `dj-<shape>-ah.png` | wide open ("a") |
+| `dj-<shape>-ee.png` | wide, teeth showing ("e", "i") |
+| `dj-<shape>-oo.png` | round ("o", "u", "w") |
+| `dj-<shape>-blink.png` | mouth closed, EYES SHUT |
+Start with the wide set so Sean can see her talking in the game before the other two shapes.
+
 ## Hand back
 PNG at exactly these sizes, named as listed. Upload to Drive (folders "The Warriors — Fighters & Props", "The Warriors — Stage Art") with an UPLOADS-GPT note + manifest (file, size, bytes, SHA256);
 files under 80 KB in an identically named ZIP. Start with `hero-p1.png` so Sean can check the style in the game first.
 
 ## For Claude
 Slots in `src/data/ddSprites.js` (POSES/SHEETS/PICTURES, CELL 256, UNIT 2 px per unit, footOf per pose); import to
-`assets/warriors/<name>.webp` lossless (originals in assets/originals/warriors). Templates: `node tools/warriors-templates.mjs`.
+`assets/warriors/<name>.webp` lossless (originals in assets/originals/warriors). Templates: `node tools/warriors-templates.mjs`. DJ: templates `python3 tools/warriors/dj-templates.py`, import `python3 tools/warriors/import-dj.py <folder>` (lines the frames up, keeps only the mouth/eye part, writes the boxes into src/data/warriorsDJ.js; `--standin` = drawn test set). Wall layers: `python3 tools/warriors/wall-tops.py` gives every wall-<name> a see-through top (sky cut out + uneven fade) from assets/originals/warriors; run it on new wall art too (add a CFG line), `--preview out.png` shows before/after stacked like the game.
