@@ -13,7 +13,7 @@
 // 1P Arcade: the story (solo 'levels'), continues, chapter select of the chapters reached. 2P one phone: both play the
 // picked chapter in turn (board: one chapter from the seed). Online: both play the same chapter on their own phones,
 // partner's progress on screen; highest score wins.
-const {clamp}=require("src/utils.js");
+const {clamp,seededRandom}=require("src/utils.js");
 const {fullBleed}=require("src/engines/fullBleed.js");
 const {soloFinish,soloProgress}=require("src/solo.js");
 const {netField}=require("src/engines/netField.js");
@@ -117,6 +117,15 @@ async function warriorsDD(s){
  // UNLOCKS (owner, Nov 24): no random joins any more. Once a chapter a locked character steps into a gang wave as a named
  // CHALLENGER (tougher than the rest); knock them out and they join you. Characters with a picture come first.
  let challenge=null;const usedCh=new Set();
+ // FACES FOR THE NAMELESS (owner, Nov 24): an enemy with no face art of its own (not a boss, a challenger or a gang whose leader has a
+ // picture) wears a real face: any character with a photo and measured head facts, the players' own and the film's named cast left out.
+ // About a third come from characters this game could still free; KO one of those and now and then (LUCKY, once per area) they join you.
+ let LUCKY=.12;const lucky=new Set();
+ const NAMED=new Set([...Object.values(SY_.REPS),...Object.values(FOES).map(t=>t.face).filter(Boolean),...s.players.map(p=>p.character)]);
+ const facePool=(()=>{try{return require("src/contentPolicy.js").ACTIVE_CATALOG.characters.filter(c=>c.unlockBy!=='dogs'&&c.source!=='The Warriors'&&!NAMED.has(c.id)&&hasArt(c.id)&&headFacts(c.id,'normal')).map(c=>c.id);}catch{return [];}})();
+ const canFree=(id,i)=>{try{const P=require("src/profile.js"),pl=s.players[i];return !!pl&&P.canRecruitReward(store.profile,id,pl.owner,'game');}catch{return false;}};
+ const lockedFaces=facePool.filter(id=>s.players.some((p,i)=>canFree(id,i)));
+ function mookFace(n){if(!facePool.length)return null;const R=seededRandom(`${seed}:face:${n}`),useLocked=lockedFaces.length&&R()<.35&&!online,pool=useLocked?lockedFaces:facePool;return pool[Math.floor(R()*pool.length)];}
  function pickChallenger(n){if(online||!freePool.length)return null;const left=freePool.filter(id=>!usedCh.has(id)&&!s.gameRecruits.flat().includes(id));if(!left.length)return null;
   const art=left.filter(hasArt),pool=art.length?art:left,id=pool[Math.floor(Math.random()*pool.length)];usedCh.add(id);
   const areas=CH[n].areas,ai=areas.length>1?1+Math.floor(Math.random()*(areas.length-1)):0,nw=(areas[ai].waves||[]).length;return nw?{n,ai,wi:Math.floor(Math.random()*nw),id}:null;}
@@ -209,6 +218,7 @@ async function warriorsDD(s){
    face:T.face||(hasArt(SY_.REPS[T.gang])?SY_.REPS[T.gang]:null),head:T.head,sheet:SHEET_OF[sp.type]||'foe-thug',weapon:T.weapon?{kind:T.weapon,uses:99,foe:1}:null,ai:{cool:.9+(uid%5)*.2,hover:uid*1.7,mode:'in'},boss,shield:T.shield||0,id:'f'+uid,entering,chaser:!!sp.chaser});
   if(sp.challenger){f.face=sp.challenger;f.challenger=sp.challenger;f.hp=Math.round(f.hp*2.6)+8;f.big=Math.max(f.big,1.08);f.ai.cool=.5;
    fx.push({kind:'txt',txt:nameOf(sp.challenger).toUpperCase()+' WANTS A PIECE!',x:f.x,d:f.d,z:150,t:2.4});sfx.clink?.();}
+  if(!f.face&&!boss&&!sp.ally&&!sp.challenger){f.face=mookFace(uid);f.randomFace=!!f.face;}
   f.maxHp=f.hp;F.push(f);return f;}
 
  // ---- chapters and areas
@@ -433,7 +443,7 @@ async function warriorsDD(s){
   triggerWaves(dt);
   if(goT>0)goT-=dt;if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}if(lvBanner){lvBanner.t-=dt;if(lvBanner.t<=0)lvBanner=lvQueue.shift()||null;}if(shakeT>0)shakeT-=dt;if(fade>0)fade=Math.max(0,fade-dt*2.5);
   // remove the beaten (now and then one drops food)
-  for(const f of F)if(f.st==='dead'&&f.stT>1.1&&f.side==='foe'&&!f.gone){f.gone=true;run.score+=f.T.pts;gainXP(f.boss?10:3);if(f.challenger)freeCharacter(f.challenger,f);if(f.boss)bossBeaten(f);else if(uid%6===0)items.push({x:f.x,d:f.d,z:20,vz:150,kind:['pizza','burger'][uid%2]});}
+  for(const f of F)if(f.st==='dead'&&f.stT>1.1&&f.side==='foe'&&!f.gone){f.gone=true;run.score+=f.T.pts;gainXP(f.boss?10:3);if(f.challenger)freeCharacter(f.challenger,f);if(f.randomFace&&canFree(f.face,cur)){const ak=chapterNo+':'+areaNo;if(!lucky.has(ak)&&Math.random()<LUCKY){lucky.add(ak);freeCharacter(f.face,f);}}if(f.boss)bossBeaten(f);else if(uid%6===0)items.push({x:f.x,d:f.d,z:20,vz:150,kind:['pizza','burger'][uid%2]});}
   F=F.filter(f=>!f.gone||f.side==='hero');}
  function physics(f,dt){f.stT+=dt;if(f.entering){f.entering-=dt;f.d=Math.min(f.d+60*dt,A.dMin+30);if(f.entering<=0)f.entering=null;}
   if(f.z>0||f.vz>0){f.z+=f.vz*dt;f.vz-=G*dt;if(f.z<=0){f.z=0;land(f);}}
@@ -899,7 +909,7 @@ async function warriorsDD(s){
   killAll:()=>{for(const f of living('foe')){f.shield=0;f.inv=0;f.entering=null;damage(hero,f,999,'knock',100,{});}},lv:n=>{run.xp=LV_XP[n-1];run.lv=n;},meter:v=>{run.meter=v;},
   boss:()=>{if(!A?.boss)return;wave=A.waves.length-1;waveQ=[];for(const f of living('foe'))f.gone=true;hero.x=A.boss.at+5;cam.x=Math.max(0,A.boss.at-vw*.4);},
   end:()=>{if(!A)return;wave=A.waves.length-1;waveQ=[];for(const f of living('foe'))f.gone=true;hero.x=A.len-(A.escape?200:100);cam.x=Math.max(0,A.len-vw);if(A.boss&&!bossOn)startBoss();},
-  give:k2=>{hero.weapon={kind:k2,uses:99};},get challenge(){return challenge;},selectMap:()=>{phase='select';},get freePool(){return freePool;},challenger:(id,dx=70)=>{const f=spawnFoe({type:'orphan',side:1,d:hero.d,challenger:id||freePool[0]});f.x=hero.x+dx;f.entering=null;return f;},spawn:(type,dx=60)=>{const f=spawnFoe({type,side:1,d:hero.d});f.x=hero.x+dx;f.entering=null;return f;},
+  give:k2=>{hero.weapon={kind:k2,uses:99};},get challenge(){return challenge;},selectMap:()=>{phase='select';},get freePool(){return freePool;},get facePool(){return facePool;},set lucky(v){LUCKY=v;},canFree:id=>canFree(id,cur),challenger:(id,dx=70)=>{const f=spawnFoe({type:'orphan',side:1,d:hero.d,challenger:id||freePool[0]});f.x=hero.x+dx;f.entering=null;return f;},spawn:(type,dx=60)=>{const f=spawnFoe({type,side:1,d:hero.d});f.x=hero.x+dx;f.entering=null;return f;},
   get cuts(){return cuts;},cut:k=>{phase="cut";cuts.start(k,()=>{phase="wait";});},  get bus(){return bus;},get riffs(){return riffsIn;},get cam(){return cam;},get k(){return k;},get vw(){return vw;}};
 
  async function turn(pi,startAt,count){cur=pi;const lv0=clamp(1+Math.ceil(startAt*.75),1,7);run={lives:board?2:3,lv:lv0,xp:LV_XP[lv0-1],meter:0,score:0,hurt:false};let n=startAt,cleared=0,conts=solo?2:0;
