@@ -102,6 +102,11 @@ Object.assign(PICTURES,{
  // body as hero-p1/-p2, running RIGHT, feet on each cell's foot point (128, 244), a full stride for both legs
  'run-p1':{w:2048,h:256,what:'hero-p1 (Sean\'s Warrior: leather vest, bare arms, brown trousers) running right: an 8-frame run cycle (contact, down, passing, up, then the same for the other leg), headless like the sheet'},
  'run-p2':{w:2048,h:256,what:'hero-p2 (Amber\'s Warrior) running right: the same 8-frame run cycle, headless like the sheet'},
+ // the cyclone spin kick (owner, Nov 24: turning the whole body round looked like a spinning cut-out, not a move): 8 frames of
+ // 256 x 256, one full turn of an airborne spinning hook kick seen from the side, frame 0 facing RIGHT and turning toward the
+ // camera first (0, 45, 90 = chest to the camera, ... 180 = back to the camera, ... 315); the game shows the frame for the turn
+ 'spin-p1':{w:2048,h:256,what:'hero-p1 (Sean\'s Warrior: leather vest, bare arms, brown trousers) doing an airborne spinning hook kick (tornado kick): 8 frames of one full turn, frame 0 facing right, kicking leg swinging out wide round the body, headless like the sheet'},
+ 'spin-p2':{w:2048,h:256,what:'hero-p2 (Amber\'s Warrior) doing the same airborne spinning hook kick: 8 frames of one full turn, headless like the sheet'},
  // the subway map (src/engines/dd/subwayMap.js): the station wall it hangs on (three screen shapes), the map poster itself (no stops
  // or names: the game draws the route, stops and tags at STOPS), and each chapter's gang tag beside its stop
  'map-wall':{w:1920,h:1080,what:'a grimy 1970s New York subway station wall, straight on: dirty cream tiles, a maroon tile band, soot streaks, faded spray-paint scribbles (no words), harsh fluorescent light; the middle left empty for a poster'},

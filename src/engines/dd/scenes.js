@@ -178,7 +178,9 @@ function carDoors(g,c){const y0=c.B*.08,wy=c.B*.22;for(const dx of c.A.doors||[]
 function drawArea(g,A,camX,vw,BACK,FRONT,t){const c={A,cam:camX,vw,B:BACK,F:FRONT,t},P=K[A.kind]||K.elstreet;
  const far=pic(A.kind,'far'),wall=pic(A.kind,'wall'),floor=pic(A.kind,'floor');
  // a moving train: the tunnel / the dawn city outside rushes past the windows by the clock
- if(far)tilePic(g,far,camX+(A.moving?t*(RUSH[A.kind]||600):0),.25,vw,-40,BACK*.8+40);else P.far(g,c);
+ // the far picture runs from above the top of the view down to the floor line (owner, Nov 24: it used to stop at 80% of the
+ // way down and left a black band wherever the wall picture is see-through at the top); bigger, the horizon stays about put
+ if(far)tilePic(g,far,camX+(A.moving?t*(RUSH[A.kind]||600):0),.25,vw,-70,BACK+74);else P.far(g,c);
  // the wall band; a subway car interior fills it from the ceiling down (WALL_TOP)
  const wt=WALL_TOP[A.kind]??.46;
  if(wall){tilePic(g,wall,camX,1,vw,BACK*wt,BACK*(1-wt));if(A.moving)carDoors(g,c);}else P.wall(g,c);
@@ -192,7 +194,9 @@ function drawArea(g,A,camX,vw,BACK,FRONT,t){const c={A,cam:camX,vw,B:BACK,F:FRON
 // solid obstacles, drawn at their front edge (depth-sorted with the fighters by the engine). X = screen x of b.x in world
 // units, yb/yf = y of the back/front edge
 // how much wider than its footprint a painted prop is drawn
-const PROP_W={car:1.05,wreck:1.05,newsstand:1.1,bench:1.15,couch:1.1,swings:1.1,hotdog:1.15,grave:1.25,hydrant:1.6,meter:2,mailbox:1.4,trashcan:1.35,phone:1.4,lamp:2.2,pylon:1.4,sink:1.3};
+// (Nov 24, GPT's photo props in: the small street pieces and graves were ~60% of real size next to a fighter, so they are drawn
+// ~1.4x their old width; the collision footprint is unchanged and the base still sits on its front edge)
+const PROP_W={car:1.05,wreck:1.05,newsstand:1.45,bench:1.15,couch:1.1,swings:1.1,hotdog:1.15,grave:1.75,hydrant:2.2,meter:2.8,mailbox:1.95,trashcan:1.9,phone:1.95,lamp:3.2,pylon:2,sink:1.8};
 function drawBlock(g,b,X,yb,yf,t){const w=b.w,k=b.kind,box=(h,front,top)=>{rect(g,top,X,yb-h,w,yf-yb);rect(g,front,X,yf-h,w,h);g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1;g.strokeRect(X,yf-h,w,h);};
  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(X+w/2,yf,w*.6,4,0,0,7);g.fill();
  // a painted prop (ddSprites prop-<kind>): as wide as the footprint (cars/newsstands a touch wider), standing on the front edge

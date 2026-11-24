@@ -28,6 +28,7 @@ const DS=require("src/data/ddSprites.js");
 const CUT=require("src/engines/dd/cutscenes.js");
 const MAP=require("src/engines/dd/subwayMap.js");
 const {NECKS}=require("src/data/ddNecks.js");
+const {HEADS}=require("src/data/ddHeads.js");
 const {faceSprite,drawFace,faceHeight,headFacts}=require("src/headFacts.js");
 // a character with a picture of their own (not the emoji card): gang members wear their gang's face only then
 const hasArt=id=>{try{return !!id&&require("src/data/userPortraits.js").isRasterArt(require("src/assets.js").portraitURL(id,'normal'));}catch{return false;}};
@@ -215,7 +216,8 @@ async function warriorsDD(s){
   // the chapter card: title, place, the story so far
   await playCut(n);if(!s.alive)return 'quit';
   story={n,t:0,from:n>0?n-1:null};lastCh=n;phase='story';phaseT=0;musicOn=false;
-  await new Promise(r=>{story.done=r;});if(!s.alive)return 'quit';story=null;challenge=pickChallenger(n);
+  await new Promise(r=>{story.done=r;});if(!s.alive)return 'quit';challenge=pickChallenger(n);
+  // the card stays up (story kept) while the first area's pictures load; playArea drops it when the area card starts
   for(let ai=0;ai<CH[n].areas.length;ai++){const res=await playArea(n,ai);if(!s.alive)return 'quit';if(res!=='clear')return res;}
   return 'clear';}
  async function playArea(n,ai){areaNo=ai;A=SY_.buildArea(n,ai,seed);
@@ -225,7 +227,7 @@ async function warriorsDD(s){
   cam={x:0,lockA:-1e9,lockB:1e9};F=[];shots=[];fx=[];fires=[];wave=-1;waveQ=[];bossOn=false;bossF=null;target=null;bus=null;lurch=0;riffsIn=false;bossT=0;
   items=A.items.map(i=>({...i,z:0}));props=A.props.map(p=>({...p,hp:2}));escapeT=A.escape||0;spawnT=4;
   hero=spawnHero();hero.x=60;F.push(hero);Object.assign(hero,{hp:run.hp??hero.maxHp,weapon:run.weapon||null});
-  phase='card';phaseT=0;fade=1;banner={big:A.beat,small:A.sub,t:2.3};musicOn=true;musicBoss=false;
+  story=null;phase='card';phaseT=0;fade=1;banner={big:A.beat,small:A.sub,t:2.3};musicOn=true;musicBoss=false;
   if(A.siren)sfx.siren();if(n===CH.length-1&&ai===0)sfx.clink();
   return new Promise(r=>{run.done=r;});}
  function triggerWaves(dt){if(phase!=='play')return;
@@ -639,15 +641,27 @@ async function warriorsDD(s){
   // a hero's own 8-frame run strip (ww:run-p1/-p2) when it's in: frame by stride, the neck from the measured strip (else run1's)
   const strip=f.st==='run'&&f.sheet?.startsWith('hero-')?DS.picture('run-'+f.sheet.slice(5)):null;
   if(strip){const fr=Math.floor(f.walkPh*1.6)%8;SCL={img:strip,cell:{sx:fr*DS.CELL,sy:0},name:'run1',strip:'run-'+f.sheet.slice(5),fr};}
+  // the cyclone spin kick drawn from the heroes' own 8-frame turn (ww:spin-p1/-p2) once that art is in: the frame for the turn,
+  // no squashing (until then the body turns by squashing the kick cell, below)
+  const spinOn=(f.st==='atk'&&f.mv?.def.spin||f.airAtk==='spin')&&f.sheet?.startsWith('hero-'),spinStrip=spinOn?DS.picture('spin-'+f.sheet.slice(5)):null;
+  if(spinStrip){const A=((f.spinA||0)%(2*Math.PI)+2*Math.PI)%(2*Math.PI),fr=Math.floor(A/(2*Math.PI)*8+.5)%8;SCL={img:spinStrip,cell:{sx:fr*DS.CELL,sy:0},name:'spin',strip:'spin-'+f.sheet.slice(5),fr};}
   const sheet=SCL?.img,cell=SCL?.cell,name=SCL?.name||f.poseName||'stand';
   let spots;const spinning=f.st==='atk'&&f.mv?.def.spin||f.airAtk==='spin',spc=Math.cos(f.spinA||0);
   // a spin kick turns the body round smoothly (x squashed by the cosine of the turn) instead of flipping every frame
-  const face=spinning?(f.airAtk==='spin'?f.baseDir:f.dir)*(spc>=0?1:-1)*Math.max(.2,Math.abs(spc)):f.dir;
+  const face=spinStrip?(f.airAtk==='spin'?f.baseDir:f.dir)||1:spinning?(f.airAtk==='spin'?f.baseDir:f.dir)*(spc>=0?1:-1)*Math.max(.2,Math.abs(spc)):f.dir;
   if(spinning)drawSwoosh(f,sx,sy,kk,false);
+  // the head where the owner placed it (Head Placer, src/data/ddHeads.js): [x, y, turn deg, size, behind] in cell px
+  const hk=SCL?.strip?[SCL.strip,'r'+SCL.fr]:[f.sheet,name],HD=cell?HEADS[hk[0]]?.[hk[1]]:null;let hdPos=null,hdDone=false;
+  const moodNow=['hurt','fall','held','dizzy','grabbed','down','dead'].includes(f.st)?'sad':f.st==='win'?'win':f.st==='atk'?'angry':'normal';
+  function headAt(cx,cy,tilt,fwv){const fid=f.side==='hero'?s.players[f.pi]?.character:f.face;let fm=f.side==='hero'?(moodNow==='angry'?'happy':moodNow):moodNow;if(fid&&fm!=='normal'&&!headFacts(fid,fm))fm='normal';
+   const sp=f.side!=='hero'&&fid?faceSprite(fid,fm,fwv,face):null;
+   if(f.side==='hero'){x.save();x.translate(cx,cy);x.rotate(tilt);drawFace(s,x,f.pi,0,0,fwv/.6,fm,face,.6);x.restore();}
+   else if(sp){x.save();x.translate(cx,cy);x.rotate(tilt);x.drawImage(sp.cv,sp.x,sp.y);x.restore();}
+   else BD.drawGangHead(x,cx,cy-fwv*.08,fwv*1.02,f.head||'thug',{face,tilt,mood:moodNow,id:f.id});}
   x.save();if(f.entering)x.globalAlpha=1-f.entering/.6*.7;
   if(cell){const sc=kk*f.big/DS.UNIT;x.save();x.globalAlpha*=.32;x.fillStyle='#000';x.beginPath();x.ellipse(sx,sy,22*kk*f.big,6*kk,0,0,7);x.fill();x.restore();
    // a running stride bobs: up through the stride, down as the back leg comes through
-   const lift=f.st==='run'&&!SCL.strip?(name==='run1'?3:1)*kk*(.6+.4*Math.abs(Math.sin(f.walkPh*.8*Math.PI))):0,rot=0;x.save();x.translate(sx,sy-f.z*kk-lift);if(rot)x.rotate(rot);x.scale(face*sc,sc);const ft=DS.footOf(name);if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
+   const lift=f.st==='run'&&!SCL.strip?(name==='run1'?3:1)*kk*(.6+.4*Math.abs(Math.sin(f.walkPh*.8*Math.PI))):0,rot=0;x.save();x.translate(sx,sy-f.z*kk-lift);if(rot)x.rotate(rot);x.scale(face*sc,sc);const ft=DS.footOf(name);if(HD){x.restore();const oy=sy-f.z*kk-lift;hdPos={x:sx+(HD[0]-ft[0])*sc*face,y:oy+(HD[1]-ft[1])*sc,a:HD[2]*Math.PI/180*face,w:FACE_W*kk*f.big*HD[3]};if(HD[4]){headAt(hdPos.x,hdPos.y,hdPos.a,hdPos.w);hdDone=true;}x.save();x.translate(sx,oy);x.scale(face*sc,sc);}if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
    const J=BD.joints(f.pose);const tp=p=>({x:sx+p[0]*face*kk*f.big,y:sy-f.z*kk+p[1]*kk*f.big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),wa:f.pose.wa,wl:f.pose.wl};
    const cn=SCL.strip&&NECKS[SCL.strip]?.['r'+SCL.fr]?cellNeck(SCL.strip,'r'+SCL.fr,sx,sy-f.z*kk-lift,face,sc,rot):cellNeck(f.sheet,name,sx,sy-f.z*kk-lift,face,sc,rot);if(cn){spots.neck=cn.neck;spots.head=cn.head;if(cn.hand)spots.hand=cn.hand;spots.measured=1;}}
   else spots=BD.drawBody(x,f.pose,{x:sx,y:sy,face,k:kk,o:f.o,big:f.big,flash:f.flash*5,z:f.z});
@@ -664,9 +678,8 @@ async function warriorsDD(s){
   const fh=(f.side==='hero'||sp)&&fid?faceHeight(fid,fm,fw):fw*1.25,cx=nk.x+ux/ul*fh*FACE_UP,cy=nk.y+uy/ul*fh*FACE_UP;spots.face={x:cx,y:cy};
   // the face turns with the neck (lying down = on its side), the chin stays on the neck
   const tilt=Math.atan2(ux,-uy);
-  if(f.side==='hero'){x.save();x.translate(cx,cy);x.rotate(tilt);drawFace(s,x,f.pi,0,0,fw/.6,fm,face,.6);x.restore();}
-  else if(sp){x.save();x.translate(cx,cy);x.rotate(tilt);x.drawImage(sp.cv,sp.x,sp.y);x.restore();}
-  else BD.drawGangHead(x,cx,cy-fw*.08,fw*1.02,f.head||'thug',{face,tilt,mood,id:f.id});
+  if(hdPos){spots.face={x:hdPos.x,y:hdPos.y};if(!hdDone)headAt(hdPos.x,hdPos.y,hdPos.a,hdPos.w);}
+  else headAt(cx,cy,tilt,fw);
   x.restore();
   if(f.side==='ally'&&f.st!=='dead'&&!(riffsIn&&bossF&&Math.abs(f.x-bossF.x)<90)){x.fillStyle='#e8a83c';x.font=`900 ${Math.max(8,7*kk)}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(f.type==='fox'?'FOX':'RIFF',cx,cy-fw*1.2);}
   if(f.challenger&&f.st!=='dead'){x.font=`900 ${Math.max(9,8*kk)}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.lineWidth=3;x.strokeStyle='#000';const nm=nameOf(f.challenger).toUpperCase();x.strokeText(nm,cx,cy-fw*1.25);x.fillStyle='#ff5c5c';x.fillText(nm,cx,cy-fw*1.25);}
