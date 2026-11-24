@@ -140,6 +140,21 @@ See each `<name>-template.png` for size and anchor: `bat`, `pipe`, `chain`, `whi
 `fx-twister` (spinning wind), `fx-fury` (speed-line burst), `logo` (THE WARRIORS / COME OUT TO PLAY, transparent) and
 `title-bg` (1920 x 1080 night street, two heroes back to back, faces turned away or out of frame).
 
+## 4. Story cutscene backdrops (10 pictures, 1920x1080, NO people)
+The game draws the people (the gangs, Cyrus, the Warriors with the players' faces) over these, so leave the lower 45%
+open (empty floor, lawn, sand or platform), keep the horizon about 40-50% down, night (or dawn) light, our own drawing
+of the place, no logos, no text except the subway sign:
+- `cut-conclave.png`: night park in the Bronx, a low wooden stage in the middle with two tall flood lights, trees, skyline far behind.
+- `cut-riffs.png`: the Riffs' headquarters at night: dark wood, candles, a dojo feel.
+- `cut-street.png`: New York street at night: brick tenements, a lamp post, graffiti.
+- `cut-lizzies.png`: a dim apartment party room: coloured lights, a couch, records.
+- `cut-park.png`: Riverside Park at night: one lamp post, trees, a path.
+- `cut-subway.png`: a 1970s subway platform: tiled wall, a station sign, yellow edge.
+- `cut-restroom.png`: a grimy subway men's room: tiles, stalls, sinks.
+- `cut-dawn.png`: inside a subway car at dawn, orange sunrise through the windows.
+- `cut-coney.png`: Coney Island beach at dawn: the big Ferris wheel, boardwalk, ocean.
+- `cut-radio.png`: a dark radio studio: one microphone, an ON AIR light.
+
 ## Hand back
 PNG at exactly these sizes, named as listed. Upload to Drive (folders "The Warriors — Fighters & Props", "The Warriors — Stage Art") with an UPLOADS-GPT note + manifest (file, size, bytes, SHA256);
 files under 80 KB in an identically named ZIP. Start with `hero-p1.png` so Sean can check the style in the game first.

@@ -25,6 +25,7 @@ const BD=require("src/engines/dd/body.js");
 const SY_=require("src/engines/dd/story.js");
 const SC=require("src/engines/dd/scenes.js");
 const DS=require("src/data/ddSprites.js");
+const CUT=require("src/engines/dd/cutscenes.js");
 const {faceSprite,drawFace,faceHeight,headFacts}=require("src/headFacts.js");
 
 const FACE_W=15,FACE_UP=.42,VH=380,BACK=210,DEPTH=SY_.DEPTH,FRONT=BACK+DEPTH,FIG=.9,G=980,SAVE='sc-warriors-v1';
@@ -37,7 +38,9 @@ const SPECIALS=[{lv:1,bars:1,name:'RISING FIST',how:'1 bar · tap SPECIAL: dashe
  {lv:1,bars:1,name:'BREAKAWAY',how:'1 bar · SPECIAL while hurt or held: knocks everyone back'}];
 // moves: seq = [pose, seconds] key poses, act = active segments, reach = [from,to] in front (negative = behind),
 // next = what PUNCH (P) / KICK (K) chains into once this one has hit, kind = what a hit does
+const SPIN_W=11;
 const MV={
+ // spin kicks turn at SPIN_W = 11 rad/s (1.75 turns a second: readable, not a blur)
  jab:{seq:[['jabC',.04],['jab',.06],['stand',.11]],act:[1],dmg:2,reach:[-14,50],kind:'light',sfx:'p',next:{P:'cross',K:'kick'}},
  cross:{seq:[['jabC',.03],['cross',.07],['stand',.12]],act:[1],dmg:2,reach:[-14,52],kind:'light',sfx:'p',next:{P:'hook',K:'sweep'},step:40},
  hook:{seq:[['hookC',.06],['hook',.08],['stand',.18]],act:[1],dmg:4,reach:[-14,54],kind:'knock',kb:170,sfx:'P',step:50,fin:1},
@@ -57,6 +60,7 @@ const MV={
  eswing:{seq:[['batWind',.32],['batHit',.07],['batFollow',.16],['batReady',.3]],act:[1],dmg:3,reach:[-8,66],kind:'knock',kb:150,sfx:'B',tell:1,wpn:1},
  toss:{seq:[['toss',.12],['stand',.18]],spawn:'knife'},
  heave:{seq:[['throw1',.1],['throw2',.14],['stand',.18]],spawn:'carry'},
+ hurl:{seq:[['throw1',.12],['throw2',.12],['stand',.16]],spawn:'weapon'},
  shoot:{seq:[['aim',.9],['aim',.1],['stand',.35]],spawn:'bullet',spawnSeg:0,aim:1},
  lobm:{seq:[['lobC',.34],['lob',.1],['stand',.3]],spawn:'lob',spawnSeg:0},
  bash:{seq:[['block',.3],['bash',.12],['block',.28]],act:[1],dmg:3,reach:[0,48],kind:'knock',kb:200,sfx:'P',lunge:[0,240],tell:1},
@@ -181,6 +185,7 @@ async function warriorsDD(s){
  // ---- chapters and areas
  async function playChapter(n){chapterNo=n;musicK=CH[n].music||0;
   // the chapter card: title, place, the story so far
+  await playCut(n);if(!s.alive)return 'quit';
   story={n,t:0};phase='story';phaseT=0;musicOn=false;
   await new Promise(r=>{story.done=r;});if(!s.alive)return 'quit';story=null;
   for(let ai=0;ai<CH[n].areas.length;ai++){const res=await playArea(n,ai);if(!s.alive)return 'quit';if(res!=='clear')return res;}
@@ -248,7 +253,7 @@ async function warriorsDD(s){
     if(dx*f.dir>0)f.x+=Math.sign(dx)*Math.min(Math.abs(dx),300*dt);else if(dx*f.dir<-6)f.x+=Math.sign(dx)*Math.min(Math.abs(dx),110*dt);f.d+=clamp(v.d-f.d,-150*dt,150*dt);}}
   if(m.home&&m.seg===0){f.x+=clamp(m.home.x-f.x,-560*dt,560*dt);f.d+=clamp(m.home.d-f.d,-220*dt,220*dt);}
   if(def.riseZ&&m.seg===2)f.z=Math.sin(Math.min(1,m.segT/seg[1])*Math.PI)*def.riseZ;
-  if(def.spin){f.spinA=(f.spinA||0)+dt*22;if(Math.floor(f.spinA/Math.PI)%2!==Math.floor((f.spinA-dt*22)/Math.PI)%2)sfx.whiff();}
+  if(def.spin){f.spinA=(f.spinA||0)+dt*SPIN_W;if(Math.floor(f.spinA/Math.PI)%2!==Math.floor((f.spinA-dt*SPIN_W)/Math.PI)%2)sfx.whiff();}
   const lastAct=def.act?def.act[def.act.length-1]:-1,active=def.act&&def.act.includes(m.seg)&&!(def.actFrac&&def.act.length>1&&m.seg===lastAct&&m.segT>seg[1]*def.actFrac);
   if(active){if(def.multi){m.multiT-=dt;if(m.multiT<=0){m.multiT=def.multi;m.hit.clear();}}attackCheck(f,def,m);}
   if(def.burst&&!m.done){m.done=true;for(const v of enemiesOf(f))if(Math.abs(v.x-f.x)<92&&Math.abs(v.d-f.d)<40&&!['dead','down','fall','gone'].includes(v.st)){v.hp-=3;knockdown(v,Math.sign(v.x-f.x||1)*240,280,v.hp<=0,f);}fx.push({kind:'ring',x:f.x,d:f.d,z:40,t:.4});shakeT=.3;}
@@ -320,8 +325,11 @@ async function warriorsDD(s){
   if(what==='knife'){shots.push({x:f.x+f.dir*24,d:f.d,z:52,vx:f.dir*360,vz:0,kind:'knife',side:own,dmg:f.side==='hero'?6:3,life:1.4});if(f.weapon&&f.side==='hero'){f.weapon.uses--;if(f.weapon.uses<=0)f.weapon=null;}sfx.whiff();}
   else if(what==='bullet'){shots.push({x:f.x+f.dir*34*f.big,d:f.d,z:62*f.big,vx:f.dir*780,vz:0,kind:'bullet',side:own,dmg:f.boss?6:5,life:1.4,flat:1});sfx.gun();fx.push({kind:'flash',x:f.x+f.dir*36*f.big,d:f.d,z:62*f.big,t:.08});}
   else if(what==='lob'){const tg=f.aimAt||hero,T=.85,kind=f.T?.ranged==='bottle'?'bottle':'molotov';shots.push({kind,x:f.x+f.dir*10,d:f.d,z:80,tx:tg.x,td:tg.d,sx:f.x+f.dir*10,sd:f.d,T,age:0,side:own,dmg:4,life:T+.1,lob:1});sfx.whiff();}
+  // a weapon thrown end over end: hits the first one in its line hard, then clatters to the floor to be picked up again
+  else if(what==='weapon'&&f.weapon){const w=f.weapon,W0=WPN[w.kind]||WPN.bat;shots.push({x:f.x+f.dir*22,d:f.d,z:64,vx:f.dir*430,vz:70,kind:'wpn',wkind:w.kind,uses:w.uses,side:own,dmg:W0.dmg+3,life:1.8,spin:0});f.weapon=null;sfx.U();}
   else if(what==='carry'&&f.carry){const kd=f.carry.kind;shots.push({x:f.x+f.dir*20,d:f.d,z:kd==='barrel'?16:70,vx:f.dir*(kd==='barrel'?280:330),vz:kd==='barrel'?0:60,kind:kd,side:own,dmg:kd==='rock'?7:6,life:2.2,roll:kd==='barrel',hides:f.carry.hides});f.carry=null;sfx.U();}}
 
+ function dropWeapon(sh){const u=(sh.uses||1)-1;if(u>0)items.push({x:sh.x-Math.sign(sh.vx)*10,d:sh.d,z:24,vz:140,kind:sh.wkind,uses:u});sfx.thud();}
  // ---- per-frame update
  function step(dt){t+=dt;if(hitstop>0){hitstop-=dt;return;}if(slow>0){slow-=dt;dt*=.3;}
   readStick();if(bot.on)botThink(dt);if(spCD>0)spCD-=dt;
@@ -335,8 +343,8 @@ async function warriorsDD(s){
    if(sh.lob){sh.age+=dt;const q=Math.min(1,sh.age/sh.T);sh.x=sh.sx+(sh.tx-sh.sx)*q;sh.d=sh.sd+(sh.td-sh.sd)*q;sh.z=80*(1-q)+Math.sin(q*Math.PI)*90;
     if(q>=1&&!sh.landed){sh.landed=true;sh.life=0;if(sh.kind==='molotov'){fires.push({x:sh.x,d:sh.d,r:26,t:3.2,tick:0});sfx.fire();}else{sfx.glass();fx.push({kind:'glass',x:sh.x,d:sh.d,z:4,t:.4});
      for(const v of living(['hero','ally']))if(Math.hypot(v.x-sh.x,(v.d-sh.d)*1.5)<24)damage(null,v,sh.dmg,'push',0,{});}}continue;}
-   sh.x+=sh.vx*dt;sh.z+=sh.vz*dt;if(!sh.roll&&!sh.flat)sh.vz-=G*.25*dt;if(sh.z<=0&&!sh.roll){sh.z=0;sh.life=Math.min(sh.life,.05);}
-   const targets=sh.side==='hero'?living('foe'):living(['hero','ally']);for(const v of targets){if(canBeHit(v,null)&&Math.abs(v.x-sh.x)<18&&Math.abs(v.d-sh.d)<(sh.kind==='bullet'?9:12)&&sh.z<v.z+100*v.big){const owner=sh.side==='hero'?hero:null;damage(owner,v,sh.dmg,'knock',sh.vx*.4,{});sfx.P();if(!sh.roll){sh.life=0;if(sh.hides)items.push({x:sh.x,d:sh.d,z:20,vz:120,kind:sh.hides});}}}}
+   sh.x+=sh.vx*dt;sh.z+=sh.vz*dt;if(!sh.roll&&!sh.flat)sh.vz-=G*.25*dt;if(sh.kind==='wpn')sh.spin+=dt*Math.sign(sh.vx)*18;if(sh.z<=0&&!sh.roll){sh.z=0;sh.life=Math.min(sh.life,.05);if(sh.kind==='wpn'&&!sh.dropped){sh.dropped=1;dropWeapon(sh);}}
+   const targets=sh.side==='hero'?living('foe'):living(['hero','ally']);for(const v of targets){if(canBeHit(v,null)&&Math.abs(v.x-sh.x)<18&&Math.abs(v.d-sh.d)<(sh.kind==='bullet'?9:12)&&sh.z<v.z+100*v.big){const owner=sh.side==='hero'?hero:null;damage(owner,v,sh.dmg,'knock',sh.vx*.4,{});sfx.P();if(!sh.roll){sh.life=0;if(sh.hides)items.push({x:sh.x,d:sh.d,z:20,vz:120,kind:sh.hides});if(sh.kind==='wpn'&&!sh.dropped){sh.dropped=1;dropWeapon(sh);}}}}}
   shots=shots.filter(q=>q.life>0&&q.x>cam.x-120&&q.x<cam.x+vw+120);
   // molotov fire on the floor: burns whoever stands in it (enemies too)
   for(const fi of fires){fi.t-=dt;fi.tick-=dt;if(fi.tick<=0){fi.tick=.45;for(const v of F)if(v.st!=='dead'&&!v.gone&&v.z<10&&Math.hypot(v.x-fi.x,(v.d-fi.d)*1.6)<fi.r&&canBeHit(v,null)){damage(v.side==='foe'&&hero?hero:null,v,2,'light',0,{});v.flash=.2;}}}
@@ -382,20 +390,22 @@ async function warriorsDD(s){
   if(f.side==='hero'){const lo=cam.x+14,hi=cam.lockB<1e8?cam.x+vw-14:A.len-14;f.x=clamp(f.x,lo,hi);}}
  function land(f){if(f.st==='fall'){f.st='down';f.stT=0;f.vz=0;sfx.thud();fx.push({kind:'dust',x:f.x,d:f.d,z:0,t:.35});
    if(f.thrown){f.thrown=false;for(const o of living(f.side))if(o!==f&&canBeHit(o,null)&&Math.abs(o.x-f.x)<36&&Math.abs(o.d-f.d)<16){o.hp-=3;knockdown(o,Math.sign(o.x-f.x||1)*170,210,o.hp<=0,null);}}}
-  else if(f.st==='air'){f.st='idle';f.airAtk=null;f.vx=0;fx.push({kind:'dust',x:f.x,d:f.d,z:0,t:.25});}}
+  else if(f.st==='air'){if(f.side==='hero'&&f.airAtk){f.recT=f.airAtk==='spin'?.3:.32;f.runT=0;}f.st='idle';f.airAtk=null;f.vx=0;fx.push({kind:'dust',x:f.x,d:f.d,z:0,t:.25});}}
  function heroStep(h,dt){
   // the special works out of trouble too (Breakaway)
   if(['hurt','held','grabbed','dizzy'].includes(h.st)){if(spCD<=0&&pending('special')){took('special');special(h,inp.sx);}if(h.st==='held'&&(took('punch',.3)||took('kick',.3)||took('jump',.3)))h.escape+=.24;return;}
   if(['fall','down','getup','pit','dead','win'].includes(h.st))return;
+  // landing from an air kick takes a moment, and the running jump kick needs a breather before the next one
+  h.rjCD=Math.max(0,(h.rjCD||0)-dt);if(h.recT>0){h.recT-=dt;h.vx*=Math.max(0,1-dt*10);h.x+=h.vx*dt;return;}
   const sx=inp.sx,sy=inp.sy,mov=Math.hypot(sx,sy)>.2;
   if(Math.abs(sx)>.88){h.runT=(h.runT||0)+dt;}else h.runT=0;const running=h.runT>.2&&!h.carry;
   // a special cancels whatever you're doing (but never one special into another)
   if(pending('special')&&!(h.mv?.def.special)&&spCD<=0&&h.st!=='air'&&h.st!=='grabbing'&&h.st!=='carry'){took('special');special(h,sx);return;}
   if(h.st==='atk'){moveStep(h,dt);bufferChain(h);return;}
   if(h.st==='air'){h.vx+=sx*260*dt;h.vx=clamp(h.vx,-190,190);h.x+=h.vx*dt;h.d+=sy*50*dt;
-   if(!h.airAtk&&took('kick')&&run.lv>=2){if(run.lv>=7&&Math.abs(h.vz)<190){h.airAtk='spin';h.spinT=0;sfx.K();}else{h.airAtk='jkick';sfx.k();}h.airHit=new Set();}
+   if(!h.airAtk&&took('kick')&&run.lv>=2){if(run.lv>=7&&Math.abs(h.vz)<190){h.airAtk='spin';h.spinT=0;h.spinA=0;sfx.K();}else{h.airAtk='jkick';sfx.k();}h.airHit=new Set();}
    if(!h.airAtk&&took('punch')){h.airAtk='jkick';h.airHit=new Set();}
-   if(h.airAtk){const def=h.airAtk==='spin'?{reach:[-54,54],dmg:6,kind:'launch',kb:170}:{reach:[4,54],dmg:4,kind:'knock',kb:170};if(h.airAtk==='spin'){h.spinT+=dt;h.dir=Math.floor(h.spinT/.07)%2?-h.baseDir:h.baseDir;}
+   if(h.airAtk){const def=h.airAtk==='spin'?{reach:[-54,54],dmg:6,kind:'launch',kb:170}:{reach:[4,54],dmg:4,kind:'knock',kb:170};if(h.airAtk==='spin'){h.spinT+=dt;const a0=h.spinA||0;h.spinA=a0+dt*SPIN_W;h.dir=Math.cos(h.spinA)>=0?h.baseDir:-h.baseDir;if(Math.floor(h.spinA/Math.PI)!==Math.floor(a0/Math.PI))sfx.whiff();}
     for(const v of living('foe')){if(h.airHit.has(v)||!canBeHit(v,h))continue;const dx=(v.x-h.x)*(h.airAtk==='spin'?1:h.dir),dd=Math.abs(v.d-h.d);if(dd>16)continue;
      const ok=h.airAtk==='spin'?Math.abs(v.x-h.x)<54:dx>=def.reach[0]&&dx<=def.reach[1];if(ok){h.airHit.add(v);damage(h,v,def.dmg,def.kind,def.kb,def);sfx.K();}}}
    return;}
@@ -427,7 +437,7 @@ async function warriorsDD(s){
    const dz=living('foe').find(v=>v.st==='dizzy'&&Math.abs(v.d-h.d)<14&&(v.x-h.x)*h.dir>-6&&(v.x-h.x)*h.dir<54);
    if(run.lv>=6&&dz&&!mov){startMove(h,'up');return;}
    startMove(h,'jab');return;}
-  if(took('kick')){autoFace(h,sx);if(away&&behindFoe(h)){startMove(h,'bkick');return;}if(running&&run.lv>=2){h.st='air';h.vz=260;h.vx=h.dir*210;h.airAtk='jkick';h.airHit=new Set();h.baseDir=h.dir;return;}startMove(h,'kick');return;}}
+  if(took('kick')){autoFace(h,sx);if(h.weapon){startMove(h,'hurl');return;}if(away&&behindFoe(h)){startMove(h,'bkick');return;}if(running&&run.lv>=2&&h.rjCD<=0){h.st='air';h.vz=260;h.vx=h.dir*210;h.airAtk='jkick';h.airHit=new Set();h.baseDir=h.dir;h.rjCD=1.5;return;}startMove(h,'kick');return;}}
  // chains: once a move's hit is out, PUNCH/KICK queues the next (only when it connected: whiffs recover fully)
  function bufferChain(h){const m=h.mv;if(!m||m.chainQ)return;const nx=m.def.next;if(!nx)return;const actEnd=Math.max(...(m.def.act||[0]));if(m.seg<actEnd||!m.landed)return;
   let q=null;if(nx.P&&pending('punch',.3)){took('punch',.3);q=nx.P;}else if(nx.K&&pending('kick',.3)){took('kick',.3);q=nx.K;}
@@ -504,7 +514,7 @@ async function warriorsDD(s){
 
  // ---- drawing
  function draw(){layout();const W=s.W,H=s.H;x.setTransform(1,0,0,1,0,0);x.fillStyle='#06060a';x.fillRect(0,0,W,H);
-  if(phase==='title'||phase==='select'){drawTitle();return;}if(phase==='story'){drawStory();return;}if(!A)return;
+  if(phase==='title'||phase==='select'){drawTitle();return;}if(phase==='story'){drawStory();return;}if(phase==='cut'){cuts.draw();return;}if(!A)return;
   const sh=shakeT>0?(Math.random()-.5)*shakeT*20:0,sway=A.moving?Math.sin(t*2.2)*1.2+Math.sin(t*7.1)*.4:0;
   x.save();x.translate(sh,bandY+sway*k);x.scale(k,k);
   SC.drawArea(x,A,cam.x,vw,BACK,FRONT,t);
@@ -529,11 +539,21 @@ async function warriorsDD(s){
   drawHUD();drawControls();
   if(fade>0){x.fillStyle=`rgba(0,0,0,${fade})`;x.fillRect(0,0,W,H);}}
  function drawBlockAt(b){x.save();x.translate(0,bandY);x.scale(k,k);SC.drawBlock(x,b,b.x-cam.x,BACK+b.d0,BACK+b.d1,t);x.restore();}
+ // the spin kick's whirl: a fading crescent round the fighter at kick height that follows the turn; the back half is
+ // drawn behind the body, the front half over it, so the leg seems to sweep round them
+ function drawSwoosh(f,sx,sy,kk,front){const A=f.spinA||0,cy=sy-f.z*kk-30*kk*f.big,rx=50*kk*f.big,ry=13*kk*f.big,dirS=(f.airAtk==='spin'?f.baseDir:f.dir)||1;
+  x.save();x.lineCap='round';for(let i=0;i<14;i++){const a1=A-i*.16,a2=a1-.16,mid=(a1+a2)/2,inFront=Math.sin(mid)>0;if(inFront!==front)continue;
+   const al=(1-i/14)*.75;x.strokeStyle=i<3?`rgba(255,255,255,${al})`:`rgba(255,${190-i*6},${90-i*4},${al})`;x.lineWidth=(7-i*.35)*kk;
+   x.beginPath();x.moveTo(sx+Math.cos(a1)*rx*dirS,cy+Math.sin(a1)*ry);x.lineTo(sx+Math.cos(a2)*rx*dirS,cy+Math.sin(a2)*ry);x.stroke();}
+  x.restore();}
  function drawFighter(f){const sx=SX(f.x),sy=SYw(BACK+f.d),kk=k*FIG,blink=(f.st==='dead'&&f.stT>.4&&Math.floor(t*14)%2)||(f.inv>0&&f.side==='hero'&&Math.floor(t*16)%2&&!f.mv);if(blink)return;
   if(sx<-90||sx>s.W+90)return;
   let name=f.poseName||'stand';const sheet=DS.picture(f.sheet);let cell=null;
   if(sheet){cell=DS.cellOf(f.sheet,name);if(!cell||cell.sy+DS.CELL>sheet.height){name=SHEET_ALIAS[name]||name;cell=DS.cellOf(f.sheet,name);if(cell&&cell.sy+DS.CELL>sheet.height)cell=null;}}
-  let spots;const face=f.st==='atk'&&f.mv?.def.spin||f.airAtk==='spin'?(Math.floor(t*28)%2?1:-1)*f.dir:f.dir;
+  let spots;const spinning=f.st==='atk'&&f.mv?.def.spin||f.airAtk==='spin',spc=Math.cos(f.spinA||0);
+  // a spin kick turns the body round smoothly (x squashed by the cosine of the turn) instead of flipping every frame
+  const face=spinning?(f.airAtk==='spin'?f.baseDir:f.dir)*(spc>=0?1:-1)*Math.max(.2,Math.abs(spc)):f.dir;
+  if(spinning)drawSwoosh(f,sx,sy,kk,false);
   x.save();if(f.entering)x.globalAlpha=1-f.entering/.6*.7;
   if(cell){const sc=kk*f.big/DS.UNIT;x.save();x.globalAlpha*=.32;x.fillStyle='#000';x.beginPath();x.ellipse(sx,sy,22*kk*f.big,6*kk,0,0,7);x.fill();x.restore();
    x.save();x.translate(sx,sy-f.z*kk);x.scale(face*sc,sc);const ft=DS.footOf(name);if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
@@ -541,6 +561,7 @@ async function warriorsDD(s){
   else spots=BD.drawBody(x,f.pose,{x:sx,y:sy,face,k:kk,o:f.o,big:f.big,flash:f.flash*5,z:f.z});
   // the riot shield, a weapon, a carried barrel
   if(f.shield>0&&!['fall','down','dead'].includes(f.st)){const hx=spots.hand.x+face*4*kk,hy=spots.hand.y;x.fillStyle='rgba(160,190,220,.45)';x.strokeStyle='#2c3448';x.lineWidth=2;x.beginPath();x.roundRect(hx-4*kk,hy-34*kk,8*kk,52*kk,3*kk);x.fill();x.stroke();}
+  if(spinning)drawSwoosh(f,sx,sy,kk,true);
   if(f.weapon)drawWeapon(f.weapon.kind,spots,face,kk,f);
   if(f.carry){const im=DS.picture(f.carry.kind);const w=(f.carry.kind==='barrel'?30:26)*kk;if(im)x.drawImage(im,spots.head.x-w/2,spots.head.y-w*1.5,w,w*im.height/im.width);else{x.fillStyle=f.carry.kind==='barrel'?'#7c4c1c':'#8c8c8c';x.beginPath();x.roundRect(spots.head.x-w/2,spots.head.y-w*1.6,w,w*1.1,5);x.fill();}}
   // the face on the neck: heroes and named characters wear their picture, the gangs a drawn head of their own look
@@ -588,6 +609,11 @@ async function warriorsDD(s){
    const TX=SX(q.tx),TY=SYw(BACK+q.td);x.strokeStyle=`rgba(255,60,40,${.5+.4*Math.sin(t*20)})`;x.lineWidth=2;x.beginPath();x.ellipse(TX,TY,16*k,6*k,0,0,7);x.stroke();
    x.save();x.translate(sx,y);x.rotate(t*12);x.fillStyle=q.kind==='molotov'?'#3c8c3c':'#5c3c1c';x.fillRect(-2.5*k,-7*k,5*k,12*k);if(q.kind==='molotov'){x.fillStyle='#ff8c2c';x.beginPath();x.arc(0,-8*k,3*k,0,7);x.fill();}x.restore();return;}
   if(q.kind==='bullet'){x.fillStyle='#ffe8a0';x.fillRect(sx-6*k,y-1*k,12*k,2*k);return;}
+  if(q.kind==='wpn'){const W0=WPN[q.wkind]||WPN.bat,im=DS.picture(q.wkind),L=W0.len*k;x.save();x.translate(sx,y);x.rotate(q.spin);
+   // motion blur: two faint copies behind it
+   for(let g=2;g>=0;g--){x.save();x.globalAlpha=g?.18/g:1;x.rotate(-g*.35*Math.sign(q.vx));
+    if(im){const h2=L*im.height/im.width;x.drawImage(im,-L/2,-h2/2,L,h2);}else{x.lineCap='round';x.strokeStyle='#000';x.lineWidth=W0.w*k+2;x.beginPath();x.moveTo(-L/2,0);x.lineTo(L/2,0);x.stroke();x.strokeStyle=W0.col;x.lineWidth=W0.w*k;x.stroke();}
+    x.restore();}x.restore();return;}
   if(q.kind==='knife'){x.save();x.translate(sx,y);x.scale(Math.sign(q.vx),1);x.fillStyle='#dcdcdc';x.beginPath();x.moveTo(10*k,0);x.lineTo(-4*k,-2*k);x.lineTo(-4*k,2*k);x.fill();x.fillStyle='#3c2c1c';x.fillRect(-9*k,-1.5*k,5*k,3*k);x.restore();}
   else{const w=(q.kind==='barrel'?22:18)*k;x.save();x.translate(sx,y-w/2);x.rotate(t*10*Math.sign(q.vx));x.fillStyle=q.kind==='barrel'?'#7c4c1c':q.kind==='rock'?'#8c8c8c':'#a8783c';x.fillRect(-w/2,-w/2,w,w);x.restore();}}
  function drawFx(q){const sx=SX(q.x),sy=SYw(BACK+(q.d||0))-(q.z||0)*k;
@@ -651,7 +677,7 @@ async function warriorsDD(s){
   const kx=sk?cx+clamp(sk.x-cx,-R,R):cx,ky=sk?cy+clamp(sk.y-cy,-R,R):cy;x.fillStyle='rgba(255,255,255,.55)';x.beginPath();x.arc(kx,ky,R*.45,0,7);x.fill();x.restore();
   // context labels: what PUNCH / KICK / SPECIAL will do right now
   const h=hero,onItem=h&&!h.weapon&&items.some(i=>!FOOD[i.kind]&&Math.abs(i.x-h.x)<24&&Math.abs(i.d-h.d)<14&&i.z===0),nsp=h&&run?nextSpecial(h,inp.sx):null;
-  const lab={punch:h?.carry?'THROW':onItem?'PICK UP':h?.weapon?'SWING':h?.st==='grabbing'?'KNEE':'PUNCH',kick:h?.carry?'THROW':'KICK',jump:'JUMP',special:'SPECIAL'};
+  const lab={punch:h?.carry?'THROW':onItem?'PICK UP':h?.weapon?'SWING':h?.st==='grabbing'?'KNEE':'PUNCH',kick:h?.carry||h?.weapon?'THROW':'KICK',jump:'JUMP',special:'SPECIAL'};
   for(const [n,b] of Object.entries(BTN)){const on=inp.held[n],bars=Math.floor(run.meter/100),dis=n==='special'&&(bars<1||spCD>0||h?.mv?.def.special);x.save();x.globalAlpha=dis?.32:on?.95:.62;
    x.fillStyle=on?'#fff':n==='special'&&bars>=3?`hsl(${(t*200)%360},80%,55%)`:b.col;x.strokeStyle='rgba(0,0,0,.6)';x.lineWidth=3;x.beginPath();x.arc(b.x,b.y,b.r*(on?.94:1),0,7);x.fill();x.stroke();
    x.fillStyle=on?b.col:'#fff';x.font=`900 ${b.r*.32}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(lab[n],b.x,b.y);
@@ -659,11 +685,31 @@ async function warriorsDD(s){
      x.strokeStyle=bars>=3?`hsl(${(t*200)%360},90%,60%)`:'#ffd23c';x.beginPath();x.arc(b.x,b.y,b.r+6,a0,a0+(a1-a0)*f2);x.stroke();}
     if(nsp&&!dis){const nm={rise:'RISING FIST',twister:'TWISTER',fury:'FURY!',burst:'BREAKAWAY'}[nsp];small(nm,b.x,b.y-b.r-15,Math.max(9,b.r*.3),'#ffd23c');}}
    x.restore();}}
+ // ---- people for the cutscenes: a body from body.js and the same face rules as a fighter (players' faces, named
+ // characters' pictures, the gangs' drawn heads); g = the canvas to draw on (the crowd is painted into its own)
+ function drawPerson(sx,sy,kk,p,g=x){const face=p.face||1,big=p.big||1,pose=BD.P[p.pose]||BD.P.stand;
+  const spots=BD.drawBody(g,pose,{x:sx,y:sy,face,k:kk,o:BD.OUTFIT[p.o]||BD.OUTFIT.thug,big});
+  const fw=FACE_W*kk*big,nk=spots.neck||spots.head,ux=spots.head.x-nk.x,uy=spots.head.y-nk.y,ul=Math.hypot(ux,uy)||1;
+  const isP=p.pi!=null&&p.pi<s.players.length,fid=isP?s.players[p.pi]?.character:p.char;let fm=p.mood||'normal';if(fid&&fm!=='normal'&&!headFacts(fid,fm))fm='normal';
+  const sp=!isP&&fid?faceSprite(fid,fm,fw,face):null,fh=(isP||sp)&&fid?faceHeight(fid,fm,fw):fw*1.25,cx=nk.x+ux/ul*fh*FACE_UP,cy=nk.y+uy/ul*fh*FACE_UP;
+  if(isP)drawFace(s,g,p.pi,cx,cy,fw/.6,fm==='angry'?'happy':fm,face,.6);else if(sp)g.drawImage(sp.cv,cx+sp.x,cy+sp.y);
+  else BD.drawGangHead(g,cx,cy-fw*.08,fw*1.02,p.head||'thug',{face,tilt:Math.atan2(ux,-uy),mood:fm,id:p.id||'x',skin:p.skin});
+  return spots;}
+ function drawPortrait(C,cx,cy,size){const isP=C.pi!=null&&C.pi<s.players.length;
+  if(isP){drawFace(s,x,C.pi,cx,cy,size/.6,'normal',1,.6);return;}
+  const sp=C.char?faceSprite(C.char,'normal',size,1):null;if(sp){x.drawImage(sp.cv,cx+sp.x,cy+sp.y);return;}
+  BD.drawGangHead(x,cx,cy,size*1.1,C.head||'thug',{face:1,id:C.id||'x',skin:C.skin});}
+ const cuts=CUT.makeCuts({x,s,W:()=>s.W,H:()=>s.H,person:drawPerson,portrait:drawPortrait,sfx,noise,snd,DS,BD,names,solo:s.players.length<2||solo,get auto(){return bot.on;}});
+ const seenCut=new Set();
+ // a story scene before a chapter (not online or on the board: those jump straight into a fight); each one once per game
+ function playCut(key){if(online||board||seenCut.has(key))return Promise.resolve();seenCut.add(key);musicOn=false;
+  return DS.ready(CUT.CUT_PICTURES.map(n=>'cut-'+n),1500).then(()=>new Promise(r=>{phase='cut';cuts.start(key,r);}));}
  // ---- title + menus: START / CONTINUE / CHAPTERS / MOVES
  const ui={btns:[],moves:false,
   tap(p){for(const b of ui.btns)if(p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h){b.act();return true;}if(ui.moves){ui.moves=false;return true;}
+   if(phase==='cut'){cuts.tap(p.x,p.y);return true;}
    if(phase==='story'&&story&&story.t>.8){story.done?.();return true;}return false;},
-  key(ev){if(phase==='title'&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();ui.btns[0]?.act();return true;}if(phase==='story'&&story&&(ev.key==='Enter'||ev.key===' ')&&story.t>.8){ev.preventDefault();story.done?.();return true;}return false;},
+  key(ev){if(phase==='cut'&&(ev.key==='Enter'||ev.key===' '||ev.key==='Escape')){ev.preventDefault();ev.key==='Escape'?cuts.skip():cuts.tap(s.W,s.H);return true;}if(phase==='title'&&(ev.key==='Enter'||ev.key===' ')){ev.preventDefault();ui.btns[0]?.act();return true;}if(phase==='story'&&story&&(ev.key==='Enter'||ev.key===' ')&&story.t>.8){ev.preventDefault();story.done?.();return true;}return false;},
   draw(){if(ui.moves)drawMoves();}};
  let titleDone=null;
  function titleBg(){const W=s.W,H=s.H,bg=DS.picture('title-bg');
@@ -699,7 +745,7 @@ async function warriorsDD(s){
   if(story.t>(story.end?7:5.5)||(bot.on&&story.t>.9))story.done?.();}
  function drawMoves(){const W=s.W,H=s.H,fs=clamp(Math.min(W,H)*.03,10,15);x.fillStyle='rgba(6,4,8,.95)';x.fillRect(0,0,W,H);big('MOVES',W/2,fs*2.6,fs*2.2,'#ffd23c');
   const lv=run?.lv||1,rows=[['PUNCH x3','Jab, cross, hook: each hit chains into the next',1],['KICK x2','Kick, roundhouse',1],['PUNCH PUNCH KICK','Cross into a leg sweep',2],['RUN · DASH PUNCH','Push the stick all the way · + PUNCH',1],['BACK KICK','Stick AWAY + KICK',1],
-   ['WEAPONS','Stand on one + PUNCH. PUNCH x3: swing, backhand, smash',1],['BARRELS & ROCKS','Next to one + PUNCH to lift, PUNCH to throw',1],['SHIELDS','Riot cops block from the front: hit their back, grab, jump-kick',1],
+   ['WEAPONS','Stand on one + PUNCH. PUNCH x3: swing, backhand, smash',1],['THROW WEAPON','Holding one + KICK: it spins at them, then pick it back up',1],['BARRELS & ROCKS','Next to one + PUNCH to lift, PUNCH to throw',1],['SHIELDS','Riot cops block from the front: hit their back, grab, jump-kick',1],
    ...Object.entries(UNLOCK).map(([l,u])=>[u[0],u[1],+l]),...SPECIALS.map(q=>[q.name,q.how,q.lv])];
   const rh=Math.min(fs*1.6,(H-fs*7)/rows.length);rows.forEach((r,i)=>{const y=fs*4.6+i*rh,on=!run||lv>=r[2];small(r[0],W*.05,y,fs*.95,on?'#ffd23c':'#666','left');fitSmall(r[1],W*.38,y,fs*.8,W*.5,on?'#fff':'#666','left');small(`LV ${r[2]}`,W*.96,y,fs*.75,'#ff8ca0','right');});
   small('Tap anywhere to close',W/2,H-fs*1.4,fs*.85,'#999');}
@@ -721,7 +767,7 @@ async function warriorsDD(s){
   boss:()=>{if(!A?.boss)return;wave=A.waves.length-1;waveQ=[];for(const f of living('foe'))f.gone=true;hero.x=A.boss.at+5;cam.x=Math.max(0,A.boss.at-vw*.4);},
   end:()=>{if(!A)return;wave=A.waves.length-1;waveQ=[];for(const f of living('foe'))f.gone=true;hero.x=A.len-(A.escape?200:100);cam.x=Math.max(0,A.len-vw);if(A.boss&&!bossOn)startBoss();},
   give:k2=>{hero.weapon={kind:k2,uses:99};},spawn:(type,dx=60)=>{const f=spawnFoe({type,side:1,d:hero.d});f.x=hero.x+dx;f.entering=null;return f;},
-  get bus(){return bus;},get riffs(){return riffsIn;},get cam(){return cam;},get k(){return k;},get vw(){return vw;}};
+  get cuts(){return cuts;},cut:k=>{phase="cut";cuts.start(k,()=>{phase="wait";});},  get bus(){return bus;},get riffs(){return riffsIn;},get cam(){return cam;},get k(){return k;},get vw(){return vw;}};
 
  async function turn(pi,startAt,count){cur=pi;const lv0=clamp(1+Math.ceil(startAt*.75),1,7);run={lives:board?2:3,lv:lv0,xp:LV_XP[lv0-1],meter:0,score:0,hurt:false};let n=startAt,cleared=0,conts=solo?2:0;
   for(;;){run.hurt=false;run.hp=null;run.weapon=null;combo.best=0;const res=await playChapter(n);if(!s.alive||res==='quit')return {score:run.score,cleared};
@@ -731,7 +777,7 @@ async function warriorsDD(s){
    break;}
   return {score:run.score,cleared,won:n>=CH.length};}
  // the end of the night: a last card, then the result
- function ending(){return new Promise(r=>{phase='story';story={n:CH.length-1,t:0,end:1,done:r};musicOn=false;sfx.clear();});}
+ async function ending(){await playCut('end');if(!s.alive)return;return new Promise(r=>{phase='story';story={n:CH.length-1,t:0,end:1,done:r};musicOn=false;sfx.clear();});}
  function askContinue(){return new Promise(r=>{phase='cont';ui.btns=[];
   const f=()=>{const fs=clamp(Math.min(s.W,s.H)*.04,12,20),bw=Math.min(s.W*.6,280),bh=fs*2.4,x0=(s.W-bw)/2;ui.btns=[{x:x0,y:s.H*.55,w:bw,h:bh,act:()=>done(true)},{x:x0,y:s.H*.55+bh+fs,w:bw,h:bh,act:()=>done(false)}];};f();
   const prev=ui.draw;ui.draw=()=>{f();const fs=clamp(Math.min(s.W,s.H)*.04,12,20);x.fillStyle='rgba(0,0,0,.8)';x.fillRect(0,0,s.W,s.H);big('CONTINUE?',s.W/2,s.H*.38,fs*3,'#ffd23c');fitSmall('From the start of this chapter · score halved',s.W/2,s.H*.46,fs,s.W*.9,'#fff');

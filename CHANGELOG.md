@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.50
+
+- **The Warriors, cutscenes:** the story now plays out between the chapters. The Conclave: every gang in the city in the park, Cyrus on the stage ("Can you dig it?" and the crowd roaring), the shot from the crowd, the cops, and Luther pinning it on the Warriors. Then the radio DJ putting the word out, Masai and the Riffs, Swan calling it, and each gang turning up (the Turnbulls' bus, the Orphans, the Furies tapping their bats, the Lizzies' party, the cops at Union Square, the Punks on skates), the ride home at dawn, Luther clinking his bottles on the beach, and the Riffs clearing the Warriors at the end. Tap to move on, SKIP to jump past.
+- **The Warriors, moves:** hold a weapon and press KICK to throw it end over end at whoever's in front of you; it knocks them down and lands on the floor to pick up again. The spin kick is slower and turns the body with a whirling trail instead of a blur. Holding forward and mashing kick no longer lets you skip across the screen: the running jump kick has a short cooldown and you land with a beat of recovery.
+- **Plinko:** the four small prizes are now real products at their real US prices (Nov 2026), with real photos: an Etch A Sketch, an Instant Pot, a Big Wheel, Converse Chucks, a case of Spam and about 60 more.
+- **Plinko and The Big Wheel:** the real show's sound cues: the Plinko music, Showcase Showdown, Come On Down, the wheel's beeps, dings, bells, buzzers, the losing horn and the big winner fanfare.
+
 ## v0.99.49
 
 - **The Warriors, story mode:** the beat 'em up now follows the film in 10 chapters: the Conclave with cops closing in, the Turnbull AC's bus, the Orphans' turf, the Baseball Furies in Riverside Park, the Lizzies, the Punks in the station, a subway station escape from the cops, a ride on the moving train (stations rush past, an oncoming train, swaying straps), and Coney Island against the Rogues, with the Riffs arriving at the end. Story cards between areas, a tally after each, an ending, and CONTINUE/CHAPTERS on the title.

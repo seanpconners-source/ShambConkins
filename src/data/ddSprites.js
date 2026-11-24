@@ -67,6 +67,17 @@ Object.assign(PICTURES,{
  'fx-hit':{w:768,h:128,what:'hit spark, 6 frames of 128x128 left to right, centred'},'fx-dust':{w:768,h:128,what:'landing dust puff, 6 frames'},
  'fx-rise':{w:768,h:256,what:'Rising Fist special: rising flame/energy column, 6 frames of 128x256'},'fx-twister':{w:768,h:256,what:'Twister special: spinning wind, 6 frames'},
  'fx-fury':{w:1024,h:256,what:'Warrior\'s Fury: speed-line energy burst, 4 frames of 256x256'},
+ // story cutscene backdrops (src/engines/dd/cutscenes.js; the people are drawn over them): 1920x1080, no people in them
+ 'cut-conclave':{w:1920,h:1080,what:'night park in the Bronx: a low wooden stage in the middle with two tall flood lights, trees, city skyline far behind, an empty lawn in front'},
+ 'cut-riffs':{w:1920,h:1080,what:'night: the Riffs headquarters room, dark wood, candles, a martial-arts dojo feel, empty floor in front'},
+ 'cut-street':{w:1920,h:1080,what:'New York street at night, brick tenements, a lamp post, graffiti, empty sidewalk in front'},
+ 'cut-lizzies':{w:1920,h:1080,what:'a dim apartment party room at night: colored lights, a couch, records, empty floor in front'},
+ 'cut-park':{w:1920,h:1080,what:'Riverside Park at night: one lamp post, trees, a path, empty grass in front'},
+ 'cut-subway':{w:1920,h:1080,what:'a 1970s subway station platform at night: tiled wall, station sign, yellow edge, empty platform in front'},
+ 'cut-restroom':{w:1920,h:1080,what:'a grimy subway station men\'s room: tiles, stalls, sinks, empty floor in front'},
+ 'cut-dawn':{w:1920,h:1080,what:'inside a subway car at dawn: orange sunrise through the windows, empty floor in front'},
+ 'cut-coney':{w:1920,h:1080,what:'Coney Island beach at dawn: the big Ferris wheel, boardwalk, ocean, empty sand in front'},
+ 'cut-radio':{w:1920,h:1080,what:'a dark radio studio at night: one microphone, an ON AIR light, nothing else'},
  logo:{w:1600,h:700,what:'title logo THE WARRIORS / COME OUT TO PLAY, transparent'},'title-bg':{w:1920,h:1080,what:'title backdrop: a dark city street at night, two fighters back to back'}});
 const imgs=new Map();let ver=0;
 function picture(name){const url=USER['ww:'+name];if(!url||typeof Image==='undefined')return null;

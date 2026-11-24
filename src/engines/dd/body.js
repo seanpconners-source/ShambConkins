@@ -107,7 +107,12 @@ const OUTFIT={
  lizzie:{shirt:'#7c1c4c',pants:'#24242c',skin:'#e8c0a0',shoe:'#7c1c4c',belt:'#c8a43c'},
  punk:{shirt:'#e8e8e8',pants:'#4c6ca8',skin:'#e0b08c',shoe:'#c8c8c8',belt:'#4c6ca8',overalls:'#4c6ca8',stripeShirt:'#c83c3c',skates:1},
  rogue:{shirt:'#1c1c1c',vest:'#3c2c24',pants:'#2c2c34',skin:'#d8a882',shoe:'#141418',belt:'#8c8c8c'},
- riff:{shirt:'#d8d4c8',vest:'#3c3c3c',pants:'#d8d4c8',skin:'#8c5c3c',shoe:'#1c1c1c',belt:'#e8a83c'}};
+ riff:{shirt:'#d8d4c8',vest:'#3c3c3c',pants:'#d8d4c8',skin:'#8c5c3c',shoe:'#1c1c1c',belt:'#e8a83c'},
+ // cutscene cast: the Warriors' leather vests (bare arms), Cyrus in black with a gold chain, the Hi-Hats (mime stripes), the Boppers (purple)
+ warrior:{shirt:'#c89470',vest:'#6c3c1c',pants:'#2c2c38',skin:'#d8a882',shoe:'#1c1414',belt:'#3c2414',stripe:'#e8b83c',bare:true},
+ cyrus:{shirt:'#141418',vest:'#2c1c34',pants:'#141418',skin:'#7c5034',shoe:'#0c0c0c',belt:'#e8c84c',stripe:'#e8c84c'},
+ hihat:{shirt:'#f0f0f0',vest:'#1c1c1c',pants:'#1c1c1c',skin:'#f4f0ec',shoe:'#1c1c1c',belt:'#c82c3c'},
+ bopper:{shirt:'#6c2c8c',vest:'#3c1c5c',pants:'#2c1c3c',skin:'#8c5c3c',shoe:'#1c1c1c',belt:'#e8c84c'}};
 function stroke(g,pts,w,col){g.strokeStyle=col;g.lineWidth=w;g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)g.lineTo(pts[i][0],pts[i][1]);g.stroke();}
 // draw a body; returns the head spot (screen, for the face) and the front hand (for a weapon)
 // g at the fighter's feet; face = +1 right / -1 left; k = scale (screen px per unit); o = outfit; big = width factor
@@ -191,6 +196,11 @@ function drawGangHead(g,cx,cy,w,style,{face=1,tilt=0,mood='normal',id='x',skin}=
  else if(style==='punk'){g.fillStyle=L.hair;g.beginPath();g.ellipse(-rx*.05,-ry*.4,rx*1,ry*.55,0,Math.PI,Math.PI*2);g.fill();g.fillStyle=['#c83c3c','#3c5cc8','#2c2c2c','#e8c83c'][L.v];g.beginPath();g.ellipse(-rx*.05,-ry*.52,rx*1.04,ry*.36,0,Math.PI,Math.PI*2);g.closePath();g.fill();g.stroke();
   g.beginPath();g.moveTo(-rx*.95,-ry*.5);g.lineTo(-rx*1.5,-ry*.3);g.lineTo(-rx*1.3,-ry*.6);g.fill();}
  else if(style==='rogue'){g.fillStyle=L.hair;g.beginPath();g.moveTo(-rx*1.02,ry*.1);g.quadraticCurveTo(-rx*1.1,-ry*1.1,rx*.4,-ry*1.02);g.quadraticCurveTo(rx*1.05,-ry*.9,rx*.9,-ry*.42);g.quadraticCurveTo(rx*.2,-ry*.56,-rx*.4,-ry*.4);g.lineTo(-rx*.55,ry*.2);g.closePath();g.fill();g.fillRect(-rx*.05,-ry*.2,rx*.12,ry*.45);}
+ else if(style==='cyrus'){g.fillStyle='#141010';g.beginPath();g.ellipse(-rx*.05,-ry*.36,rx*1.0,ry*.6,0,Math.PI*.96,Math.PI*2.04);g.closePath();g.fill();
+  g.beginPath();g.moveTo(rx*.05,ry*.2);g.quadraticCurveTo(rx*.6,ry*1.08,rx*.98,ry*.32);g.lineTo(rx*.7,ry*.5);g.quadraticCurveTo(rx*.4,ry*.6,rx*.2,ry*.3);g.closePath();g.fill();
+  g.fillStyle='#0c0c10';g.beginPath();g.roundRect(rx*.12,-ry*.3,rx*.86,ry*.32,ry*.08);g.fill();g.fillStyle='rgba(255,255,255,.35)';g.fillRect(rx*.3,-ry*.24,rx*.2,ry*.06);}
+ else if(style==='hihat'){g.fillStyle='#1c1c1c';g.beginPath();g.ellipse(rx*.42,-ry*.12,rx*.14,ry*.12,0,0,7);g.fill();g.fillStyle='#c82c3c';g.beginPath();g.ellipse(rx*.52,ry*.42,rx*.18,ry*.07,0,0,7);g.fill();
+  g.fillStyle='#141414';g.fillRect(-rx*.95,-ry*.62,rx*1.9,ry*.14);g.fillRect(-rx*.62,-ry*1.5,rx*1.24,ry*.92);g.fillStyle='#c82c3c';g.fillRect(-rx*.62,-ry*.78,rx*1.24,ry*.12);}
  else if(style==='riff'){g.fillStyle='rgba(30,20,10,.3)';g.beginPath();g.ellipse(-rx*.05,-ry*.38,rx*.92,ry*.5,0,Math.PI,Math.PI*2);g.fill();g.fillStyle='#f0ece0';g.fillRect(-rx,-ry*.58,rx*2,ry*.2);}
  else{g.fillStyle=L.hair;g.beginPath();g.ellipse(-rx*.08,-ry*.38,rx*1.02,ry*.56,0,Math.PI*.96,Math.PI*2.04);g.closePath();g.fill();}
  g.restore();}
