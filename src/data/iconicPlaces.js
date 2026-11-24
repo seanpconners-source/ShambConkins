@@ -588,6 +588,27 @@ Uno|The Kitchen Table
 Vampire Survivors|The Mad Forest
 Vanderpump Rules|SUR
 The Secret Lives of Mormon Wives|MomTok House
+Joe Dirt|Joe's Meteor Hole
+The Waterboy|Mama Boucher's Bayou Shack
+The Brothers Solomon|The Solomon Brothers' House
+Who Charted?|The Who Charted? Studio
+Tim and Eric Awesome Show, Great Job!|Cinco Products HQ
+YouTube|The Comment Section
+Transformers|Mission City
+Mad Max|The Compound
+Michael Jackson|Neverland Ranch
+Talking Heads|CBGB
+Gandhi|The Salt March Road
+Midsommar|Hårga
+The Mask|The Coco Bongo
+Son of the Mask|The Avery House
+Green Room|The Green Room
+Drop Dead Fred|Elizabeth's Childhood Bedroom
+Being John Malkovich|Floor 7½
+Godzilla|Tokyo Bay
+Congo|Zinj
+Psycho Goreman|The Backyard Pit
+The Dirty Dozen|The Stockade
 Viagra Boys|Stockholm
 Vice Principals|North Jackson High
 Videodrome|Civic TV
