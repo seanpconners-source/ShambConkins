@@ -2,7 +2,7 @@
 
 Owner, Nov 24: heads kept landing behind the neck, so the owner now places them himself.
 
-- **Page:** https://claude.ai/artifact/8xWvhr9jMKG5Y6ZkQdxFbp (made from the other account). This account's copy (Nov 24, packed with pack.py, so every pose starts at the spot the game used in v0.99.61): https://claude.ai/artifact/4adgsc6HA8CAQcQcjdSmW2 (db `heads`). Apply locks from whichever copy the owner used. The source is `index.html` plus `data.json`, with the sheets copied as lossy WebP previews into `sheets/`.
+- **Page:** https://claude.ai/artifact/8xWvhr9jMKG5Y6ZkQdxFbp (made from the other account). This account's copy (Nov 24, packed with pack.py, so every pose starts at the spot the game used in v0.99.61): https://claude.ai/artifact/4adgsc6HA8CAQcQcjdSmW2 (db `heads`). Apply locks from whichever copy the owner used. Version 2 (Nov 24): the gang sheets wear 16 real cut-out faces (pack.py GANG_FACES, face box from the photo's head facts), one per sheet to start, with a 'Try another face' button. The source is `index.html` plus `data.json`, with the sheets copied as lossy WebP previews into `sheets/`.
 - **What the owner does:** drags each pose's head (and can turn or resize it). He can also set "Head behind body", which defaults to on for `win` and `up` because of the raised arm. Lock in saves the pose.
 - **Where it's stored:** the page's db collection `heads`, one doc per pose with id `<sheet>--<pose>`:
   `{x, y, a, s, b, locked, at}`
