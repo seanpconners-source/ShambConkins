@@ -1,11 +1,13 @@
 # The Warriors (Double Dragon style beat 'em up): sprites brief (paste this to GPT)
 
-**The game:** a belt-scrolling street brawler that plays like the NES *Double Dragon*: you walk right along a street (up/down =
-deeper/nearer), punch, kick, jump, grab, throw, swing bats, and level up to learn new moves. Our own designs (no Double Dragon
-characters, sprites or logos). The heroes and enemies are **HEADLESS** bodies: the game puts a real face on every neck (the
-players' faces on the heroes, characters from the game on the enemies). The look we want: **gritty, punchy 16-bit-era arcade
-pixel art, chunky bold outlines, strong poses that read instantly, every move looking badass and powerful.** Think late-80s
-/ early-90s arcade brawler, a step up from the NES (more colours, more detail), crisp at phone size.
+**The game:** a belt-scrolling street brawler in the line of *Double Dragon* and *Final Fight*, told as the long night of the
+film *The Warriors* (1979): the Conclave in the park and the cops' raid, the Turnbull AC's and their bus, the Orphans, the
+subway south, the Baseball Furies, the Lizzies, the cops at Union Square, the Punks, the dawn ride and the Rogues on Coney
+Island. You walk right (up/down = deeper/nearer), punch, kick, jump, grab, throw, swing bats, and level up to learn moves.
+Our own designs (no film stills, no actors' likenesses, no other game's sprites or logos). The heroes and gang members are
+**HEADLESS** bodies: the game puts a face on every neck (the players' faces on the heroes, its own drawn heads or characters'
+faces on the gangs). The look we want: **gritty, punchy 16-bit-era arcade pixel art, chunky bold outlines, strong poses that
+read instantly, late-70s New York grime.** Crisp at phone size (fighters are now drawn about a quarter of the screen tall).
 
 ## 1. Fighter sheets (the most important part)
 Every sheet is a grid of **256 x 256 px cells, 8 per row**, one cell per KEY POSE in the order below. The game blends between
@@ -20,17 +22,24 @@ key poses, so each must be a clear, strong, readable pose. Rules for every cell:
 
 | Sheet | Size | Poses | Who |
 |---|---|---|---|
-| `hero-p1.png` | 2048 x 1280 | 40 poses (all) | Player 1 hero: a street-fighting gang member in a sleeveless denim vest over a blue T-shirt, jeans, boots, fingerless gloves; athletic, cool, badass |
-| `hero-p2.png` | 2048 x 1280 | 40 poses (all) | Player 2 hero: same build and poses, red T-shirt under a black leather vest, brown cargo pants, boots |
-| `foe-thug.png` | 2048 x 1024 | 26 poses (enemy list) | street thug: grey hoodie, dark jeans, sneakers |
-| `foe-bat.png` | 2048 x 1024 | 26 poses (enemy list) | slugger: green bomber jacket, carries a baseball bat in the swing poses (bat drawn in the hand) |
-| `foe-whip.png` | 2048 x 1024 | 26 poses (enemy list) | whip fighter: purple crop jacket, black leggings, holds a coiled whip (whip drawn in the hand, lashing out in swing2) |
-| `foe-knife.png` | 2048 x 1024 | 26 poses (enemy list) | knife thrower: mustard leather jacket, knife in hand in toss |
-| `foe-kicker.png` | 2048 x 1024 | 26 poses (enemy list) | black belt: black gi top, white pants, red belt, barefoot; sharp martial-arts kicks |
-| `foe-brute.png` | 2048 x 1024 | 26 poses (enemy list) | bruiser: huge bare-chested hulk, torn brown pants, belt, massive arms (still drawn 200 px tall: the game scales him up) |
-| `foe-boss.png` | 2048 x 1024 | 26 poses (enemy list) | mission boss: gold jacket with a black vest and red stripe, black pants, boots; looks like the leader |
+| `hero-p1.png` | 2048 x 1792 | 50 poses (hero list) | Player 1 hero: a Warriors-style gang member in a sleeveless leather vest (our own design, no film logo) over a blue T-shirt, jeans, boots |
+| `hero-p2.png` | 2048 x 1792 | 50 poses (hero list) | Player 2 hero: same build and poses, red T-shirt under the vest, brown cargo pants, boots |
+| `foe-cop.png` | 2048 x 1536 | 45 (enemy list) | 1979 New York patrolman: navy uniform shirt with a badge, navy trousers, black belt and shoes (the game draws the cap) |
+| `foe-riot.png` | 2048 x 1536 | 45 | riot cop: dark navy uniform with a padded vest; in `block`/`bash` the left arm holds a tall clear riot shield in front |
+| `foe-turnbull.png` | 2048 x 1536 | 45 | Turnbull AC's skinhead: white T-shirt, red braces, rolled-up blue jeans, oxblood boots |
+| `foe-orphan.png` | 2048 x 1536 | 45 | Orphan: torn grey T-shirt, faded trousers, worn shoes; scrappy, no colours |
+| `foe-fury.png` | 2048 x 1536 | 45 | Baseball Fury: white pinstriped baseball uniform with a purple belt, black cleats |
+| `foe-lizzie.png` | 2048 x 1536 | 45 | Lizzie: plum wrap top, dark flared trousers, plum boots, gold belt |
+| `foe-punk.png` | 2048 x 1536 | 45 | Punk: blue denim overalls over a red-and-white striped shirt, roller skates |
+| `foe-rogue.png` | 2048 x 1536 | 45 | Rogue: black shirt under a brown leather vest, dark trousers, boots |
+| `foe-riff.png` | 2048 x 1536 | 45 | Riff (fights on YOUR side at the very end): off-white martial-arts style outfit, dark vest, amber sash |
 
-Enemy sheets use this subset, in this order: `stand, stand2, walk1, walk2, walk3, run1, run2, jabC, jab, cross, hookC, hook, kickC, kick, jump, jkick, grab, swing1, swing2, toss, hurt, dizzy, fall, down, kneel, win`.
+**No weapons in any cell** (the game draws every bat, pipe, nightstick, chain and gun in the front hand and swings it itself),
+except the riot shield in `block`/`bash`. Bosses use their gang's sheet, drawn bigger by the game.
+Hero sheets: the 40 poses below in order (1-40), then `batReady, batWind, batHit, batFollow, batBack, batLow, batOver,
+batSmash, hurtLow, sweep`. Enemy sheets: `stand, stand2, walk1, walk2, walk3, run1, run2, jabC, jab, cross, hookC, hook, kickC,
+kick, jump, jkick, grab, swing1, swing2, toss, hurt, dizzy, fall, down, kneel, win`, then `batReady, batWind, batHit, batFollow,
+batBack, batLow, batOver, batSmash, block, bash, aim, lobC, lob, skate1, skate2, hurtLow, charge, crouch, taunt`.
 The **templates** (`<sheet>-template.png`) show every cell with its pose name, the face circle and the feet dot; the
 **references** (`<sheet>-reference.png`) show how the game draws them today.
 
@@ -77,45 +86,62 @@ The **templates** (`<sheet>-template.png`) show every cell with its pose name, t
 | 38 | `rise1` | RISING FIST start: crouched very low, fist cocked by the hip, energy gathering |
 | 39 | `rise2` | RISING FIST: flying straight up, punching fist high over the head, legs trailing below (super move) |
 | 40 | `fury` | WARRIOR'S FURY: lunging forward in a full-power double punch, both arms forward, body low and long (super move) |
+| 41 | `batReady` | holding a bat (both hands) at chest height, the bat resting up and back over the shoulder |
+| 42 | `batWind` | the swing cocked: both hands up by the BACK shoulder, leaning back, weight on the back foot |
+| 43 | `batHit` | contact: hips and shoulders turned in, both hands low in front at waist height, arms extended (the bat sticks out level, forward) |
+| 44 | `batFollow` | follow-through: hands finished high in front by the head, the bat wrapped back over the shoulder, back heel up |
+| 45 | `batBack` | backhand: both hands low in front, body turned in (the bat comes back across) |
+| 46 | `batLow` | backhand finish: crouched forward, hands low by the knees |
+| 47 | `batOver` | overhead wind-up: both arms straight up over the head |
+| 48 | `batSmash` | overhead smash: deep lunge forward, both hands chopped down in front at hip height |
+| 49 | `hurtLow` | hit in the gut: doubled over forward, arms clutching the stomach |
+| 50 | `sweep` | leg sweep: dropped low on the back knee, front leg swept out flat along the ground |
+| (enemy) | `block` | riot cop guard: shield arm up in front of the body |
+| (enemy) | `bash` | shield bash: lunging forward, shield arm driven out |
+| (enemy) | `aim` | aiming a pistol: front arm straight out level, the other hand supporting (no gun drawn) |
+| (enemy) | `lobC` / `lob` | overhand throw of a bottle/molotov: arm cocked far back high / whipped forward over the top |
+| (enemy) | `skate1` / `skate2` | roller-skating low and fast, crouched, arms swinging (two strides) |
+| (enemy) | `charge` | shoulder charge: bent low, shoulder first, running |
+| (enemy) | `taunt` | arms raised, calling the hero out |
 
-## 2. Stage art: 18 settings (3 pictures each, 54 in all)
-Every mission happens at one of the game's locations; each location has a setting. Per setting:
+## 2. Stage art: the story's 18 places (3 pictures each, 54 in all)
 | File | Size | What |
 |---|---|---|
-| `far-<setting>.png` | 2048 x 512 | the sky and the far scenery behind the street; scrolls slowly; **repeats side to side** (right edge joins the left edge) |
-| `wall-<setting>.png` | 1024 x 320 | the back edge of the street (wall, fence, shop fronts, cliff...), bottom edge = where the walkable floor starts; repeats side to side |
-| `floor-<setting>.png` | 1024 x 512 | the walkable ground (pavement, sand, planks, grass...) seen from the side at an angle like a brawler; repeats side to side |
-No people, no text, no logos. Keep the floor fairly even (fighters stand on all of it).
+| `far-<area>.png` | 2048 x 512 | the sky and the far scenery behind; scrolls slowly; **repeats side to side** (right edge joins the left edge) |
+| `wall-<area>.png` | 1024 x 320 | the back edge of the floor (shop fronts, fence, tiled wall, the subway car's side...), bottom edge = where the walkable floor starts; repeats side to side |
+| `floor-<area>.png` | 1024 x 512 | the walkable ground seen from the side at an angle like a brawler; repeats side to side |
+No people, no text other than our own signs, no logos. Keep the floor fairly even (fighters stand on all of it).
+`ref-<area>.png` in the templates folder shows how the game draws each place now (the layout to match).
 
-| Setting | Look |
+| Area | Look |
 |---|---|
-| `nyc` | New York-style city street: brownstones, fire escapes, graffiti, steam |
-| `gotham` | dark gothic city: gargoyles, neon, rain, grime |
-| `suburb` | American suburb: fences, garages, lawns, a hill-valley town square |
-| `forest` | woods: tall trees, a dirt trail, a cabin far back |
-| `jungle` | jungle: vines, ruins, ferns, mist |
-| `beach` | beach boardwalk: sand, sea, lifeguard tower, palms |
-| `desert` | desert town: adobe, cactus, mesas, heat haze |
-| `snow` | snowy town: snowbanks, icicles, pines |
-| `graveyard` | cemetery at night: tombstones, iron fence, fog, full moon |
-| `gothic` | castle halls: stone arches, candles, banners |
-| `lava` | volcanic hell: lava rivers, black rock, embers |
-| `space` | space station corridor: metal panels, big windows onto space |
-| `digital` | neon computer world: glowing grid, circuit lines |
-| `themepark` | theme park midway: rides, game stalls, lights |
-| `funhouse` | kids' TV studio / funhouse: bright slime colours, giant props |
-| `stage` | rock concert stage: amps, lights, crowd silhouettes |
-| `mountains` | mountain dojo path: cliffs, temple, clouds |
-| `countryside` | English countryside: hedgerows, farm, stone walls |
+| `conclave` | Van Cortlandt Park at night: a field full of gangs (tiny far silhouettes) facing a lit stage, trees behind |
+| `park` | a park path through dark woods at night, iron fence, lamps |
+| `cemetery` | an old cemetery at night: fog, gravestones, iron fence, a mausoleum |
+| `elstreet` | a Bronx street under the elevated train tracks at night: storefronts, neon, graffiti |
+| `yard` | a rail yard at night: boxcars, floodlights, chain-link fence, gravel and rails |
+| `tenement` | a Bronx street of brownstone tenements at night: stoops, doorways, fire escapes |
+| `burning` | the same street lit orange by a burning car, smoke |
+| `train` | inside a 1970s graffiti-covered subway car (far = the dark tunnel with lights, seen through the windows; wall = the car side with windows left SEE-THROUGH) |
+| `trainDawn` | the same car at dawn on an elevated stretch (far = Brooklyn rooftops and sunrise) |
+| `riverside` | Riverside Park at night: stone wall, lamps, the river and lights beyond |
+| `playground` | a city playground at night: chain-link, climbing frame, swings |
+| `apartment` | a 70s party apartment: patterned wallpaper, lamps, jukebox, windows on the city |
+| `apartment2` | an apartment block hallway: doors, stair landing |
+| `station` | a subway platform: tiled wall with the station name, the track pit, steel columns |
+| `platform` | another subway platform, same style |
+| `restroom` | a grimy subway men's room: tiled walls, stalls, sinks |
+| `boardwalk` | Coney Island boardwalk at dawn: game stalls, a big Ferris wheel and parachute tower far behind |
+| `beach` | Coney Island beach at dawn: sand, waves, the parachute tower far away |
 
 ## 3. Items, effects, title
-See each `<name>-template.png` for size and anchor: `bat`, `pipe`, `chain`, `whip`, `knife` (handle on the LEFT), `rock`, `barrel`,
+See each `<name>-template.png` for size and anchor: `bat`, `pipe`, `chain`, `whip`, `stick` (police nightstick), `knife` (handle on the LEFT), `rock`, `barrel`,
 `crate`, food `chicken` `burger` `pizza`, effects `fx-hit` (6-frame hit spark), `fx-dust`, `fx-rise` (Rising Fist energy column),
 `fx-twister` (spinning wind), `fx-fury` (speed-line burst), `logo` (THE WARRIORS / COME OUT TO PLAY, transparent) and
 `title-bg` (1920 x 1080 night street, two heroes back to back, faces turned away or out of frame).
 
 ## Hand back
-PNG at exactly these sizes, named as listed. Upload to Drive with an UPLOADS-GPT note + manifest (file, size, bytes, SHA256);
+PNG at exactly these sizes, named as listed. Upload to Drive (folders "The Warriors — Fighters & Props", "The Warriors — Stage Art") with an UPLOADS-GPT note + manifest (file, size, bytes, SHA256);
 files under 80 KB in an identically named ZIP. Start with `hero-p1.png` so Sean can check the style in the game first.
 
 ## For Claude

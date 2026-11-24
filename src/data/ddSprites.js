@@ -25,13 +25,6 @@ const HERO=POSES.filter(p=>!['block','bash','aim','lobC','lob','skate1','skate2'
 const SHEETS={
  'hero-p1':{poses:HERO,what:'Player 1 hero: a street-fighting gang member in a sleeveless denim vest over a blue T-shirt, jeans, boots, fingerless gloves; athletic, cool, badass'},
  'hero-p2':{poses:HERO,what:'Player 2 hero: same build and poses, red T-shirt under a black leather vest, brown cargo pants, boots'},
- 'foe-thug':{poses:FOE,what:'street thug: grey hoodie, dark jeans, sneakers'},
- 'foe-bat':{poses:FOE,what:'slugger: green bomber jacket, carries a baseball bat in the swing poses (bat drawn in the hand)'},
- 'foe-whip':{poses:FOE,what:'whip fighter: purple crop jacket, black leggings, holds a coiled whip (whip drawn in the hand, lashing out in swing2)'},
- 'foe-knife':{poses:FOE,what:'knife thrower: mustard leather jacket, knife in hand in toss'},
- 'foe-kicker':{poses:FOE,what:'black belt: black gi top, white pants, red belt, barefoot; sharp martial-arts kicks'},
- 'foe-brute':{poses:FOE,what:'bruiser: huge bare-chested hulk, torn brown pants, belt, massive arms (still drawn 200 px tall: the game scales him up)'},
- 'foe-boss':{poses:FOE,what:'mission boss: gold jacket with a black vest and red stripe, black pants, boots; looks like the leader'},
  // THE STORY'S GANGS (our own looks after the film's gangs; headless like the rest, weapons are drawn by the game)
  'foe-cop':{poses:FOE,what:'1979 New York patrolman: navy uniform shirt with a badge, navy trousers, black belt and shoes (cap is drawn by the game on the head)'},
  'foe-riot':{poses:FOE,what:'riot cop: dark navy uniform with a padded vest, the left arm holds a tall clear riot shield in front (block/bash poses)'},
@@ -61,7 +54,8 @@ const PICTURES={};
 for(const b of AREAS){PICTURES['far-'+b]={w:2048,h:512,what:`${AREA_WHAT[b]}: far scenery and sky (repeats side to side)`};
  PICTURES['wall-'+b]={w:1024,h:320,what:`${AREA_WHAT[b]}: the back wall / edge of the floor (repeats side to side)`};
  PICTURES['floor-'+b]={w:1024,h:512,what:`${AREA_WHAT[b]}: the walkable floor (repeats side to side)`};}
-for(const b of BIOMES){PICTURES['far-'+b]={w:2048,h:512,what:`${b}: the far scenery and sky (repeats side to side)`};
+// (the old per-biome slots are no longer asked for; a delivered one still stands in for the areas in scenes.js FALLBACK)
+if(0)for(const b of BIOMES){PICTURES['far-'+b]={w:2048,h:512,what:`${b}: the far scenery and sky (repeats side to side)`};
  PICTURES['wall-'+b]={w:1024,h:320,what:`${b}: the back wall / edge of the street (repeats side to side)`};
  PICTURES['floor-'+b]={w:1024,h:512,what:`${b}: the walkable ground band (repeats side to side)`};}
 // items (on the ground / in hand), effects, title

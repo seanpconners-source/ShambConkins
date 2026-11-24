@@ -73,12 +73,20 @@ const K={
   floor(g,c){K.tenement.floor(g,c);g.fillStyle=`rgba(255,120,40,${.12+.05*Math.sin(c.t*13)})`;g.fillRect(0,c.B,c.vw,c.F-c.B+300);}},
  // the subway car: windows show the tunnel rushing by (lights and pillars), seats under them, the car end doors
  train:{far(g,c){rect(g,'#05060a',0,-400,c.vw,c.B+400);const sp=900;g.fillStyle='#2c2c30';each(c.cam,c.vw,70,1,(X)=>{const x2=((X-c.t*sp)%(c.vw+140)+c.vw+140)%(c.vw+140)-70;rect(g,'#1c1c22',x2,c.B*.16,14,c.B*.5);});
-   each(c.cam,c.vw,260,1,(X)=>{const x2=((X-c.t*sp*1.0)%(c.vw+260)+c.vw+260)%(c.vw+260)-130;const gr=g.createLinearGradient(x2-60,0,x2+20,0);gr.addColorStop(0,'rgba(255,230,150,0)');gr.addColorStop(1,'rgba(255,230,150,.9)');g.fillStyle=gr;g.fillRect(x2-60,c.B*.3,80,3);});},
+   each(c.cam,c.vw,260,1,(X)=>{const x2=((X-c.t*sp*1.0)%(c.vw+260)+c.vw+260)%(c.vw+260)-130;const gr=g.createLinearGradient(x2-60,0,x2+20,0);gr.addColorStop(0,'rgba(255,230,150,0)');gr.addColorStop(1,'rgba(255,230,150,.9)');g.fillStyle=gr;g.fillRect(x2-60,c.B*.3,80,3);})
+   // every few seconds a lit station rushes past the windows
+   const per=9,p=(c.t%per)/2.2;if(p<1){const L=c.vw*1.6,x0=c.vw-p*(L+c.vw);rect(g,'#c8c4b4',x0,c.B*.12,L,c.B*.5);rect(g,'#2c5c3c',x0,c.B*.2,L,8);
+    each(0,L,60,1,(X,i)=>{rect(g,'#2c3c5c',x0+X,c.B*.12,6,c.B*.5);if(i%3===0){rect(g,'#2c5c3c',x0+X+14,c.B*.26,40,10);g.fillStyle='#f0ece0';g.font='900 7px sans-serif';g.fillText(['96 ST','86 ST','72 ST'][Math.floor(c.t/per)%3],x0+X+18,c.B*.26+8);}
+     if(hash(i*7)<.4){rect(g,'#1c1c24',x0+X+30,c.B*.38,6,c.B*.2);g.beginPath();g.fillStyle='#1c1c24';g.arc(x0+X+33,c.B*.37,3.5,0,7);g.fill();}});
+    g.fillStyle='rgba(255,255,255,.15)';for(let k=0;k<8;k++)g.fillRect(0,c.B*.14+k*c.B*.06,c.vw,1);}},
   wall(g,c){car(g,c,'#9ca4a8','#c8ccc8');},
   floor(g,c){floorStripes(g,c.vw,c.B,c.F,'#6c6c70','#3c3c40',c.cam,0);hLines(g,c.vw,c.B,c.F,6,'#2c2c30',.35);rect(g,'#c8a43c',0,c.B,c.vw,2);}},
  trainDawn:{far(g,c){sky(g,c.vw,c.B,'#ff9c5c','#ffe0b0');const sp=520;g.fillStyle='#fff4c8';g.beginPath();g.arc(c.vw*.3,c.B*.42,26,0,7);g.fill();
    const roll=(par,base,col,seed,hm)=>{g.save();const o=c.t*sp*par;skylineMove(g,c.vw,base,o,col,seed,hm);g.restore();};roll(.15,c.B*.62,'#a8645c',2,70);roll(.45,c.B*.74,'#6c3c3c',5,50);
-   each(0,c.vw,120,1,X=>{const x2=((X-c.t*sp*1.4)%(c.vw+120)+c.vw+120)%(c.vw+120)-60;rect(g,'#3c2420',x2,c.B*.1,4,c.B*.7);rect(g,'#3c2420',x2-14,c.B*.14,32,2);});},
+   each(0,c.vw,120,1,X=>{const x2=((X-c.t*sp*1.4)%(c.vw+120)+c.vw+120)%(c.vw+120)-60;rect(g,'#3c2420',x2,c.B*.1,4,c.B*.7);rect(g,'#3c2420',x2-14,c.B*.14,32,2);})
+   // now and then a train the other way flashes past
+   const per=13,p=(c.t%per)/1.3;if(p<1){const L=c.vw*1.8,x0=-L+p*(L+c.vw)*1.0;rect(g,'#8c8478',x0,c.B*.2,L,c.B*.45);for(let X=0;X<L;X+=40){rect(g,'#ffe8a0',x0+X+6,c.B*.26,26,c.B*.14);rect(g,'#5c5448',x0+X,c.B*.2,3,c.B*.45);}
+    g.fillStyle='rgba(255,255,255,.2)';for(let k=0;k<6;k++)g.fillRect(0,c.B*.22+k*c.B*.07,c.vw,1);}},
   wall(g,c){car(g,c,'#a8a49c','#d8d0c0',true);},
   floor(g,c){K.train.floor(g,c);}},
  riverside:{far(g,c){sky(g,c.vw,c.B,'#04060c','#1c2a44');stars(g,c.cam,c.vw,c.B,c.t);rect(g,'#0c1628',0,c.B*.5,c.vw,c.B*.3);skyline(g,c.cam,c.vw,c.B*.5,.08,'#0a0e18','rgba(255,220,150,.6)',6,40);
@@ -149,6 +157,8 @@ function car(g,c,body,trim,dawn){const y0=c.B*.08,wy=c.B*.22,wh=c.B*.4;
  each(c.cam,c.vw,220,1,(X,i)=>{g.save();g.globalAlpha=.55;g.font='900 12px "SC Bangers",Impact';g.fillStyle=['#e83c8c','#3cc8e8','#e8e83c'][i%3];g.translate(X+40,wy+wh+20);g.rotate(-.12);g.fillText(['WARRIORS','DIG IT','B-BOYS'][i%3],0,0);g.restore();});
  rect(g,'#2c4c7c',0,c.B-22,c.vw,16);rect(g,'#1c3c6c',0,c.B-8,c.vw,8);each(c.cam,c.vw,40,1,X=>rect(g,'rgba(0,0,0,.25)',X,c.B-22,1,16));
  each(c.cam,c.vw,220,1,X=>{rect(g,'#c8ccd0',X+100,-40,3,c.B+40);});
+ // hand straps swinging with the ride
+ rect(g,'#c8ccd0',0,y0+14,c.vw,2);each(c.cam,c.vw,36,1,(X,i)=>{const a=Math.sin(c.t*2.2+i*.7)*.18+Math.sin(c.t*7.1)*.05;g.save();g.translate(X+18,y0+15);g.rotate(a);rect(g,'#3c3c3c',-1,0,2,14);g.strokeStyle='#e8e0c8';g.lineWidth=2;g.beginPath();g.arc(0,18,4,0,7);g.stroke();g.restore();});
  // car ends: the connecting doors (enemies come through them)
  for(const dx of c.A.doors||[]){const X=dx-c.cam;if(X<-60||X>c.vw+60)continue;rect(g,'#5c6468',X-22,y0,44,c.B-y0);rect(g,'#2c3034',X-14,y0+12,28,c.B-y0-12);rect(g,'#0c0c10',X-8,wy+4,16,22);}
  // lights flicker as the train runs

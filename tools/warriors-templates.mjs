@@ -45,5 +45,14 @@ for (const [name, w, h, what] of pics) save(name + '-template', await page.evalu
   if (name.startsWith('fx-')) {const n = name === 'fx-fury' ? 4 : 6, fw = w / n; x.setLineDash([6, 4]); for (let i = 1; i < n; i++) {x.beginPath(); x.moveTo(i * fw, 0); x.lineTo(i * fw, h); x.stroke();} x.setLineDash([]);}
   x.fillStyle = '#333'; x.textBaseline = 'top'; lines.forEach((l, i) => {x.font = `${i ? 400 : 700} ${fs * (i ? .7 : 1)}px sans-serif`; x.fillText(l.trim(), 12, 10 + i * fs * (i ? .95 : 1.3));});
   return c.toDataURL('image/png');}, {name, w, h, what}));
+// a reference shot of every story area as the game draws it now (no fighters), so the pictures can match the layout
+const areas = await page.evaluate(() => require('src/data/ddSprites.js').AREAS);
+for (const kind of areas) save('ref-' + kind, await page.evaluate(kind => {
+  const SC = require('src/engines/dd/scenes.js'), c = document.getElementById('c'), K = 2.4, VW = 700; c.width = VW * K; c.height = 380 * K; const x = c.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, c.width, c.height); x.save(); x.scale(K, K);
+  SC.drawArea(x, {kind, len: 2400, doors: kind.startsWith('train') ? [40, 680] : kind === 'tenement' || kind === 'apartment' ? [200, 520] : [], pits: [], blocks: [], escape: kind === 'station' ? 1 : 0, trainOpen: 1}, 300, VW, 210, 340, 3.3);
+  x.restore(); x.fillStyle = '#ff2a6a'; x.font = '700 30px sans-serif'; x.fillText('ref-' + kind + ' (drawn by the game now): far = sky/back, wall = band above the floor line, floor = below it', 20, 40);
+  x.strokeStyle = '#ff2a6a'; x.setLineDash([10, 8]); x.lineWidth = 3; x.beginPath(); x.moveTo(0, 210 * K); x.lineTo(c.width, 210 * K); x.stroke();
+  return c.toDataURL('image/png');}, kind));
 await browser.close();
-console.log('warriors templates ->', outDir, sheets.length * 2 + pics.length, 'files');
+console.log('warriors templates ->', outDir, sheets.length * 2 + pics.length + areas.length, 'files');

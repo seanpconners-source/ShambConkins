@@ -467,7 +467,7 @@ async function warriorsDD(s){
   const side=Math.sign(f.x-h.x)||1,ranged=T.ranged;
   let gx=h.x+side*(ranged==='gun'?190:ranged==='knife'?150:ranged?140:(30*f.big+8)),gd=h.d;
   if(ai.mode==='out'&&!ally){ai.hover+=dt;gx=h.x+side*(120+Math.sin(ai.hover)*30);gd=DEPTH/2+Math.sin(ai.hover*.7)*DEPTH*.4;}
-  if(!ally)gx=clamp(gx,cam.x+14,cam.x+vw-14);
+  gx=clamp(gx,cam.x+14,cam.x+vw-14);
   const dx=gx-f.x,dd=gd-f.d,sp=T.sp*(f.boss&&f.hp<f.maxHp*.4?1.3:1)*(ally?1:(.85+.25*DIFF));
   if(Math.abs(dx)>4||Math.abs(dd)>3){f.x+=clamp(dx,-1,1)*Math.min(Math.abs(dx),sp*dt*(Math.abs(dx)>150?1.6:1));f.d+=clamp(dd,-1,1)*Math.min(Math.abs(dd),sp*.6*dt);f.st='walk';f.walkPh+=dt*6;}else f.st='idle';
   f.dir=Math.sign(h.x-f.x)||f.dir;
