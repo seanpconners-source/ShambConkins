@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.99.52
+
+- **The Warriors art from Drive:** both heroes, the title screen logo and backdrop, the three special-move effects, and the street scenery for every level are now real pictures (the old biome set stands in for the story's areas: forest, cemetery, city streets, subway stations, the Coney boardwalk and beach).
+- **The gangs have their own looks:** Orphans, Baseball Furies, Turnbull AC's, Punks, Rogues and the Riffs. Lizzies, cops and riot cops are still drawn until their art comes.
+- Title screen: the logo now fits above the menu on short landscape screens, and MOVES no longer runs off the bottom.
+
 ## v0.99.51
 
 - **The Warriors:** thrown barrels and rocks now leave from over your head (where you carry them) and arc down onto the enemy; a barrel that lands keeps rolling and bowls people over. They used to come out at knee height.

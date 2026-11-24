@@ -78,6 +78,14 @@ const WPN={bat:{dmg:5,uses:16,len:40,w:6,col:'#c8944c'},pipe:{dmg:6,uses:14,len:
 const FOOD={chicken:12,burger:8,pizza:6};
 // a sheet missing a newer pose shows the nearest older one
 const SHEET_ALIAS={batReady:'stand',batWind:'swing1',batHit:'swing2',batFollow:'swing2',batBack:'swing2',batLow:'swing2',batOver:'swing1',batSmash:'swing2',block:'stand',bash:'cross',aim:'jab',lobC:'throw1',lob:'toss',skate1:'run1',skate2:'run2',hurtLow:'hurt',charge:'run1',sweep:'kick',taunt:'win'};
+// enemy sheets made to the older 26-pose list draw their own weapon in swing1/swing2 (Furies' bat, Lizzies' whip), while the
+// game draws the held weapon itself: the newer weapon poses fall back to empty-handed ones there, so nothing shows twice
+const FOE_ALIAS=Object.assign({},SHEET_ALIAS,{batReady:'stand',batWind:'hookC',batHit:'cross',batFollow:'cross',batBack:'hookC',batLow:'cross',batOver:'hookC',batSmash:'cross'});
+// a cell a sheet left empty (older sheets end their last row with blank cells) counts as missing: checked once per cell
+const blankCells=new WeakMap();
+function blankCell(img,c){let m=blankCells.get(img);if(!m){m=new Map();blankCells.set(img,m);}const key=c.sx+','+c.sy;if(m.has(key))return m.get(key);let b=false;
+ try{const cv=document.createElement('canvas');cv.width=cv.height=24;const g=cv.getContext('2d',{willReadFrequently:true});g.drawImage(img,c.sx,c.sy,DS.CELL,DS.CELL,0,0,24,24);const d=g.getImageData(0,0,24,24).data;b=true;for(let q=3;q<d.length;q+=4)if(d[q]>8){b=false;break;}}catch{}
+ m.set(key,b);return b;}
 const SHEET_OF={cop:'foe-cop',sarge:'foe-cop',riot:'foe-riot',skin:'foe-turnbull',chain:'foe-turnbull',big:'foe-turnbull',driver:'foe-turnbull',orphan:'foe-orphan',lob:'foe-orphan',orphboss:'foe-orphan',fury:'foe-fury',furyboss:'foe-fury',
  liz:'foe-lizzie',knifeliz:'foe-lizzie',gunliz:'foe-lizzie',lizboss:'foe-lizzie',punk:'foe-punk',skater:'foe-punk',punkboss:'foe-punk',rogue:'foe-rogue',bottler:'foe-rogue',luther:'foe-rogue',riff:'foe-riff'};
 
@@ -550,7 +558,7 @@ async function warriorsDD(s){
  function drawFighter(f){const sx=SX(f.x),sy=SYw(BACK+f.d),kk=k*FIG,blink=(f.st==='dead'&&f.stT>.4&&Math.floor(t*14)%2)||(f.inv>0&&f.side==='hero'&&Math.floor(t*16)%2&&!f.mv);if(blink)return;
   if(sx<-90||sx>s.W+90)return;
   let name=f.poseName||'stand';const sheet=DS.picture(f.sheet);let cell=null;
-  if(sheet){cell=DS.cellOf(f.sheet,name);if(!cell||cell.sy+DS.CELL>sheet.height){name=SHEET_ALIAS[name]||name;cell=DS.cellOf(f.sheet,name);if(cell&&cell.sy+DS.CELL>sheet.height)cell=null;}}
+  if(sheet){const ok=c=>c&&c.sy+DS.CELL<=sheet.height&&!blankCell(sheet,c);cell=DS.cellOf(f.sheet,name);if(!ok(cell)){name=(f.sheet.startsWith('foe-')?FOE_ALIAS:SHEET_ALIAS)[name]||name;cell=DS.cellOf(f.sheet,name);if(!ok(cell))cell=null;}}
   let spots;const spinning=f.st==='atk'&&f.mv?.def.spin||f.airAtk==='spin',spc=Math.cos(f.spinA||0);
   // a spin kick turns the body round smoothly (x squashed by the cosine of the turn) instead of flipping every frame
   const face=spinning?(f.airAtk==='spin'?f.baseDir:f.dir)*(spc>=0?1:-1)*Math.max(.2,Math.abs(spc)):f.dir;
@@ -720,15 +728,17 @@ async function warriorsDD(s){
   const kk=H/400,a=BD.drawBody(x,BD.P.stand,{x:W/2-40,y:H*.66,face:1,k:kk,o:BD.OUTFIT.p1}),b2=BD.drawBody(x,BD.P.stand,{x:W/2+40,y:H*.66,face:-1,k:kk,o:BD.OUTFIT.p2});
   s.sprite(x,0,a.head.x,a.head.y,kk*28,{exact:true,still:true,noBadge:true});if(s.players[1])s.sprite(x,1,b2.head.x,b2.head.y,kk*28,{exact:true,still:true,noBadge:true});}
  function drawTitle(){const W=s.W,H=s.H,fs=clamp(Math.min(W,H)*.04,12,20),logo=DS.picture('logo');titleBg();
-  if(logo){const w=Math.min(W*.9,640),h=w*logo.height/logo.width;x.drawImage(logo,(W-w)/2,H*.05,w,h);}
-  else{big('THE WARRIORS',W/2,H*.15,Math.min(W/7,fs*4.4),'#ff3c3c');small('COME OUT TO PLAY',W/2,H*.26,fs*1.2,'#ffd23c');}
   const bw=Math.min(W*.7,320),bh=fs*2.4,x0=(W-bw)/2;ui.btns=[];
+  // the main menu sits low; on short screens it moves up so MOVES stays on screen, and the logo fits in the space above it
+  const nBtn=(save.reached||0)>0?4:2,menuH=nBtn*(bh+fs*.55)+(save.best?fs*1.2:0),menuY=Math.max(H*.3,Math.min(H*.58,H-menuH-6));
+  if(logo){const room=(phase==='select'?H*.3:menuY)-H*.03-fs*.4,w=Math.min(W*.9,640,room*logo.width/logo.height),h=w*logo.height/logo.width;x.drawImage(logo,(W-w)/2,H*.03,w,h);}
+  else{big('THE WARRIORS',W/2,H*.15,Math.min(W/7,fs*4.4),'#ff3c3c');small('COME OUT TO PLAY',W/2,H*.26,fs*1.2,'#ffd23c');}
   if(phase==='select'){// the chapters reached so far
    small('CHAPTERS',W/2,H*.33,fs*1.1,'#ffd23c');const cols=W>H?2:1,cw=Math.min(cols===2?W*.44:W*.8,300),n=Math.min(CH.length,(save.reached|0)+1),rows=Math.ceil(n/cols),rh=Math.min(fs*1.95,(H*.55-bh)/rows-fs*.3);
    for(let i=0;i<n;i++){const col=cols===2?i%2:0,row=cols===2?Math.floor(i/2):i,X=cols===2?W/2+(col?8:-cw-8):W/2-cw/2,Y=H*.37+row*(rh+fs*.3);ui.btns.push({x:X,y:Y,w:cw,h:rh,act:()=>titleDone?.(i)});
     x.fillStyle='rgba(20,10,14,.88)';x.strokeStyle='#e8b83c';x.lineWidth=2;x.beginPath();x.roundRect(X,Y,cw,rh,9);x.fill();x.stroke();fitSmall(`${i+1}. ${CH[i].title}`,X+cw/2,Y+rh/2,Math.min(fs*.95,rh*.5),cw-12,'#fff');}
    const by=Math.min(H*.37+rows*(rh+fs*.3)+fs*.4,H-bh-8);ui.btns.push({x:x0,y:by,w:bw,h:bh,act:()=>{phase='title';}});x.fillStyle='#3c3c44';x.beginPath();x.roundRect(x0,by,bw,bh,10);x.fill();small('BACK',W/2,by+bh/2,fs);ui.draw();return;}
-  let y0=H*.58;
+  let y0=menuY;
   const add=(label,act,main)=>{ui.btns.push({x:x0,y:y0,w:bw,h:bh,act});x.fillStyle=main?'#e8b83c':'rgba(20,10,14,.85)';x.strokeStyle='#000';x.lineWidth=3;x.beginPath();x.roundRect(x0,y0,bw,bh,12);x.fill();x.stroke();fitSmall(label,W/2,y0+bh/2,fs*1.02,bw-14,main?'#1c0c0c':'#fff');y0+=bh+fs*.55;};
   add('START · THE CONCLAVE',()=>titleDone?.(0),true);
   if((save.reached||0)>0)add(`CONTINUE · ${CH[save.reached].title}`,()=>titleDone?.(save.reached));
