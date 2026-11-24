@@ -178,7 +178,9 @@ function carDoors(g,c){const y0=c.B*.08,wy=c.B*.22;for(const dx of c.A.doors||[]
 function drawArea(g,A,camX,vw,BACK,FRONT,t){const c={A,cam:camX,vw,B:BACK,F:FRONT,t},P=K[A.kind]||K.elstreet;
  const far=pic(A.kind,'far'),wall=pic(A.kind,'wall'),floor=pic(A.kind,'floor');
  // a moving train: the tunnel / the dawn city outside rushes past the windows by the clock
- if(far)tilePic(g,far,camX+(A.moving?t*(RUSH[A.kind]||600):0),.25,vw,-40,BACK*.8+40);else P.far(g,c);
+ // the far picture runs from above the top of the view down to the floor line (owner, Nov 24: it used to stop at 80% of the
+ // way down and left a black band wherever the wall picture is see-through at the top); bigger, the horizon stays about put
+ if(far)tilePic(g,far,camX+(A.moving?t*(RUSH[A.kind]||600):0),.25,vw,-70,BACK+74);else P.far(g,c);
  // the wall band; a subway car interior fills it from the ceiling down (WALL_TOP)
  const wt=WALL_TOP[A.kind]??.46;
  if(wall){tilePic(g,wall,camX,1,vw,BACK*wt,BACK*(1-wt));if(A.moving)carDoors(g,c);}else P.wall(g,c);

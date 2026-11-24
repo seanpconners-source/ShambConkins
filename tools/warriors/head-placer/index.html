@@ -1,0 +1,184 @@
+<title>Warriors Head Placer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;600;800;900&display=swap">
+<style>
+/* Layout: sheet chips on top; the pose being placed in a big editor (sticky on wide screens) beside a grid of every pose on the sheet. Single dark look, like the Background Picker. */
+:root{
+ --ink:#070a14; --panel:#101629; --panel2:#18213d; --line:#27335a; --text:#eef2ff; --muted:#97a2c6; --blue:#4d8dff;
+ --ok:#3ccf8e; --warn:#ffc24d; --cell:#2a2f3e;
+ --f-disp:"Bangers","Impact",system-ui,sans-serif; --f-body:"Nunito",system-ui,-apple-system,"Segoe UI",sans-serif;
+ color-scheme:dark;
+}
+html,body{background:var(--ink);color:var(--text)}
+body{font-family:var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 60px}
+h1{font-family:var(--f-disp);font-weight:400;letter-spacing:.04em;font-size:clamp(28px,5vw,40px);margin:0;line-height:1}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 20px;justify-content:space-between;margin-bottom:10px}
+.progress{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}.progress b{color:var(--text)}
+.status{font-size:13px;color:var(--muted);min-height:18px}
+.help{font-size:14px;color:var(--muted);margin:0 0 10px;max-width:70ch;line-height:1.45}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:thin}
+.chip{flex:0 0 auto;font:inherit;font-weight:800;font-size:13px;border-radius:999px;border:1.5px solid var(--line);background:var(--panel);color:var(--text);padding:7px 12px;cursor:pointer;white-space:nowrap}
+.chip small{color:var(--muted);font-weight:600;margin-left:6px;font-variant-numeric:tabular-nums}
+.chip.on{border-color:var(--blue);box-shadow:0 0 0 3px #4d8dff44}
+.chip.done small{color:var(--ok)}
+.main{display:grid;grid-template-columns:minmax(0,520px) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:minmax(0,1fr)}}
+.editor{position:sticky;top:max(8px,env(safe-area-inset-top,0px));background:var(--panel);border:1.5px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+@media (max-width:860px){.editor{position:static}}
+.ehead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ehead h2{font-family:var(--f-disp);font-weight:400;font-size:26px;letter-spacing:.03em;margin:0}
+.tag{font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;background:var(--panel2);color:var(--muted)}
+.tag.lock{background:var(--ok);color:var(--ink)}
+.stagewrap{display:flex;gap:10px;align-items:flex-end}
+#stage{flex:1 1 auto;min-width:0;width:100%;max-width:440px;aspect-ratio:1;border-radius:10px;background:var(--cell);touch-action:none;cursor:grab;display:block}
+#stage:active{cursor:grabbing}
+.mini{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted)}
+.mini canvas{background:var(--cell);border-radius:6px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.slider{display:grid;grid-template-columns:52px 1fr 56px;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.slider output{font-variant-numeric:tabular-nums;color:var(--text);text-align:right}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.btn{font:inherit;font-weight:800;font-size:13px;border-radius:999px;border:1.5px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 14px;cursor:pointer;min-height:38px}
+.btn:hover{border-color:var(--blue)}
+.btn.primary{background:var(--ok);color:var(--ink);border-color:var(--ok)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,.chip:focus-visible,.card:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px}
+.card{border:2px solid transparent;border-radius:10px;background:var(--panel);padding:0;cursor:pointer;color:var(--text);text-align:left;overflow:hidden}
+.card canvas{display:block;width:100%;aspect-ratio:1;background:var(--cell)}
+.card span{display:flex;align-items:center;gap:6px;padding:5px 7px;font-size:12px;font-weight:800}
+.card .dot{width:9px;height:9px;border-radius:50%;background:var(--line);margin-left:auto}
+.card.locked .dot{background:var(--ok)}.card.moved .dot{background:var(--warn)}
+.card.on{border-color:var(--blue)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-bottom:8px;flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="top">
+ <div><h1>Warriors Head Placer</h1><div class="status" id="status">Loading…</div></div>
+ <div class="progress" id="progress"></div>
+</div>
+<p class="help">Drag the head where it belongs on the neck. Use two fingers to turn and resize it, or the sliders. Arrow keys nudge it 1 px. <b>Lock in</b> saves it and moves to the next pose. Every change saves as you go, so you can stop any time.</p>
+<div class="chips" id="chips"></div>
+<div class="main">
+ <section class="editor" aria-label="Place the head">
+  <div class="ehead"><h2 id="ename">—</h2><span class="tag" id="etag">Auto</span><span class="tag" id="epos"></span></div>
+  <div class="stagewrap">
+   <canvas id="stage" width="880" height="880" aria-label="Pose with the head; drag to move it"></canvas>
+   <div class="mini"><canvas id="mini" width="96" height="96"></canvas>game size</div>
+  </div>
+  <label class="slider"><span>Turn</span><input id="ang" type="range" min="-180" max="180" step="1"><output id="angv"></output></label>
+  <label class="slider"><span>Size</span><input id="siz" type="range" min="60" max="160" step="1"><output id="sizv"></output></label>
+  <div class="row">
+   <button class="btn" id="prev">◀ Prev</button><button class="btn" id="next">Next ▶</button>
+   <button class="btn" id="copy">Same as last pose</button><button class="btn" id="reset">Reset</button>
+   <button class="btn" id="mirror" aria-pressed="false">Face left</button>
+   <button class="btn" id="behind" aria-pressed="false">Head behind body</button>
+  </div>
+  <div class="row"><button class="btn primary" id="lock">Lock in ✓</button><button class="btn" id="unlock" hidden>Unlock</button></div>
+ </section>
+ <section>
+  <div class="legend"><span><i style="background:var(--ok)"></i>Locked</span><span><i style="background:var(--warn)"></i>Moved, not locked</span><span><i style="background:var(--line)"></i>My automatic spot</span></div>
+  <div class="grid" id="grid"></div>
+ </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const S={data:null,sheet:0,cell:0,saved:{},imgs:{},faces:{},db:null,mirror:false,last:null};
+const key=(sh,c)=>sh.id+'--'+c.p;
+const cur=()=>{const sh=S.data.sheets[S.sheet];return [sh,sh.cells[S.cell]];};
+// a pose's placement: what was saved, else the automatic spot [x,y,angle,size]
+function place(sh,c){const s=S.saved[key(sh,c)];return s?[s.x,s.y,s.a,s.s]:c.d.slice();}
+function behind(sh,c){const s=S.saved[key(sh,c)];return s&&s.b!=null?!!s.b:!!c.b;}
+function isMoved(sh,c){const s=S.saved[key(sh,c)];if(!s)return false;const d=c.d;return Math.abs(s.x-d[0])>.4||Math.abs(s.y-d[1])>.4||Math.abs(s.a-d[2])>.4||Math.abs(s.s-d[3])>.004;}
+// the face as the game draws it: the FACE box (brow to chin) 30 cell px wide x size, centred on (x,y), turned by angle
+function drawHead(g,sh,x,y,a,s){const fw=30*s;g.save();g.translate(x,y);g.rotate(a*Math.PI/180);
+ const F=S.faces[sh.face];
+ if(F&&F.img.complete&&F.img.naturalWidth){const [fx,fy,fW,fH]=F.f,ar=F.aspect,wk=ar>=1?1:ar,hk=ar>=1?1/ar:1,L=fw/(fW*wk),w=L*wk,h=L*hk;
+  const dx=(.5-(fx+fW/2))*w,dy=(.5-(fy+fH/2))*h;g.drawImage(F.img,dx-w/2,dy-h/2,w,h);}
+ else{// gangs wear a drawn head: same spot and size
+  const w=fw*1.02,h=fw*1.28;g.translate(0,-fw*.08);g.fillStyle='#d9a47c';g.strokeStyle='#1a1410';g.lineWidth=1.4;g.beginPath();g.ellipse(0,0,w/2,h/2,0,0,7);g.fill();g.stroke();
+  g.fillStyle='#2b211a';g.beginPath();g.ellipse(0,-h*.3,w*.52,h*.24,0,Math.PI,0);g.fill();
+  g.fillStyle='#111';g.beginPath();g.arc(-w*.17,-h*.02,1.6,0,7);g.arc(w*.17,-h*.02,1.6,0,7);g.fill();g.fillRect(-w*.14,h*.22,w*.28,1.6);}
+ g.restore();}
+// one pose drawn into a canvas, cropped round the body; returns the crop so pointer math can map back
+function cropOf(sh,c,big){if(!big)return {x:0,y:0,s:256};const s=168,x=Math.max(0,Math.min(256-s,c.d[0]-s/2)),y=Math.max(0,Math.min(256-s,c.d[1]-s*.38));return {x,y,s};}
+function drawCell(cv,sh,c,pl,showNeck){const g=cv.getContext('2d'),W=cv.width,im=S.imgs[sh.id],cr=cropOf(sh,c,cv.id==='stage'),k=W/cr.s;g.clearRect(0,0,W,W);
+ g.save();if(S.mirror&&cv.id){g.translate(W,0);g.scale(-1,1);}
+ g.scale(k,k);g.translate(-cr.x,-cr.y);
+ // the victory pose holds an arm up past the face: the head goes behind the body there (owner, Nov 24)
+ const [x,y,a,s]=pl,bh=behind(sh,c);if(bh)drawHead(g,sh,x,y,a,s);
+ if(im&&im.complete)g.drawImage(im,c.c*256,c.r*256,256,256,0,0,256,256);
+ if(!bh)drawHead(g,sh,x,y,a,s);
+ if(showNeck){g.strokeStyle='rgba(77,141,255,.55)';g.lineWidth=1/k*1.5;g.beginPath();g.arc(c.d[0],c.d[1],2.2,0,7);g.stroke();}
+ g.restore();}
+function renderChips(){const box=$('chips');box.textContent='';let tot=0,lk=0;
+ S.data.sheets.forEach((sh,i)=>{const n=sh.cells.length,l=sh.cells.filter(c=>S.saved[key(sh,c)]?.locked).length;tot+=n;lk+=l;
+  const b=document.createElement('button');b.className='chip'+(i===S.sheet?' on':'')+(l===n?' done':'');b.textContent=sh.name;const sm=document.createElement('small');sm.textContent=l+'/'+n;b.append(sm);
+  b.onclick=()=>{S.sheet=i;S.cell=firstOpen(i);renderAll();};box.append(b);});
+ $('progress').innerHTML='';const b=document.createElement('b');b.textContent=lk;$('progress').append(b,document.createTextNode(' of '+tot+' poses locked'));}
+function firstOpen(i){const sh=S.data.sheets[i];const j=sh.cells.findIndex(c=>!S.saved[key(sh,c)]?.locked);return j<0?0:j;}
+function renderGrid(){const sh=S.data.sheets[S.sheet],box=$('grid');box.textContent='';
+ sh.cells.forEach((c,j)=>{const b=document.createElement('button');const st=S.saved[key(sh,c)];b.className='card'+(j===S.cell?' on':'')+(st?.locked?' locked':isMoved(sh,c)?' moved':'');
+  const cv=document.createElement('canvas');cv.width=224;cv.height=224;const sp=document.createElement('span');sp.textContent=c.p;const d=document.createElement('i');d.className='dot';sp.append(d);
+  b.append(cv,sp);b.onclick=()=>{S.cell=j;renderEditor();markGrid();};box.append(b);c._cv=cv;drawCell(cv,sh,c,place(sh,c));});}
+function markGrid(){const sh=S.data.sheets[S.sheet];[...$('grid').children].forEach((b,j)=>{const c=sh.cells[j],st=S.saved[key(sh,c)];b.className='card'+(j===S.cell?' on':'')+(st?.locked?' locked':isMoved(sh,c)?' moved':'');});}
+function renderEditor(){const [sh,c]=cur();if(!c)return;const pl=place(sh,c),st=S.saved[key(sh,c)];
+ $('ename').textContent=sh.name+' · '+c.p;$('epos').textContent=(S.cell+1)+' / '+sh.cells.length;
+ $('etag').textContent=st?.locked?'Locked':isMoved(sh,c)?'Moved':'Automatic spot';$('etag').className='tag'+(st?.locked?' lock':'');
+ $('lock').hidden=false;$('unlock').hidden=!st?.locked;$('lock').textContent=st?.locked?'Save & next ✓':'Lock in ✓';
+ $('ang').value=Math.round(pl[2]);$('angv').textContent=Math.round(pl[2])+'°';$('siz').value=Math.round(pl[3]*100);$('sizv').textContent=Math.round(pl[3]*100)+'%';
+ drawCell($('stage'),sh,c,pl,true);
+ // game size: a fighter cell is drawn at about 0.4x on a phone
+ const m=$('mini'),g=m.getContext('2d');drawCell(m,sh,c,pl);
+ const bh=behind(sh,c);$('behind').setAttribute('aria-pressed',bh);$('behind').textContent=bh?'Head behind body ✓':'Head behind body';$('behind').style.borderColor=bh?'var(--blue)':'';
+ $('prev').disabled=S.cell===0;$('next').disabled=S.cell===sh.cells.length-1;$('copy').disabled=S.cell===0&&!S.last;}
+function renderAll(){renderChips();renderGrid();renderEditor();}
+// edits: every change saves (debounced); Lock in saves with locked:true and moves on
+let saveT=null;
+function setPlace(pl,{locked}={}){const [sh,c]=cur(),k=key(sh,c),old=S.saved[k];
+ const rec={x:+pl[0].toFixed(1),y:+pl[1].toFixed(1),a:+(((pl[2]+540)%360)-180).toFixed(1),s:+pl[3].toFixed(3),b:behind(sh,c)?1:0,locked:locked??!!old?.locked,at:Date.now()};
+ S.saved[k]=rec;S.last=[rec.x,rec.y,rec.a,rec.s];renderEditor();if(c._cv)drawCell(c._cv,sh,c,place(sh,c));markGrid();
+ clearTimeout(saveT);const now=locked!==undefined;saveT=setTimeout(()=>save(k,rec),now?0:500);}
+async function save(k,rec){if(!S.db){$('status').textContent='Not saved: sign in to save.';return;}
+ try{await S.db.doc('heads/'+k).set(rec);$('status').textContent='Saved · '+new Date().toLocaleTimeString();}catch(e){$('status').textContent='Couldn’t save ('+(e?.code||'error')+'). Try again.';}}
+function go(d){const [sh]=cur();S.cell=Math.max(0,Math.min(sh.cells.length-1,S.cell+d));renderEditor();markGrid();}
+$('prev').onclick=()=>go(-1);$('next').onclick=()=>go(1);
+$('reset').onclick=()=>{const [,c]=cur();setPlace(c.d.slice());};
+$('copy').onclick=()=>{const [sh]=cur();const p=S.cell>0?place(sh,sh.cells[S.cell-1]):S.last;if(p)setPlace(p.slice());};
+$('lock').onclick=()=>{const [sh,c]=cur();setPlace(place(sh,c),{locked:true});renderChips();
+ const j=sh.cells.findIndex((cc,i)=>i>S.cell&&!S.saved[key(sh,cc)]?.locked);if(j>=0){S.cell=j;renderEditor();markGrid();}};
+$('unlock').onclick=()=>{const [sh,c]=cur();setPlace(place(sh,c),{locked:false});renderChips();};
+$('behind').onclick=()=>{const [sh,c]=cur(),k=key(sh,c),now=!behind(sh,c),p=place(sh,c);S.saved[k]={...(S.saved[k]||{x:p[0],y:p[1],a:p[2],s:p[3]}),b:now?1:0};setPlace(p);};
+$('mirror').onclick=()=>{S.mirror=!S.mirror;$('mirror').setAttribute('aria-pressed',S.mirror);$('mirror').textContent=S.mirror?'Face right':'Face left';renderEditor();};
+$('ang').oninput=e=>{const [sh,c]=cur(),p=place(sh,c);p[2]=+e.target.value;setPlace(p);};
+$('siz').oninput=e=>{const [sh,c]=cur(),p=place(sh,c);p[3]=e.target.value/100;setPlace(p);};
+// drag anywhere on the big pose = move the head; two fingers = turn + resize
+const pts=new Map();let g0=null;
+function toCell(e){const r=$('stage').getBoundingClientRect(),[sh,c]=cur(),cr=cropOf(sh,c,true),k=cr.s/r.width;let x=(e.clientX-r.left)*k;if(S.mirror)x=cr.s-x;return {x:x+cr.x,y:(e.clientY-r.top)*k+cr.y};}
+$('stage').addEventListener('pointerdown',e=>{$('stage').setPointerCapture(e.pointerId);pts.set(e.pointerId,toCell(e));g0=null;});
+$('stage').addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;const prev=pts.get(e.pointerId),now=toCell(e);pts.set(e.pointerId,now);const [sh,c]=cur(),p=place(sh,c);
+ if(pts.size===1){p[0]+=now.x-prev.x;p[1]+=now.y-prev.y;setPlace(p);return;}
+ const [A,B]=[...pts.values()],ang=Math.atan2(B.y-A.y,B.x-A.x),dist=Math.hypot(B.x-A.x,B.y-A.y);
+ if(g0){p[2]+=(ang-g0.ang)*180/Math.PI*(S.mirror?-1:1);p[3]=Math.max(.6,Math.min(1.6,p[3]*dist/g0.dist));setPlace(p);}g0={ang,dist};});
+const up=e=>{pts.delete(e.pointerId);g0=null;};$('stage').addEventListener('pointerup',up);$('stage').addEventListener('pointercancel',up);
+$('stage').addEventListener('wheel',e=>{e.preventDefault();const [sh,c]=cur(),p=place(sh,c);if(e.shiftKey)p[2]+=e.deltaY>0?2:-2;else p[3]=Math.max(.6,Math.min(1.6,p[3]*(e.deltaY>0?.98:1.02)));setPlace(p);},{passive:false});
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const [sh,c]=cur();if(!c)return;const p=place(sh,c),m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+ if(m){e.preventDefault();p[0]+=m[0]*(S.mirror?-1:1);p[1]+=m[1];setPlace(p);}else if(e.key==='Enter'){e.preventDefault();$('lock').click();}else if(e.key==='['){go(-1);}else if(e.key===']'){go(1);}});
+// boot: data + pictures, then the saved choices from the shared store
+(async()=>{
+ try{S.data=await (await fetch('data.json')).json();}catch(e){$('status').textContent='Couldn’t load the poses. Reload the page.';return;}
+ for(const [k,f] of Object.entries(S.data.faces)){const im=new Image();im.onload=()=>renderAll();im.src=f.src;S.faces[k]={...f,img:im};}
+ S.data.sheets.forEach(sh=>{const im=new Image();im.onload=()=>{if(S.data.sheets[S.sheet]===sh)renderAll();};im.src=sh.img;S.imgs[sh.id]=im;});
+ renderAll();
+ const timer=setTimeout(()=>{$('status').textContent='Couldn’t reach your saved spots yet; changes save once it connects.';},10000);
+ try{const db=await window.claude?.use?.('db');if(!db){clearTimeout(timer);$('status').textContent='Viewing only: sign in to save.';return;}
+  S.db=db;let first=true;db.collection('heads').onSnapshot(snap=>{clearTimeout(timer);for(const d of snap.docs){const id=d.id.split('/').pop();S.saved[id]=d.data();}
+   if(first){first=false;S.cell=firstOpen(S.sheet);$('status').textContent='Every change saves automatically.';renderAll();}else{renderChips();markGrid();}},
+   err=>{clearTimeout(timer);$('status').textContent='Couldn’t load saved spots ('+(err?.code||'error')+').';});}
+ catch(e){clearTimeout(timer);$('status').textContent='Couldn’t load saved spots.';}
+})();
+</script>
