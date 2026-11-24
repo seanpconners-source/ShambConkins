@@ -30,6 +30,24 @@ function fruitSwipeStep(drag,p,now,W,H){
  return {a,b:p,reset:expired||restart};
 }
 // Normalized launch positions and ballistic heights keep both turns fair on any screen.
+// a bomb: solid black ball with a shine, a metal cap, and a LIT fuse (burning spark + embers) so it reads as a bomb at a glance
+// (owner: the 💣 emoji came out see-through on phones: it was drawn with the shadow's 20% fill colour)
+function drawBomb(g,cx,cy,r,t){g.save();g.globalAlpha=1;
+ const gr=g.createRadialGradient(cx-r*.35,cy-r*.35,r*.1,cx,cy,r);gr.addColorStop(0,'#5a5e68');gr.addColorStop(.45,'#1c1e24');gr.addColorStop(1,'#050506');
+ g.fillStyle=gr;g.beginPath();g.arc(cx,cy,r,0,Math.PI*2);g.fill();g.lineWidth=Math.max(1.5,r*.06);g.strokeStyle='#000';g.stroke();
+ g.fillStyle='rgba(255,255,255,.55)';g.beginPath();g.ellipse(cx-r*.38,cy-r*.42,r*.22,r*.12,-.6,0,Math.PI*2);g.fill();
+ // the cap and the fuse
+ const ca=-.75,capX=cx+Math.cos(ca)*r*.9,capY=cy+Math.sin(ca)*r*.9;g.save();g.translate(capX,capY);g.rotate(ca+Math.PI/2);
+ g.fillStyle='#8c8f98';g.fillRect(-r*.24,-r*.12,r*.48,r*.24);g.fillStyle='#c8ccd4';g.fillRect(-r*.24,-r*.12,r*.48,r*.07);g.restore();
+ const fx0=capX+Math.cos(ca)*r*.12,fy0=capY+Math.sin(ca)*r*.12,fx1=fx0+r*.42,fy1=fy0-r*.5;
+ g.strokeStyle='#c8a26c';g.lineWidth=Math.max(2,r*.1);g.lineCap='round';g.beginPath();g.moveTo(fx0,fy0);g.quadraticCurveTo(fx0+r*.38,fy0-r*.06,fx1,fy1);g.stroke();
+ // the spark: a flickering glow, a hot core, rays and embers flying off
+ const fl=.8+.2*Math.sin(t*41)+.12*Math.sin(t*67),gl=g.createRadialGradient(fx1,fy1,0,fx1,fy1,r*.8*fl);
+ gl.addColorStop(0,'rgba(255,250,210,1)');gl.addColorStop(.3,'rgba(255,190,60,.9)');gl.addColorStop(1,'rgba(255,90,20,0)');g.fillStyle=gl;g.beginPath();g.arc(fx1,fy1,r*.8*fl,0,Math.PI*2);g.fill();
+ g.strokeStyle='#ffe9a0';g.lineWidth=Math.max(1,r*.05);for(let i=0;i<6;i++){const a=i/6*Math.PI*2+t*9,l=r*(.3+.2*Math.abs(Math.sin(t*23+i)));g.beginPath();g.moveTo(fx1,fy1);g.lineTo(fx1+Math.cos(a)*l,fy1+Math.sin(a)*l);g.stroke();}
+ for(let i=0;i<4;i++){const q=(t*2.6+i/4)%1,a=-1.2+i*.7;g.fillStyle=`rgba(255,${180-q*120|0},40,${1-q})`;g.beginPath();g.arc(fx1+Math.cos(a)*q*r*.7,fy1+Math.sin(a)*q*r*.7-q*r*.2,Math.max(1,r*.06*(1-q)),0,Math.PI*2);g.fill();}
+ g.fillStyle='#fff';g.beginPath();g.arc(fx1,fy1,Math.max(1.5,r*.08),0,Math.PI*2);g.fill();
+ g.restore();}
 function fruitCourse(seed,count=45){const random=seededRandom(seed),gravity=1.9;return Array.from({length:count},(_,i)=>{const peak=[.14,.36,.58][i%3]+random()*.14;return {time:i*.65,x:.14+random()*.72,vx:(random()-.5)*.2,vy:-Math.sqrt(2*gravity*(1.07-peak)),peak,gravity,kind:Math.floor(random()*6),bomb:random()<.14};});}
 // The "fruit" is whatever lives in this game's world (src/engines/fruitThemes.js: a Crappy Crush world or a Flappy Disaster
 // stage picked from the seed, its items and its characters' heads); a sliced one splits into two squished halves.
@@ -91,7 +109,7 @@ async function fruitslice(s){
   else{x.fillStyle=theme?.tint?.[1]||'#523c29';x.fillRect(-20,-20,W+40,H+40);x.strokeStyle=theme?.tint?.[0]||'#806449';x.lineWidth=3;for(let i=0;i<W;i+=W/9){x.beginPath();x.moveTo(i,0);x.lineTo(i,H);x.stroke();}}
   x.fillStyle='#fae7b5';x.font=`bold ${clamp(W*.028,12,19)}px Georgia`;x.textAlign='center';x.strokeStyle='#000a';x.lineWidth=4;const ttl=theme?`FRUIT NINJA · ${theme.name.toUpperCase()}`:`TASKMASTER · ${s.players[target()].name.toUpperCase()} HEAD BUFFET`;const ty=W<600?62:25,mw=W<600?W*.92:W-300,tw=x.measureText?.(ttl)?.width||0;if(tw>mw)x.font=`bold ${clamp(W*.028,12,19)*mw/tw}px Georgia`;x.strokeText(ttl,W/2,ty);x.fillText(ttl,W/2,ty);
   for(const p of pieces)if(p.spark){x.globalAlpha=Math.max(0,1-p.age/.8);circle(x,p.x*W,p.y*H,Math.max(2,r*.12),p.color);x.globalAlpha=1;}
-  for(const f of fruits){if(f.bomb){circle(x,f.x*W+3,f.y*H+5,r,'#0003');x.font=`${r*1.9}px Arial`;x.textAlign='center';x.textBaseline='alphabetic';x.fillText('💣',f.x*W,f.y*H+r*.55);continue;}
+  for(const f of fruits){if(f.bomb){circle(x,f.x*W+3,f.y*H+5,r,'#0003');drawBomb(x,f.x*W,f.y*H,r*.92,clock+f.time*3);continue;}
    const o=f.o||objs[f.kind%Math.max(1,objs.length)];circle(x,f.x*W+4,f.y*H+6,r*.9,'#0003');
    if(drawObj(o,itemMood[f.kind],x,f.x*W,f.y*H,head))continue;
    x.strokeStyle=colors[f.kind];x.lineWidth=Math.max(3,r*.12);x.beginPath();x.arc(f.x*W,f.y*H,r*1.02,0,Math.PI*2);x.stroke();

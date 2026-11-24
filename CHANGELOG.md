@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.99.56
+
+- **Warriors heads sit on the bodies:** faces used to be placed from the old drawn skeleton, not the new sprite art, so they floated above necks, beside bodies lying on the ground, and off falling or dizzy fighters. Every frame of every fighter sheet now has its real neck measured from the art, and the face sits on it and turns with the body (on its side when someone is knocked flat, hanging forward when dizzy). Faces still turn to look the way the body faces. Cutscene people use the same fix.
+- **The Riffs' big entrance:** in the final fight the Riffs now march in from both sides at once, the leftover Rogues run off, and Luther is held in the middle of the screen while the Riffs surround him and beat him down, so you can watch it.
+- **Fruit Ninja bombs:** no longer see-through. They're now a solid black bomb with a metal cap and a burning, sparking fuse, so you can tell them apart at a glance.
+
 ## v0.99.55
 
 - **Warriors cutscenes fit every screen:** on an upright phone the scenes were zoomed in so far that people were cut off at the sides. Now the whole shot fits: the camera sizes itself by the screen's width on tall screens and the scene sits in the middle, with the Warriors, the gangs, Cyrus's stage and the Conclave crowd all in view (also on the open Fold and sideways).

@@ -26,6 +26,7 @@ const SY_=require("src/engines/dd/story.js");
 const SC=require("src/engines/dd/scenes.js");
 const DS=require("src/data/ddSprites.js");
 const CUT=require("src/engines/dd/cutscenes.js");
+const {NECKS}=require("src/data/ddNecks.js");
 const {faceSprite,drawFace,faceHeight,headFacts}=require("src/headFacts.js");
 
 const FACE_W=15,FACE_UP=.42,VH=380,BACK=210,DEPTH=SY_.DEPTH,FRONT=BACK+DEPTH,FIG=.9,G=980,SAVE='sc-warriors-v1';
@@ -230,15 +231,20 @@ async function warriorsDD(s){
    if(ev.kind==='lurch'){lurch=.5;shakeT=.4;txt(hero,'HOLD ON!');sfx.thud();}}
   // the Rogues keep coming until the Riffs show up
   if(bossOn&&A.boss.endless&&!riffsIn){spawnT-=dt;if(spawnT<=0){spawnT=3;if(living('foe').length<4)spawnFoe({type:uid%3===0?'bottler':'rogue',side:uid%2?-1:1,d:(uid*41)%DEPTH});}}
-  if(bossOn&&A.boss.riffs&&!riffsIn&&(hero.hp<hero.maxHp*.42||bossT>38))riffsArrive();}
+  if(bossOn&&A.boss.riffs&&!riffsIn&&(hero.hp<hero.maxHp*.42||bossT>38))riffsArrive();
+  // the Riffs' beating happens in the middle of the screen: the boss is drawn back there (also while he's being hit)
+  if(riffsIn&&bossF&&bossF.hp>0&&!bossF.gone&&!['fall','down','dead','pit'].includes(bossF.st)){const c=cam.x+vw/2,dx=c-bossF.x;if(Math.abs(dx)>6)bossF.x+=Math.sign(dx)*Math.min(Math.abs(dx),110*dt);}}
  function startBoss(){bossOn=true;bossT=0;cam.x=cam.lockA=cam.lockB=Math.max(0,Math.min(A.len-vw,hero.x-vw*.35));musicBoss=true;
   bossF=spawnFoe({type:A.boss.type,boss:true,side:1,d:DEPTH/2});bossF.x=cam.x+vw+40;
   const ms=A.boss.minions.split(' ').filter(Boolean);ms.forEach((ty,i)=>{const m=spawnFoe({type:ty,side:i%2?-1:1,d:(i+1)*DEPTH/(ms.length+1)});m.hp=Math.round(m.hp*.8);});
   const T=FOES[A.boss.type];banner={big:T.name,small:T.gang,t:2.2,boss:true};sfx.boss();vibrate([40,40,40]);
   if(A.boss.line)fx.push({kind:'say',txt:A.boss.line,f:bossF,t:3.2});spawnT=4;}
  function riffsArrive(){riffsIn=true;sfx.riffs();vibrate([30,30,30,30,80]);banner={big:'THE RIFFS!',small:'They know who shot Cyrus. Now the Rogues are outnumbered.',t:3.2};
-  for(let i=0;i<8;i++){const a=spawnFoe({type:'riff',ally:true,side:i%2?-1:1,d:12+i*(DEPTH-24)/7});a.inv=1;}
-  hero.hp=Math.min(hero.maxHp,hero.hp+hero.maxHp*.3);for(const f of living('foe'))if(!f.boss)f.ai.scared=1;}
+  // the Riffs march in from BOTH sides in two lines, the Rogues still standing run for it, and the boss is held in the middle of
+  // the screen while the Riffs close in round him (owner: "keep him in the center while they beat him up so you can see it")
+  for(let i=0;i<8;i++){const L=i<4,j=i%4,a=spawnFoe({type:'riff',ally:true,side:L?-1:1,d:A.dMin+8+(j+.5)*(A.dMax-A.dMin-16)/4});
+   a.x=L?cam.x-36-j*34:cam.x+vw+36+j*34;a.inv=1.5;a.dir=L?1:-1;a.ring=(j-1.5)/1.5;}
+  hero.hp=Math.min(hero.maxHp,hero.hp+hero.maxHp*.3);for(const f of living('foe'))if(!f.boss){f.ai.scared=1;f.ai.flee=Math.sign(f.x-(cam.x+vw/2))||1;}}
  function areaClear(msg){if(phase!=='play')return;phase='clear';phaseT=0;musicOn=false;sfx.clear();hero.st='win';hero.stT=0;hero.mv=null;hero.z=0;
   for(const o of living('foe'))knockdown(o,Math.sign(o.x-hero.x||1)*200,300,true,null);
   run.clearMsg=msg||(A.last?'CHAPTER CLEAR!':'AREA CLEAR!');run.outro=A.last?CH[chapterNo].outro:null;}
@@ -291,8 +297,9 @@ async function warriorsDD(s){
    m.hit.add(v);const kind=def.spin&&f.mv&&f.mv.seg===0&&f.mv.segT>def.seq[0][1]-.13?def.finish:def.kind;
    if(def.grabber)continue;
    let dmg=def.dmg;if(def.wpn&&f.weapon){dmg=(WPN[f.weapon.kind]?.dmg||4)*(f.mv.name==='swing3'?1.4:1)*(f.side==='foe'?.6:1);if(f.side==='hero'){f.weapon.uses--;if(f.weapon.uses<=0){f.weapon=null;txt(f,'WEAPON BROKE');}}}
-   if(f.side==='ally'&&v.boss)dmg*=.35;
-   if(damage(f,v,dmg,kind,def.kb||60,def)!==false){m.landed=true;if(def.sfx)sfx[def.sfx]?.();}}
+   // a Riff hitting the boss: small hits that rock him on the spot (no knockdowns that would carry him off the middle)
+   const ringHit=f.side==='ally'&&v.boss;if(ringHit)dmg*=.5;
+   if(damage(f,v,dmg,ringHit?'light':kind,ringHit?20:def.kb||60,def)!==false){m.landed=true;if(def.sfx)sfx[def.sfx]?.();}}
   // props break when hit
   if(f.side==='hero')for(const p of props){if(m.hit.has(p))continue;const dx=(p.x-f.x)*f.dir;if(Math.abs(p.d-f.d)<16&&dx>def.reach[0]&&dx<def.reach[1]+10){m.hit.add(p);breakProp(p);}}}
  function damage(a,v,dmg,kind,kb,def={}){if(!canBeHit(v,a)&&v.st!=='grabbed')return false;
@@ -477,8 +484,11 @@ async function warriorsDD(s){
  function foeStep(f,dt){if(['hurt','fall','down','getup','pit','dead','grabbed','dizzy'].includes(f.st)||f.gone||f.entering)return;
   if(f.st==='atk'){moveStep(f,dt);return;}if(f.st==='holding')return;
   const ally=f.side==='ally',T=f.T,ai=f.ai;ai.cool-=dt*(ally?1.3:DIFF);
-  // pick a target: the hero, or a Riff who is closer
-  let h=null;if(ally){let bd=1e9;const fs=living('foe');for(const v of fs){if(v.boss&&fs.length>1)continue;const d=Math.abs(v.x-f.x)+Math.abs(v.d-f.d)*2;if(d<bd){bd=d;h=v;}}if(!h){f.st='idle';return;}}
+  // a Rogue running off once the Riffs arrive: out of the screen and gone
+  if(ai.flee&&!ally&&!f.boss&&!['hurt','fall','down','dead','held','dizzy','grabbed'].includes(f.st)&&!f.mv){f.x+=ai.flee*T.sp*1.5*dt;f.dir=ai.flee;f.st='walk';f.walkPh+=dt*7;
+   if(f.x<cam.x-70||f.x>cam.x+vw+70)f.gone=true;return;}
+  // pick a target: the hero, or a Riff who is closer (once the Riffs are in, they all go for the boss)
+  let h=null;if(ally&&riffsIn&&bossF&&bossF.hp>0&&!bossF.gone)h=bossF;else if(ally){let bd=1e9;const fs=living('foe');for(const v of fs){if(v.boss&&fs.length>1)continue;const d=Math.abs(v.x-f.x)+Math.abs(v.d-f.d)*2;if(d<bd){bd=d;h=v;}}if(!h){f.st='idle';return;}}
   else{h=hero;let bd=hero&&canBeHit(hero,f)?Math.abs(hero.x-f.x)+60:1e9;if(!f.boss)for(const v of living('ally')){const d=Math.abs(v.x-f.x);if(d<bd){bd=d;h=v;}}}
   if(!h||h.st==='dead'||h.st==='pit'){f.st='idle';return;}
   // scared Rogues back off once the Riffs are here
@@ -489,12 +499,16 @@ async function warriorsDD(s){
   const side=Math.sign(f.x-h.x)||1,ranged=T.ranged;
   let gx=h.x+side*(ranged==='gun'?190:ranged==='knife'?150:ranged?140:(30*f.big+8)),gd=h.d;
   if(ai.mode==='out'&&!ally){ai.hover+=dt;gx=h.x+side*(120+Math.sin(ai.hover)*30);gd=DEPTH/2+Math.sin(ai.hover*.7)*DEPTH*.4;}
+  // the beating: the boss walks back to the middle of the screen, the Riffs ring him (front and back rows on both sides)
+  if(f.boss&&riffsIn){gx=cam.x+vw/2;gd=(A.dMin+A.dMax)/2;}
+  if(ally&&riffsIn&&h===bossF){gx=h.x+side*(24*h.big+6+Math.abs(f.ring||0)*6);gd=clamp(h.d+(f.ring||0)*8,A.dMin,A.dMax);}
   gx=clamp(gx,cam.x+14,cam.x+vw-14);
   const dx=gx-f.x,dd=gd-f.d,sp=T.sp*(f.boss&&f.hp<f.maxHp*.4?1.3:1)*(ally?1:(.85+.25*DIFF));
   if(Math.abs(dx)>4||Math.abs(dd)>3){f.x+=clamp(dx,-1,1)*Math.min(Math.abs(dx),sp*dt*(Math.abs(dx)>150?1.6:1));f.d+=clamp(dd,-1,1)*Math.min(Math.abs(dd),sp*.6*dt);f.st='walk';f.walkPh+=dt*6;}else f.st='idle';
   f.dir=Math.sign(h.x-f.x)||f.dir;
   const adx=Math.abs(h.x-f.x),add=Math.abs(h.d-f.d);
-  if((ally||ai.mode==='in')&&ai.cool<=0&&canBeHit(h,f)){let mv=null;const r=Math.random();
+  const ringWait=ally&&riffsIn&&h===bossF&&Math.abs(h.x-(cam.x+vw/2))>60;
+  if((ally||ai.mode==='in')&&ai.cool<=0&&!ringWait&&canBeHit(h,f)){let mv=null;const r=Math.random();
    if(ranged==='gun'&&adx>90&&add<16)mv='shoot';
    else if(ranged==='knife'&&adx>70&&adx<240&&add<10)mv='toss';
    else if((ranged==='lob'||ranged==='bottle')&&adx>80&&adx<260){mv='lobm';f.aimAt={x:h.x,d:h.d};}
@@ -506,7 +520,7 @@ async function warriorsDD(s){
    else if(T.weapon&&adx<70&&add<12)mv='eswing';
    else if(adx<46*f.big&&add<12){const opts=T.moves.filter(m=>MV[m]&&!['toss','eswing','bash','shoot','lobm'].includes(m));mv=opts[Math.floor(r*opts.length)];}
    if(f.boss&&f.hp<f.maxHp*.5&&!f.summoned&&!A.boss?.endless){f.summoned=true;const ms=A.boss.minions.split(' ').filter(Boolean).slice(0,2);ms.forEach((ty,i)=>spawnFoe({type:ty,side:i?-1:1,d:i?20:DEPTH-20}));fx.push({kind:'say',txt:'GET \'EM!',f,t:1.4});}
-   if(mv){startMove(f,mv);ai.cool=(ally?.5:f.boss?.6:1.05)+Math.random()*(f.boss?.6:1.1);if(Math.random()<.25&&!ally)ai.mode='out';}}}
+   if(mv){startMove(f,mv);ai.cool=(ally?.5:f.boss?(riffsIn?1.4:.6):1.05)+Math.random()*(f.boss?.6:1.1);if(Math.random()<.25&&!ally)ai.mode='out';}}}
  // ---- hero out / pit / boss
  function heroOut(h){run.lives--;if(run.lives>0){Object.assign(h,{st:'air',hp:h.maxHp,inv:2.4,dead:false,z:140,vz:0,vx:0,airAtk:null,airHit:new Set()});txt(h,'GET UP!');}else{phase='over';phaseT=0;musicOn=false;sfx.die();}}
  function heroPit(h){run.lives--;if(run.lives>0){Object.assign(h,{st:'air',hp:h.maxHp,inv:2.4,z:160,vz:0,vx:0,airAtk:null,airHit:new Set()});const p=A.pits.find(([a,b])=>h.x>a-10&&h.x<b+10);if(p)h.x=Math.max(cam.x+20,p[0]-50);}else{h.st='dead';phase='over';phaseT=0;musicOn=false;}}
@@ -562,7 +576,11 @@ async function warriorsDD(s){
  function sheetCell(sheetName,name){const img=sheetName&&DS.picture(sheetName);if(!img)return null;const ok=c=>c&&c.sy+DS.CELL<=img.height&&!blankCell(img,c);
   let cell=DS.cellOf(sheetName,name);if(!ok(cell)){name=(sheetName.startsWith('hero-')?SHEET_ALIAS:FOE_ALIAS)[name]||name;cell=DS.cellOf(sheetName,name);
    if(!ok(cell)){name='stand';cell=DS.cellOf(sheetName,name);if(!ok(cell))return null;}}
-  return {img,cell,name};}
+  return {img,cell,name,sheet:sheetName};}
+ // where the neck and head are on a drawn sheet cell (measured from the art: src/data/ddNecks.js), in screen space; the cell is
+ // drawn at (ox,oy) mirrored by `face`, scaled sc, turned by rot round (ox,oy). null = this cell has no measurement
+ function cellNeck(sheetName,name,ox,oy,face,sc,rot){const m=NECKS[sheetName]?.[name];if(!m)return null;const ft=DS.footOf(name),c=Math.cos(rot),sn=Math.sin(rot);
+  const T=(px,py)=>{const lx=(px-ft[0])*sc*face,ly=(py-ft[1])*sc;return {x:ox+lx*c-ly*sn,y:oy+lx*sn+ly*c};};return {neck:T(m[0],m[1]),head:T(m[2],m[3])};}
  function drawFighter(f){const sx=SX(f.x),sy=SYw(BACK+f.d),kk=k*FIG,blink=(f.st==='dead'&&f.stT>.4&&Math.floor(t*14)%2)||(f.inv>0&&f.side==='hero'&&Math.floor(t*16)%2&&!f.mv);if(blink)return;
   if(sx<-90||sx>s.W+90)return;
   const SCL=sheetCell(f.sheet,f.poseName||'stand'),sheet=SCL?.img,cell=SCL?.cell,name=SCL?.name||f.poseName||'stand';
@@ -575,8 +593,9 @@ async function warriorsDD(s){
    // a running stride is the float: lift the body a touch
    const lift=f.st==='run'&&(name==='run1'||name==='run2')?3*kk:0;
    // the passing cell is upright: lean it into the run like the strides
-   x.save();x.translate(sx,sy-f.z*kk-lift);if(f.st==='run'&&name==='walk2')x.rotate(face*.12);x.scale(face*sc,sc);const ft=DS.footOf(name);if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
-   const J=BD.joints(f.pose);const tp=p=>({x:sx+p[0]*face*kk*f.big,y:sy-f.z*kk+p[1]*kk*f.big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),wa:f.pose.wa,wl:f.pose.wl};}
+   const rot=f.st==='run'&&name==='walk2'?face*.12:0;x.save();x.translate(sx,sy-f.z*kk-lift);if(rot)x.rotate(rot);x.scale(face*sc,sc);const ft=DS.footOf(name);if(f.flash>0&&'filter' in x)x.filter=`brightness(${1+Math.min(1,f.flash*5)*1.6})`;x.drawImage(sheet,cell.sx,cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);x.restore();
+   const J=BD.joints(f.pose);const tp=p=>({x:sx+p[0]*face*kk*f.big,y:sy-f.z*kk+p[1]*kk*f.big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),wa:f.pose.wa,wl:f.pose.wl};
+   const cn=cellNeck(f.sheet,name,sx,sy-f.z*kk-lift,face,sc,rot);if(cn){spots.neck=cn.neck;spots.head=cn.head;spots.measured=1;}}
   else spots=BD.drawBody(x,f.pose,{x:sx,y:sy,face,k:kk,o:f.o,big:f.big,flash:f.flash*5,z:f.z});
   // the riot shield, a weapon, a carried barrel
   if(f.shield>0&&!['fall','down','dead'].includes(f.st)){const hx=spots.hand.x+face*4*kk,hy=spots.hand.y;x.fillStyle='rgba(160,190,220,.45)';x.strokeStyle='#2c3448';x.lineWidth=2;x.beginPath();x.roundRect(hx-4*kk,hy-34*kk,8*kk,52*kk,3*kk);x.fill();x.stroke();}
@@ -589,11 +608,13 @@ async function warriorsDD(s){
   const fid=f.side==='hero'?s.players[f.pi]?.character:f.face;let fm=f.side==='hero'?(mood==='angry'?'happy':mood):mood;if(fid&&fm!=='normal'&&!headFacts(fid,fm))fm='normal';
   const sp=f.side!=='hero'&&fid?faceSprite(fid,fm,fw,face):null;
   const fh=(f.side==='hero'||sp)&&fid?faceHeight(fid,fm,fw):fw*1.25,cx=nk.x+ux/ul*fh*FACE_UP,cy=nk.y+uy/ul*fh*FACE_UP;spots.face={x:cx,y:cy};
-  if(f.side==='hero')drawFace(s,x,f.pi,cx,cy,fw/.6,fm,face,.6);
-  else if(sp)x.drawImage(sp.cv,cx+sp.x,cy+sp.y);
-  else BD.drawGangHead(x,cx,cy-fw*.08,fw*1.02,f.head||'thug',{face,tilt:Math.atan2(ux,-uy),mood,id:f.id});
+  // the face turns with the neck (lying down = on its side), the chin stays on the neck
+  const tilt=Math.atan2(ux,-uy);
+  if(f.side==='hero'){x.save();x.translate(cx,cy);x.rotate(tilt);drawFace(s,x,f.pi,0,0,fw/.6,fm,face,.6);x.restore();}
+  else if(sp){x.save();x.translate(cx,cy);x.rotate(tilt);x.drawImage(sp.cv,sp.x,sp.y);x.restore();}
+  else BD.drawGangHead(x,cx,cy-fw*.08,fw*1.02,f.head||'thug',{face,tilt,mood,id:f.id});
   x.restore();
-  if(f.side==='ally'&&f.st!=='dead'){x.fillStyle='#e8a83c';x.font=`900 ${Math.max(8,7*kk)}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText('RIFF',cx,cy-fw*1.2);}
+  if(f.side==='ally'&&f.st!=='dead'&&!(riffsIn&&bossF&&Math.abs(f.x-bossF.x)<90)){x.fillStyle='#e8a83c';x.font=`900 ${Math.max(8,7*kk)}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText('RIFF',cx,cy-fw*1.2);}
   if(f.st==='dizzy'){for(let i=0;i<3;i++){const a=t*6+i*2.1;x.fillStyle='#ffe85c';x.font=`${10*kk}px sans-serif`;x.textAlign='center';x.fillText('★',spots.face.x+Math.cos(a)*14*kk,spots.face.y-fh*.75+Math.sin(a)*4*kk);}}
   // a telegraphed attack: a red ! over the head before it comes
   if(f.side==='foe'&&f.mv?.def.tell&&f.mv.seg===0){x.font=`900 ${Math.max(14,16*kk)}px "SC Bangers",Impact`;x.textAlign='center';x.textBaseline='middle';x.fillStyle=`rgba(255,${80+Math.floor(80*Math.sin(t*30))},40,.95)`;x.strokeStyle='#000';x.lineWidth=3;x.strokeText('!',cx,cy-fw*1.3);x.fillText('!',cx,cy-fw*1.3);}
@@ -712,13 +733,16 @@ async function warriorsDD(s){
   const SC=sheetCell(personSheet(p),p.pose||'stand');let spots;
   if(SC){const sc=kk*big/DS.UNIT,ft=DS.footOf(SC.name);g.save();g.globalAlpha*=.3;g.fillStyle='#000';g.beginPath();g.ellipse(sx,sy,22*kk*big,6*kk,0,0,7);g.fill();g.restore();
    g.save();g.translate(sx,sy);g.scale(face*sc,sc);g.drawImage(SC.img,SC.cell.sx,SC.cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);g.restore();
-   const J=BD.joints(pose),tp=q=>({x:sx+q[0]*face*kk*big,y:sy+q[1]*kk*big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),sheet:1};}
+   const J=BD.joints(pose),tp=q=>({x:sx+q[0]*face*kk*big,y:sy+q[1]*kk*big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),sheet:1};
+   const cn=cellNeck(SC.sheet,SC.name,sx,sy,face,sc,0);if(cn){spots.neck=cn.neck;spots.head=cn.head;}}
   else spots=BD.drawBody(g,pose,{x:sx,y:sy,face,k:kk,o:BD.OUTFIT[p.o]||BD.OUTFIT.thug,big});
   const fw=FACE_W*kk*big,nk=spots.neck||spots.head,ux=spots.head.x-nk.x,uy=spots.head.y-nk.y,ul=Math.hypot(ux,uy)||1;
   const isP=p.pi!=null&&p.pi<s.players.length,fid=isP?s.players[p.pi]?.character:p.char;let fm=p.mood||'normal';if(fid&&fm!=='normal'&&!headFacts(fid,fm))fm='normal';
   const sp=!isP&&fid?faceSprite(fid,fm,fw,face):null,fh=(isP||sp)&&fid?faceHeight(fid,fm,fw):fw*1.25,cx=nk.x+ux/ul*fh*FACE_UP,cy=nk.y+uy/ul*fh*FACE_UP;
-  if(isP)drawFace(s,g,p.pi,cx,cy,fw/.6,fm==='angry'?'happy':fm,face,.6);else if(sp)g.drawImage(sp.cv,cx+sp.x,cy+sp.y);
-  else BD.drawGangHead(g,cx,cy-fw*.08,fw*1.02,p.head||'thug',{face,tilt:Math.atan2(ux,-uy),mood:fm,id:p.id||'x',skin:p.skin});
+  const tilt=Math.atan2(ux,-uy);
+  if(isP){g.save();g.translate(cx,cy);g.rotate(tilt);drawFace(s,g,p.pi,0,0,fw/.6,fm==='angry'?'happy':fm,face,.6);g.restore();}
+  else if(sp){g.save();g.translate(cx,cy);g.rotate(tilt);g.drawImage(sp.cv,sp.x,sp.y);g.restore();}
+  else BD.drawGangHead(g,cx,cy-fw*.08,fw*1.02,p.head||'thug',{face,tilt,mood:fm,id:p.id||'x',skin:p.skin});
   return spots;}
  function drawPortrait(C,cx,cy,size){const isP=C.pi!=null&&C.pi<s.players.length;
   if(isP){drawFace(s,x,C.pi,cx,cy,size/.6,'normal',1,.6);return;}
