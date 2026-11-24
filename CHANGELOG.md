@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.99.51
+
+- **The Warriors:** thrown barrels and rocks now leave from over your head (where you carry them) and arc down onto the enemy; a barrel that lands keeps rolling and bowls people over. They used to come out at knee height.
+
 ## v0.99.50
 
 - **The Warriors, cutscenes:** the story now plays out between the chapters. The Conclave: every gang in the city in the park, Cyrus on the stage ("Can you dig it?" and the crowd roaring), the shot from the crowd, the cops, and Luther pinning it on the Warriors. Then the radio DJ putting the word out, Masai and the Riffs, Swan calling it, and each gang turning up (the Turnbulls' bus, the Orphans, the Furies tapping their bats, the Lizzies' party, the cops at Union Square, the Punks on skates), the ride home at dawn, Luther clinking his bottles on the beach, and the Riffs clearing the Warriors at the end. Tap to move on, SKIP to jump past.

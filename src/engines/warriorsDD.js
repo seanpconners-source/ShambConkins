@@ -327,7 +327,7 @@ async function warriorsDD(s){
   else if(what==='lob'){const tg=f.aimAt||hero,T=.85,kind=f.T?.ranged==='bottle'?'bottle':'molotov';shots.push({kind,x:f.x+f.dir*10,d:f.d,z:80,tx:tg.x,td:tg.d,sx:f.x+f.dir*10,sd:f.d,T,age:0,side:own,dmg:4,life:T+.1,lob:1});sfx.whiff();}
   // a weapon thrown end over end: hits the first one in its line hard, then clatters to the floor to be picked up again
   else if(what==='weapon'&&f.weapon){const w=f.weapon,W0=WPN[w.kind]||WPN.bat;shots.push({x:f.x+f.dir*22,d:f.d,z:64,vx:f.dir*430,vz:70,kind:'wpn',wkind:w.kind,uses:w.uses,side:own,dmg:W0.dmg+3,life:1.8,spin:0});f.weapon=null;sfx.U();}
-  else if(what==='carry'&&f.carry){const kd=f.carry.kind;shots.push({x:f.x+f.dir*20,d:f.d,z:kd==='barrel'?16:70,vx:f.dir*(kd==='barrel'?280:330),vz:kd==='barrel'?0:60,kind:kd,side:own,dmg:kd==='rock'?7:6,life:2.2,roll:kd==='barrel',hides:f.carry.hides});f.carry=null;sfx.U();}}
+  else if(what==='carry'&&f.carry){const kd=f.carry.kind;shots.push({x:f.x+f.dir*22,d:f.d,z:108*(f.big||1),vx:f.dir*(kd==='barrel'?290:330),vz:kd==='barrel'?10:0,kind:kd,side:own,dmg:kd==='rock'?7:6,life:2.6,rollAfter:kd==='barrel',hides:f.carry.hides});f.carry=null;sfx.U();}}
 
  function dropWeapon(sh){const u=(sh.uses||1)-1;if(u>0)items.push({x:sh.x-Math.sign(sh.vx)*10,d:sh.d,z:24,vz:140,kind:sh.wkind,uses:u});sfx.thud();}
  // ---- per-frame update
@@ -343,8 +343,9 @@ async function warriorsDD(s){
    if(sh.lob){sh.age+=dt;const q=Math.min(1,sh.age/sh.T);sh.x=sh.sx+(sh.tx-sh.sx)*q;sh.d=sh.sd+(sh.td-sh.sd)*q;sh.z=80*(1-q)+Math.sin(q*Math.PI)*90;
     if(q>=1&&!sh.landed){sh.landed=true;sh.life=0;if(sh.kind==='molotov'){fires.push({x:sh.x,d:sh.d,r:26,t:3.2,tick:0});sfx.fire();}else{sfx.glass();fx.push({kind:'glass',x:sh.x,d:sh.d,z:4,t:.4});
      for(const v of living(['hero','ally']))if(Math.hypot(v.x-sh.x,(v.d-sh.d)*1.5)<24)damage(null,v,sh.dmg,'push',0,{});}}continue;}
-   sh.x+=sh.vx*dt;sh.z+=sh.vz*dt;if(!sh.roll&&!sh.flat)sh.vz-=G*.25*dt;if(sh.kind==='wpn')sh.spin+=dt*Math.sign(sh.vx)*18;if(sh.z<=0&&!sh.roll){sh.z=0;sh.life=Math.min(sh.life,.05);if(sh.kind==='wpn'&&!sh.dropped){sh.dropped=1;dropWeapon(sh);}}
-   const targets=sh.side==='hero'?living('foe'):living(['hero','ally']);for(const v of targets){if(canBeHit(v,null)&&Math.abs(v.x-sh.x)<18&&Math.abs(v.d-sh.d)<(sh.kind==='bullet'?9:12)&&sh.z<v.z+100*v.big){const owner=sh.side==='hero'?hero:null;damage(owner,v,sh.dmg,'knock',sh.vx*.4,{});sfx.P();if(!sh.roll){sh.life=0;if(sh.hides)items.push({x:sh.x,d:sh.d,z:20,vz:120,kind:sh.hides});if(sh.kind==='wpn'&&!sh.dropped){sh.dropped=1;dropWeapon(sh);}}}}}
+   sh.x+=sh.vx*dt;sh.z+=sh.vz*dt;if(!sh.roll&&!sh.flat)sh.vz-=G*.25*dt;if(sh.kind==='wpn')sh.spin+=dt*Math.sign(sh.vx)*18;if(sh.z<=0&&!sh.roll&&sh.rollAfter){sh.z=0;sh.vz=0;sh.roll=true;sh.vx*=.85;sfx.thud();fx.push({kind:'dust',x:sh.x,d:sh.d,z:0,t:.3});}
+   if(sh.z<=0&&!sh.roll){sh.z=0;sh.life=Math.min(sh.life,.05);if(sh.kind==='wpn'&&!sh.dropped){sh.dropped=1;dropWeapon(sh);}}
+   const targets=sh.side==='hero'?living('foe'):living(['hero','ally']);for(const v of targets){if(canBeHit(v,null)&&Math.abs(v.x-sh.x)<18&&Math.abs(v.d-sh.d)<(sh.kind==='bullet'?9:12)&&sh.z<v.z+115*v.big){const owner=sh.side==='hero'?hero:null;damage(owner,v,sh.dmg,'knock',sh.vx*.4,{});sfx.P();if(!sh.roll){sh.life=0;if(sh.hides)items.push({x:sh.x,d:sh.d,z:20,vz:120,kind:sh.hides});if(sh.kind==='wpn'&&!sh.dropped){sh.dropped=1;dropWeapon(sh);}}}}}
   shots=shots.filter(q=>q.life>0&&q.x>cam.x-120&&q.x<cam.x+vw+120);
   // molotov fire on the floor: burns whoever stands in it (enemies too)
   for(const fi of fires){fi.t-=dt;fi.tick-=dt;if(fi.tick<=0){fi.tick=.45;for(const v of F)if(v.st!=='dead'&&!v.gone&&v.z<10&&Math.hypot(v.x-fi.x,(v.d-fi.d)*1.6)<fi.r&&canBeHit(v,null)){damage(v.side==='foe'&&hero?hero:null,v,2,'light',0,{});v.flash=.2;}}}
