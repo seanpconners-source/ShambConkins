@@ -215,7 +215,8 @@ async function warriorsDD(s){
   // the chapter card: title, place, the story so far
   await playCut(n);if(!s.alive)return 'quit';
   story={n,t:0,from:n>0?n-1:null};lastCh=n;phase='story';phaseT=0;musicOn=false;
-  await new Promise(r=>{story.done=r;});if(!s.alive)return 'quit';story=null;challenge=pickChallenger(n);
+  await new Promise(r=>{story.done=r;});if(!s.alive)return 'quit';challenge=pickChallenger(n);
+  // the card stays up (story kept) while the first area's pictures load; playArea drops it when the area card starts
   for(let ai=0;ai<CH[n].areas.length;ai++){const res=await playArea(n,ai);if(!s.alive)return 'quit';if(res!=='clear')return res;}
   return 'clear';}
  async function playArea(n,ai){areaNo=ai;A=SY_.buildArea(n,ai,seed);
@@ -225,7 +226,7 @@ async function warriorsDD(s){
   cam={x:0,lockA:-1e9,lockB:1e9};F=[];shots=[];fx=[];fires=[];wave=-1;waveQ=[];bossOn=false;bossF=null;target=null;bus=null;lurch=0;riffsIn=false;bossT=0;
   items=A.items.map(i=>({...i,z:0}));props=A.props.map(p=>({...p,hp:2}));escapeT=A.escape||0;spawnT=4;
   hero=spawnHero();hero.x=60;F.push(hero);Object.assign(hero,{hp:run.hp??hero.maxHp,weapon:run.weapon||null});
-  phase='card';phaseT=0;fade=1;banner={big:A.beat,small:A.sub,t:2.3};musicOn=true;musicBoss=false;
+  story=null;phase='card';phaseT=0;fade=1;banner={big:A.beat,small:A.sub,t:2.3};musicOn=true;musicBoss=false;
   if(A.siren)sfx.siren();if(n===CH.length-1&&ai===0)sfx.clink();
   return new Promise(r=>{run.done=r;});}
  function triggerWaves(dt){if(phase!=='play')return;
