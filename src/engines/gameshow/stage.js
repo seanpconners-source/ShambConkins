@@ -192,8 +192,8 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
  // TITLE: the show's main theme from the top while the curtain opens (owner: 'play the main theme during the title screen');
  // title(false) fades it out and lets the bed (or the synth vamp) start. Waits up to 1.5 s for the file to decode.
  let themeOn=false,themeH=null;
- async function title(onOff){if(onOff){if(!store.profile?.settings?.music)return;themeOn=true;clearInterval(timer);bedStop();const t0=Date.now();while(!clipBufs.theme&&Date.now()-t0<1500&&themeOn)await new Promise(r=>setTimeout(r,60));
-   if(!themeOn)return;themeH=clip('theme',{vol:1.15,fin:.05});if(!themeH){themeOn=false;const m=musicOn;musicOn=false;if(m)music(true);}return;}
+ async function title(onOff,{loop=false}={}){if(onOff){if(!store.profile?.settings?.music)return;themeOn=true;clearInterval(timer);bedStop();const t0=Date.now();while(!clipBufs.theme&&Date.now()-t0<1500&&themeOn)await new Promise(r=>setTimeout(r,60));
+   if(!themeOn)return;themeH=clip('theme',{vol:1.15,fin:.05});if(themeH&&loop){const h=themeH,src=h.src;src.onended=()=>{playing.delete(src);if(themeOn&&themeH===h)setTimeout(()=>{if(themeOn&&themeH===h){themeOn=false;title(true,{loop:true});}},2500);};}if(!themeH){themeOn=false;const m=musicOn;musicOn=false;if(m)music(true);}return;}
   if(!themeOn)return;themeOn=false;const a=A,h=themeH;themeH=null;if(h&&a){const t=a.currentTime;try{h.g.gain.cancelScheduledValues(t);h.g.gain.setValueAtTime(h.g.gain.value,t);h.g.gain.linearRampToValueAtTime(.0001,t+1.4);h.src.stop(t+1.5);}catch{}}
   holdTo=(a?a.currentTime:0)+1;if(musicOn){musicOn=false;music(true);}}
  return {sfx,music,title,clip,crowd,loaded:n=>!!clipBufs[n],stop:()=>{musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}

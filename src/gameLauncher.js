@@ -252,7 +252,8 @@ async function requestGame({id=null,filter='all',origin='board',resume=false,ret
    if(delivered||!valid()||store.session!==session||!session.finished)return;
    delivered=true;
   }
-  if(session.solo&&!session.solo.board){void settleSolo(game,scores,label,players,{...session.solo,progress:session.soloProgress},session.broforceRecruits||session.gameRecruits);return;}
+  // a menu game that ran one of its games (The Price Is Right's pricing games): scores/bests go to that game
+  if(session.solo&&!session.solo.board){void settleSolo(session.scoreAs&&gameById(session.scoreAs)||game,scores,label,players,{...session.solo,progress:session.soloProgress},session.broforceRecruits||session.gameRecruits);return;}
   // 1P board game, a co-op game played alone: the human's result is the team's.
   const alone=session.solo?.board&&session.solo.kind==='alone'?{kind:game.bossId?'boss':'survival',won:!!session.solo.won,tied:false,humanTotal:Math.max(0,scores[0]|0),cpuTotal:0,cpuScores:[0,0],duration:0,sitOut:run.cpu?.seat??1,...(game.bossId?{bossId:game.bossId}:{})}:null;
   void settleGame(game,scores,label,origin,players,alone||session.teamResult,returnToRoll,bfAttempt?{attempt:bfAttempt,evidence:getEvidence()}:null,session.broforceRecruits||session.gameRecruits);
@@ -333,7 +334,7 @@ async function netGame(game,duel,valid){
   const mine=Math.max(0,Math.floor(scores[me])||0),theirs=Math.max(0,Math.floor(scores[1-me])||0),cages=session.broforceRecruits||session.gameRecruits;
   // a co-op game (session.teamResult): won = the team's result; in the Arcade both phones report the team total
   const team=session.cooperative&&session.teamResult?session.teamResult:null;
-  void settleSolo(game,[mine,theirs],label,[players[me],players[1-me]],{kind:'net',won:team?!!team.won:mine>theirs,coop:!!team&&!duel.board,duel},Array.isArray(cages)?[cages[me]||[]]:null);});
+  void settleSolo(session.scoreAs&&gameById(session.scoreAs)||game,[mine,theirs],label,[players[me],players[1-me]],{kind:'net',won:team?!!team.won:mine>theirs,coop:!!team&&!duel.board,duel},Array.isArray(cages)?[cages[me]||[]]:null);});
  duelSeed(session,duel,game,0);session.online=ch;session.hotseat=true;
  ch.onGone=()=>{if(store.session===session&&session.alive&&!delivered)session.finish(session.score.slice(),`${players[1-me].name} left the game.`);};
  session.active=0;store.session=session;session.updateScores();launching=false;

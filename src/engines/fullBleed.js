@@ -31,6 +31,8 @@ function fullBleed(s,{bg='#000',hint=false}={}){
  // This look replaces the generic session.bleed() layout that s.canvas() switches on by default.
  s.bleed?.(false);
  const shell=s.body.closest('.game-shell'),layer=shell?.parentElement;if(!shell)return {top:0};
+ // a second call in the same session (a menu handing over to the game it picked) just changes the colour
+ if(shell.classList.contains('fb-shell')){shell.style.setProperty('--fb-bg',bg);s.queueCanvasFit?.();return {top:44};}
  shell.classList.add('fb-shell');if(hint)shell.classList.add('fb-hint');shell.style.setProperty('--fb-bg',bg);layer?.classList.add('fb-layer');
  const css=document.createElement('style');css.textContent=CSS;shell.appendChild(css);
  let fs=null;

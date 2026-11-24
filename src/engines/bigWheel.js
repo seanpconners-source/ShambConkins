@@ -156,9 +156,9 @@ async function bigWheel(s){
  s.debug={snd,get mode(){return mode;},C,order,get cur(){return cur;},simSpin,valueAt,spin:(w0=16)=>startSpin(w0),choose:id=>choose(id),set hurry(v){hurry=!!v;},
   bot:net?()=>{if(!human(cur))return '';if(mode==='pull'){startSpin(10+Math.random()*12);return 'spin';}if(mode==='choose'){choose(C[cur].total<55?'again':'stay');return 'choose';}hurry=true;return '';}:null};
  // ---- the show
- if(!await s.pass(0,net?'THE BIG WHEEL online: three contestants, closest to $1.00 without going over wins.':cpu?`THE BIG WHEEL vs ${names[1]} and a studio contestant: pull the wheel down hard, closest to $1.00 without going over wins.`:'THE BIG WHEEL: two players and a studio contestant. Pull the wheel down hard; closest to $1.00 without going over wins.','Come on down!'))return;
+ if(!s.fromMenu&&!await s.pass(0,net?'THE BIG WHEEL online: three contestants, closest to $1.00 without going over wins.':cpu?`THE BIG WHEEL vs ${names[1]} and a studio contestant: pull the wheel down hard, closest to $1.00 without going over wins.`:'THE BIG WHEEL: two players and a studio contestant. Pull the wheel down hard; closest to $1.00 without going over wins.','Come on down!'))return;
  await SS.ready(['stage-wheel','stage-wheel-tall','curtain','wheel-frame','wheel-logo','host','model','model-2','nametag'],5000);
- snd.title(true);snd.music(true);snd.crowd(3.2,.9,{at:.3});mode='intro';introT=0;
+ if(!s.fromMenu)snd.title(true);snd.music(true);snd.crowd(3.2,.9,{at:.3});mode='intro';introT=0;
  banner={big:'SHOWCASE SHOWDOWN!',small:C.map(o=>o.name.toUpperCase()).join(' · '),t:2.6,col:'#ffe23a'};await wait(2600);
  say('Time to spin the big wheel! Closest to a dollar without going over wins.',2600,'point');introT=Math.max(introT,2.3);await wait(2600);snd.title(false);
  for(const ci of order){if(!s.alive)return;await turn(ci);if(!s.alive)return;

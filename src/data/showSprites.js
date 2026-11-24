@@ -30,8 +30,10 @@ const SLOTS={
  'model-2':{w:1536,h:1024,what:'show assistant 2, a different look, same 3 poses, transparent'},
  nametag:{w:512,h:256,what:'a contestant price-tag name tag (blank: the game writes the name), transparent'}};
 const imgs=new Map();let ver=0;
-function picture(name){const url=USER['show:'+name];if(!url||typeof Image==='undefined')return null;
+// a name with a ':' is a whole build key (e.g. 'keyart:price-bid-off' = the Arcade background), else a show: slot
+const keyOf=name=>name.includes(':')?name:'show:'+name;
+function picture(name){const url=USER[keyOf(name)];if(!url||typeof Image==='undefined')return null;
  let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;ver++;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}
-const has=name=>!!USER['show:'+name];
+const has=name=>!!USER[keyOf(name)];
 function ready(names=Object.keys(SLOTS),ms=6000){for(const n of names)if(has(n))picture(n);const t0=Date.now();return new Promise(r=>{const go=()=>{if(names.every(n=>!has(n)||imgs.get(n)?.ok)||Date.now()-t0>ms)return r();setTimeout(go,60);};go();});}
 Object.assign(exports,{HOST,MODEL,PLINKO_GEOM,WHEEL_GEOM,SLOTS,picture,has,ready,version:()=>ver});
