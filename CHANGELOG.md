@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.99.67
 
 - **The Price Is Right talks:** Bob Barker now says the host's lines out loud in every pricing game, and the announcer calls contestants down and presents the prizes on Contestants' Row ("It's a Nintendo Switch 2!"). He finishes his sentence before the show moves on; tap to hurry him. Real show recordings, when added, still play first.
 - **Real names on the show:** studio guests on Contestants' Row and the Big Wheel are characters from the game under their own names, and nobody gets called down twice in one game.
