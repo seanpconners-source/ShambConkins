@@ -5,6 +5,11 @@
 // photoreal people, Nov 23 delivery UPLOADS-GPT-2026-11-23-2100); the drawn studio/host stay as the fallback.
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 // people sheets: one row of poses, each frame w x h, feet at the bottom middle
+// CONTESTANTS' ROW (contestantsRow.js): the contestant body sheets cr-body-1..4 = one row of 9 poses, each cell 256 x 512, headless
+// (the game puts the player's / guest's face on SPOT), feet on FEET; UNIT = the body height in px the game's h maps to. The podium
+// picture: the game prints the bid in its BID window (orange LED figures) and the name under it.
+const CR_BODY={w:256,h:512,frames:['stand','run1','run2','run3','run4','jump','cheer','clap','sad'],feet:[128,500],spot:[128,85],unit:480,face:[0,.865],faceW:.14};
+const CR_PODIUM={w:600,h:500,bid:[110,60,490,170]};
 const HOST={w:512,h:1024,frames:['talk','point','cheer'],feet:[256,1004]};
 const MODEL={w:512,h:1024,frames:['present','wave','clap'],feet:[256,1004]};
 // the Plinko board picture covers the whole board box = 2 px per board unit (board 900 x 1272 units, plinkoShow.js: pegs from
@@ -77,21 +82,21 @@ const SLOTS={
  host:{w:1536,h:1024,what:'our own game-show host, full body, 3 poses (talk, point, cheer), transparent'},
  model:{w:1536,h:1024,what:'show assistant 1, full body in a sparkly gown, 3 poses (present, wave, clap), transparent'},
  'model-2':{w:1536,h:1024,what:'show assistant 2, a different look, same 3 poses, transparent'},
- 'stage-range':{w:1920,h:1080,kind:'range',what:'the Range Game studio, wide: the tall price board stands in the middle with the prize on a turntable to its left (keep both calm)'},
+ 'stage-range':{w:1920,h:1080,kind:'range',what:'the Range Game studio, wide, EMPTY: just the set (walls, doors, lights, floor) with NO board, button, turntable or prize: the game draws all of those in the dashed box'},
  'stage-range-tall':{w:1080,h:1920,kind:'range',what:'the same studio for upright phones'},
  'stage-range-fold':{w:1504,h:1670,kind:'range',what:'the same studio for near-square screens (the open Fold)'},
  'range-board':{w:600,h:1600,mod:'src/engines/rangeGame.js',guides:[{r:[230,140,180,1320],t:'SCALE STRIP: bottom = low price, top = high; the game prints the $ marks to its left'}],what:'the Range Game price board: a tall lit frame with a vertical scale strip (green at the bottom to red at the top); NO numbers (the game prints them)'},
  'range-finder':{w:260,h:400,mod:'src/engines/rangeGame.js',guides:[{r:[20,35,220,330],t:'SEE-THROUGH WINDOW'}],what:'the range finder: a lit yellow frame with a see-through window that slides up the board'},
  'range-button':{w:400,h:400,mod:'src/engines/rangeGame.js',guides:[{r:[30,120,340,250],t:'the big button (top half lights up)'}],what:'the big red stop button on a chrome stand, seen from the front'},
  'range-logo':{w:1400,h:500,what:'RANGE GAME in big lit-up game-show letters, transparent'},
- 'stage-safe':{w:1920,h:1080,kind:'safe',what:'the Safe Crackers studio, wide: the giant safe stands left of the middle (keep it calm), the prize names + digits on the right'},
+ 'stage-safe':{w:1920,h:1080,kind:'safe',what:'the Safe Crackers studio, wide, EMPTY: just the set with NO safe, sign or prizes: the game draws them in the dashed box'},
  'stage-safe-tall':{w:1080,h:1920,kind:'safe',what:'the same studio for upright phones'},
  'stage-safe-fold':{w:1504,h:1670,kind:'safe',what:'the same studio for near-square screens (the open Fold)'},
  safe:{w:1000,h:1100,mod:'src/engines/safeCrackers.js',guides:[{r:[230,420,540,180],t:'DIAL: 3 dark digit windows (the game prints the digits)'},{c:[500,820,150],t:'handle'}],what:'the giant game-show safe, door SHUT, seen straight on: steel, rivets, a brass COMBINATION plate with 3 dark digit windows, a spoked handle'},
  'safe-open':{w:1000,h:1100,mod:'src/engines/safeCrackers.js',guides:[{r:[160,160,680,740],t:'INSIDE: lit, two shelves (the game puts the prize photos here)'}],what:'the same safe with the door swung OPEN: a lit empty inside with two shelves'},
  'safe-tile':{w:300,h:360,mod:'src/engines/safeCrackers.js',guides:[{r:[50,50,200,260],t:'blank: the game prints the digit'}],what:'a lit gold number tile (blank) the contestant moves into the dial'},
  'safe-logo':{w:1400,h:500,what:'SAFE CRACKERS in big lit-up game-show letters, transparent'},
- 'stage-race':{w:1920,h:1080,kind:'race',what:'the Race Game studio, wide: four prize podiums across the middle, the lever board on the right (keep both calm)'},
+ 'stage-race':{w:1920,h:1080,kind:'race',what:'the Race Game studio, wide, EMPTY: just the set with NO podiums, lever board or sign: the game draws them in the dashed box'},
  'stage-race-tall':{w:1080,h:1920,kind:'race',what:'the same studio for upright phones'},
  'stage-race-fold':{w:1504,h:1670,kind:'race',what:'the same studio for near-square screens (the open Fold)'},
  'race-podium':{w:600,h:700,mod:'src/engines/raceGame.js',guides:[{r:[90,40,420,260],t:'the prize photo stands here'},{c:[300,500,30],t:'TAG hangs here'}],what:'a blue prize podium seen from the front with a hook where the price tag hangs; transparent around'},
@@ -99,13 +104,26 @@ const SLOTS={
  'race-board':{w:1000,h:500,mod:'src/engines/raceGame.js',guides:[{c:[200,310,70],t:'1'},{c:[400,310,70],t:'2'},{c:[600,310,70],t:'3'},{c:[800,310,70],t:'4'}],what:'the Race Game board: CORRECTLY PRICED written on top, 4 round lamps (off; the game lights them)'},
  'race-lever':{w:200,h:520,mod:'src/engines/raceGame.js',guides:[{c:[100,470,30],t:'PIVOT'}],what:'the big lever (red ball handle on a chrome bar), upright, transparent'},
  'race-logo':{w:1400,h:500,what:'RACE GAME in big lit-up game-show letters, transparent'},
- 'stage-punch':{w:1920,h:1080,kind:'punch',what:'the Punch-a-Bunch studio, wide: the big punchboard fills the right 60% (keep it calm), the small prize on the left'},
+ 'stage-punch':{w:1920,h:1080,kind:'punch',what:'the Punch-a-Bunch studio, wide, EMPTY: just the set with NO punchboard, pedestal or prize: the game draws them in the dashed box'},
  'stage-punch-tall':{w:1080,h:1920,kind:'punch',what:'the same studio for upright phones'},
  'stage-punch-fold':{w:1504,h:1670,kind:'punch',what:'the same studio for near-square screens (the open Fold)'},
  'punch-board':{w:2000,h:1160,mod:'src/engines/punchABunch.js',guides:[{r:[120,220,1760,880],t:'GRID: 10 x 5 holes (the game draws a paper-covered hole in every cell)'}],what:'the Punch-a-Bunch punchboard: a big red frame with PUNCH-A-BUNCH on top and a dark backing with 50 hole rims in 5 rows of 10'},
  'punch-paper':{w:200,h:200,mod:'src/engines/punchABunch.js',guides:[{c:[100,100,84],t:'one hole covered in gold foil paper'}],what:'one punchboard hole covered with shiny paper (not punched)'},
  'punch-slip':{w:640,h:320,mod:'src/engines/punchABunch.js',guides:[{r:[70,50,500,220],t:'blank: the game prints the $ amount'}],what:'the unfolded paper slip from inside a hole (blank)'},
  'punch-logo':{w:1400,h:500,what:'PUNCH-A-BUNCH in big lit-up game-show letters, transparent'},
+ 'stage-row':{w:1920,h:1080,kind:'row',what:'the Price Is Right studio seen from the audience for Contestants\' Row: the big turntable stage with the bright 70s set and doors in the upper half (the prize turntable stands in the middle); the bottom half is the row floor where the four podiums stand (the game draws them)'},
+ 'stage-row-tall':{w:1080,h:1920,kind:'row',what:'the same studio for upright phones'},
+ 'stage-row-fold':{w:1504,h:1670,kind:'row',what:'the same studio for near-square screens (the open Fold)'},
+ 'cr-audience':{w:1920,h:1080,mod:'src/engines/contestantsRow.js',what:'the studio AUDIENCE seen from the stage: steep bleachers packed with excited people in bright T-shirts (some with homemade name shirts), lit by the studio lights; the game puts three rows of cheering fans along the bottom half and the called contestant in the middle, so keep the lower middle calm'},
+ 'cr-audience-tall':{w:1080,h:1920,mod:'src/engines/contestantsRow.js',what:'the same audience for upright phones'},
+ 'cr-audience-fold':{w:1504,h:1670,mod:'src/engines/contestantsRow.js',what:'the same audience for near-square screens (the open Fold)'},
+ 'cr-podium':{w:600,h:500,mod:'src/engines/contestantsRow.js',guides:[{r:[110,60,380,110],t:'BID WINDOW: dark, the game prints the bid in orange'},{r:[60,280,480,90],t:'the game writes the name here'}],what:'one Contestants\' Row podium seen from the front (the classic show look): a small lit bid display on top, a colourful front panel; the contestant stands behind it; transparent around'},
+ 'cr-comeondown':{w:1400,h:500,mod:'src/engines/contestantsRow.js',what:'the words COME ON DOWN! in big 70s game-show lettering, transparent'},
+ 'cr-logo':{w:1400,h:500,what:'CONTESTANTS\' ROW in big lit-up game-show letters, transparent'},
+ 'cr-body-1':{w:2304,h:512,mod:'src/engines/contestantsRow.js',guides:CR_BODY.frames.flatMap((f,i)=>[{c:[i*256+128,85,40],t:i?'':'FACE'},{c:[i*256+128,500,8],t:''}]),what:'contestant 1: a happy game-show contestant WITHOUT a head (the game adds the face on the circle), a T-shirt and jeans, 9 poses left to right: STAND, RUN 1-4 (running down the aisle toward us), JUMP (both arms up), CHEER (fists pumping), CLAP, SAD; feet on the dots, transparent'},
+ 'cr-body-2':{w:2304,h:512,mod:'src/engines/contestantsRow.js',guides:CR_BODY.frames.flatMap((f,i)=>[{c:[i*256+128,85,40],t:i?'':'FACE'},{c:[i*256+128,500,8],t:''}]),what:'contestant 2: a happy game-show contestant WITHOUT a head (the game adds the face on the circle), a sweater and khakis, 9 poses left to right: STAND, RUN 1-4 (running down the aisle toward us), JUMP (both arms up), CHEER (fists pumping), CLAP, SAD; feet on the dots, transparent'},
+ 'cr-body-3':{w:2304,h:512,mod:'src/engines/contestantsRow.js',guides:CR_BODY.frames.flatMap((f,i)=>[{c:[i*256+128,85,40],t:i?'':'FACE'},{c:[i*256+128,500,8],t:''}]),what:'contestant 3: a happy game-show contestant WITHOUT a head (the game adds the face on the circle), a bright tracksuit, 9 poses left to right: STAND, RUN 1-4 (running down the aisle toward us), JUMP (both arms up), CHEER (fists pumping), CLAP, SAD; feet on the dots, transparent'},
+ 'cr-body-4':{w:2304,h:512,mod:'src/engines/contestantsRow.js',guides:CR_BODY.frames.flatMap((f,i)=>[{c:[i*256+128,85,40],t:i?'':'FACE'},{c:[i*256+128,500,8],t:''}]),what:'contestant 4: a happy game-show contestant WITHOUT a head (the game adds the face on the circle), a sundress / blouse and skirt, 9 poses left to right: STAND, RUN 1-4 (running down the aisle toward us), JUMP (both arms up), CHEER (fists pumping), CLAP, SAD; feet on the dots, transparent'},
  nametag:{w:512,h:256,what:'a contestant price-tag name tag (blank: the game writes the name), transparent'}};
 const imgs=new Map();let ver=0;
 // a name with a ':' is a whole build key (e.g. 'keyart:price-bid-off' = the Arcade background), else a show: slot
@@ -114,4 +132,4 @@ function picture(name){const url=USER[keyOf(name)];if(!url||typeof Image==='unde
  let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;ver++;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}
 const has=name=>!!USER[keyOf(name)];
 function ready(names=Object.keys(SLOTS),ms=6000){for(const n of names)if(has(n))picture(n);const t0=Date.now();return new Promise(r=>{const go=()=>{if(names.every(n=>!has(n)||imgs.get(n)?.ok)||Date.now()-t0>ms)return r();setTimeout(go,60);};go();});}
-Object.assign(exports,{RANGE_GEOM,FINDER_GEOM,BUTTON_GEOM,SAFE_GEOM,TILE_GEOM,PODIUM_GEOM,RTAG_GEOM,RBOARD_GEOM,LEVER_GEOM,PBOARD_GEOM,PAPER_GEOM,SLIP_GEOM,HOST,MODEL,PLINKO_GEOM,WHEEL_GEOM,CLOCK_GEOM,HAND_GEOM,DISPLAY_GEOM,PLATFORM_GEOM,CLIFF_GEOM,CLIMBER,STAND_GEOM,SLOTS,picture,has,ready,version:()=>ver});
+Object.assign(exports,{CR_BODY,CR_PODIUM,RANGE_GEOM,FINDER_GEOM,BUTTON_GEOM,SAFE_GEOM,TILE_GEOM,PODIUM_GEOM,RTAG_GEOM,RBOARD_GEOM,LEVER_GEOM,PBOARD_GEOM,PAPER_GEOM,SLIP_GEOM,HOST,MODEL,PLINKO_GEOM,WHEEL_GEOM,CLOCK_GEOM,HAND_GEOM,DISPLAY_GEOM,PLATFORM_GEOM,CLIFF_GEOM,CLIMBER,STAND_GEOM,SLOTS,picture,has,ready,version:()=>ver});

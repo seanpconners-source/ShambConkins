@@ -52,19 +52,27 @@ async function play(which){
   await S_(()=>window.ShambConkins.store.session.debug.solve());await page.waitForTimeout(200);const lv=await S_(()=>window.ShambConkins.store.session.debug.lever);
   await page.mouse.click(box.x+lv.x,box.y+lv.y+lv.h*.4);await page.waitForTimeout(1600);await page.screenshot({path:screenshotPath(`tpir-race-lever-${tag}.png`)});
   const st=await S_(()=>window.ShambConkins.store.session.debug.P[0]);check(st.pulls>=1&&st.lights===4,`a tap on the lever with all four right lights ${st.lights}`);}
+ if(which==='contestants-row'){ // the call-downs, then real keypad taps for player 1's bid
+  await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.scene==='crowd',null,{timeout:30000});await page.waitForTimeout(1800);await page.screenshot({path:screenshotPath(`tpir-cr-call-${tag}.png`)});
+  await page.waitForFunction(()=>{const D=window.ShambConkins.store.session?.debug;return D&&D.waiting&&D.keys.length;},null,{timeout:60000});await page.waitForTimeout(300);
+  await page.screenshot({path:screenshotPath(`tpir-cr-bid-${tag}.png`)});const ks=await S_(()=>window.ShambConkins.store.session.debug.keys);
+  const taken=await S_(()=>window.ShambConkins.store.session.debug.seats.map(o=>o.bid));let g=373;while(taken.includes(g))g++;
+  for(const ch of [...String(g),'BID']){const k=ks.find(k=>k.l===ch);await click(k);}
+  const st=await S_(()=>window.ShambConkins.store.session.debug.seats.find(o=>o.p===0).bid);check(st===g,`keypad bid $${g} lands on the podium: ${st}`);
+  await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.seats?.every(o=>o.bid!=null),null,{timeout:30000}).catch(()=>{});await page.waitForTimeout(2600);await page.screenshot({path:screenshotPath(`tpir-cr-reveal-${tag}.png`)});}
  if(which==='punch-a-bunch'){ // real taps: HIGHER, then a hole
   await page.waitForFunction(()=>{const D=window.ShambConkins.store.session?.debug;return D&&D.phase==='ask'&&D.cur===0&&D.hits.length>=2;},null,{timeout:30000});
   const hs=await S_(()=>window.ShambConkins.store.session.debug.hits);await click(hs[hs.length-2]);const a=await S_(()=>window.ShambConkins.store.session.debug.P[0].prizes[0].ans);check(a==='h','a tap on HIGHER answers h');
   await page.screenshot({path:screenshotPath(`tpir-punch-ask-${tag}.png`)});}
  const t0=Date.now();let end='';
  while(Date.now()-t0<240000){const st=await page.evaluate(()=>{const S=window.ShambConkins.store,d=document.getElementById('dialog');if(d.open&&!S.session)return {done:d.innerText.replace(/\s+/g,' ').slice(0,160)};const D=S.session?.debug;if(!D)return {};
-   D.hurry=true;if(D.mode==='guess'&&D.P&&D.guess){const q=D.P[D.cur].prizes[D.pk];D.guess(Math.max(1,q.price+Math.round((Math.random()-.5)*20)));}else if(D.price&&D.price.res==null){D.pick(0);}else if(D.mode==='aim'){D.drop();}else if(D.mode==='pull'){D.spin(14);}else if(D.mode==='choose'){D.choose('stay');}else if(D.rising!==undefined&&D.rising)D.stop();else if(D.tryIt&&D.mode==='input'&&!D.P[D.cur].tried)D.tryIt(D.P[D.cur].digits.join(''));else if(D.solve&&D.mode==='input'){D.solve();D.pullLever();}else if(D.phase==='ask')D.answer('h');else if(D.phase==='punch'){const p=D.P[D.cur];for(let j=0;j<50;j++)if(!p.punched.has(j)){D.punch(j);break;}}else if(D.phase==='choose')D.choose(1);return {mode:D.mode};});
+   D.hurry=true;if(D.autoBid&&D.waiting)D.autoBid();else if(D.mode==='guess'&&D.P&&D.guess){const q=D.P[D.cur].prizes[D.pk];D.guess(Math.max(1,q.price+Math.round((Math.random()-.5)*20)));}else if(D.price&&D.price.res==null){D.pick(0);}else if(D.mode==='aim'){D.drop();}else if(D.mode==='pull'){D.spin(14);}else if(D.mode==='choose'){D.choose('stay');}else if(D.rising!==undefined&&D.rising)D.stop();else if(D.tryIt&&D.mode==='input'&&!D.P[D.cur].tried)D.tryIt(D.P[D.cur].digits.join(''));else if(D.solve&&D.mode==='input'){D.solve();D.pullLever();}else if(D.phase==='ask')D.answer('h');else if(D.phase==='punch'){const p=D.P[D.cur];for(let j=0;j<50;j++)if(!p.punched.has(j)){D.punch(j);break;}}else if(D.phase==='choose')D.choose(1);return {mode:D.mode};});
   if(st.done){end=st.done;break;}await page.waitForTimeout(250);}
  check(/\$|wins|WIN|tie|heat|takes it|beats/i.test(end),`${which} plays to the result card: `+end.slice(0,100));
  const best=await page.evaluate(id=>window.ShambConkins.store.profile.soloBest?.[id]||null,which);check(best!==null,`the result is filed under ${which}`);
  await page.evaluate(()=>{const d=document.getElementById('dialog');if(d.open)d.close();});
  }
-for(const g of (process.env.GAMES||'range-game,safe-crackers,race-game,punch-a-bunch,clock-game,cliff-hangers,plinko-show,big-wheel').split(','))await play(g);
+for(const g of (process.env.GAMES||'contestants-row,range-game,safe-crackers,race-game,punch-a-bunch,clock-game,cliff-hangers,plinko-show,big-wheel').split(','))await play(g);
 
 check(!errors.length,'no page errors '+errors.slice(0,3).join(' | '));
 await browser.close();console.log(bad?`${bad} problem(s)`:'TPIR OK');process.exit(bad?1:0);

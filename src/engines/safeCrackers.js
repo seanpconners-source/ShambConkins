@@ -55,7 +55,8 @@ async function safeCrackers(s){
    g.save();g.translate(a+j*w+w/2,(b+d)/2);g.font=`900 ${(d-b)*.78}px "SC Bangers",Impact,sans-serif`;g.textAlign='center';g.textBaseline='middle';g.fillStyle=p.open?'#7dff5a':'#ff3a2a';g.shadowColor=g.fillStyle;g.shadowBlur=20;g.fillText(dg,0,4);g.restore();
    if(K.mode==='input'&&!K.waiting()&&v!=null)K.hits.push({x:Sf.x+(a+j*w)*k,y:Sf.y+b*k,w:w*k,h:(d-b)*k,fn:()=>take(j)});}}
   g.restore();
-  K.txt(g,'',0,0,1,'#fff');ST().drawLogo(g,'safe-logo','SAFE CRACKERS',L.logo.x,L.logo.y,L.logo.w,t,{cols:['#ffe23a','#b8c4d0']});
+  // GPT's safe picture carries the SAFE CRACKERS sign on top: no second logo then
+  K.txt(g,'',0,0,1,'#fff');if(!SS.picture('safe'))ST().drawLogo(g,'safe-logo','SAFE CRACKERS',L.logo.x,L.logo.y,L.logo.w,t,{cols:['#ffe23a','#b8c4d0']});
   // what's in the safe
   const Pz=L.prizes;txt(g,`${p.small.name}  +  ${p.big.name.replace(/^an? /,'')}`.toUpperCase(),Pz.x+Pz.w/2,Pz.y+fs*.6,fs*.72,'#ffe23a',{max:Pz.w});
   txt(g,p.done?(p.open?`COMBINATION ${p.code} · WON ${K.money(p.score)}`:`IT WAS ${p.code}`):'The combination is the price of the smaller prize',Pz.x+Pz.w/2,Pz.y+fs*1.7,fs*.66,p.done?(p.open?'#7dff5a':'#ff8a6a'):'#bfe7ff',{max:Pz.w});

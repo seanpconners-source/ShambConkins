@@ -19,7 +19,7 @@ function drawBoard(g,lo=0){const pic=SS.picture('range-board'),[a,b,c,d]=RG.scal
   g.fillStyle='#14062e';g.fillRect(a-14,b-14,c-a+28,d-b+28);const sg=g.createLinearGradient(0,b,0,d);sg.addColorStop(0,'#ff4a2a');sg.addColorStop(.5,'#ffd23f');sg.addColorStop(1,'#2ac46a');g.fillStyle=sg;g.fillRect(a,b,c-a,d-b);}
  // the dollar marks: every $500, the game prints them
  g.save();g.textAlign='right';g.textBaseline='middle';for(let v=0;v<=SCALE;v+=500){const y=d-(d-b)*v/SCALE,big=v%1000===0;g.strokeStyle='#14062e';g.lineWidth=big?6:3;g.beginPath();g.moveTo(a,y);g.lineTo(a+(big?40:22),y);g.moveTo(c,y);g.lineTo(c-(big?40:22),y);g.stroke();
-  if(big||v===SCALE){g.font=`900 ${big?44:34}px "SC Bangers",Impact,sans-serif`;g.lineWidth=7;g.strokeStyle='rgba(0,0,0,.8)';const s='$'+(lo+v).toLocaleString('en-US');g.strokeText(s,a-46,y);g.fillStyle="#fff";g.fillText(s,a-46,y);}}g.restore();}
+  if(big||v===SCALE){g.font=`900 ${big?44:34}px "SC Bangers",Impact,sans-serif`;const cream=!!SS.picture('range-board');g.lineWidth=cream?4:7;g.strokeStyle=cream?'rgba(255,248,230,.9)':'rgba(0,0,0,.8)';const s='$'+(lo+v).toLocaleString('en-US');g.strokeText(s,a-46,y);g.fillStyle=cream?'#123f12':'#fff';g.fillText(s,a-46,y);}}g.restore();}
 function drawFinder(g,lit=false,t=0){const pic=SS.picture('range-finder'),[a,b,c,d]=FG.window;if(pic){g.drawImage(pic,0,0,FG.w,FG.h);return;}
  g.save();g.fillStyle=lit&&Math.floor(t*8)%2?'#fff':'#ffe23a';g.beginPath();g.rect(0,0,FG.w,FG.h);g.rect(a,b,c-a,d-b);g.fill('evenodd');g.strokeStyle='#14062e';g.lineWidth=6;g.strokeRect(a,b,c-a,d-b);g.strokeRect(3,3,FG.w-6,FG.h-6);
  g.fillStyle='rgba(255,255,255,.12)';g.fillRect(a,b,c-a,d-b);g.restore();}

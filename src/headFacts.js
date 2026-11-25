@@ -77,6 +77,9 @@ function picture(id,mood){
  if(!im){im=new Image();try{im.src=require("src/headCutouts.js").headDisplayURL(url);}catch{im.src=url;}IMG.set(url,im);}
  return im.complete&&im.naturalWidth?im:null;
 }
+// how many of these pictures are still on their way (a cached picture painted before its faces arrived would keep the
+// drawn stand-in heads for good: the Warriors cutscene crowd, owner Nov 25)
+function facesLoading(){let n=0;for(const im of IMG.values())if(!im.complete)n++;return n;}
 function drawFaceById(g,id,mood,cx,cy,faceW,dir){
  const im=picture(id,mood)||picture(id,'normal');if(!im)return false;const fit=faceFit(id,mood,faceW);
  const size=fit?fit.size-3:faceW/.6,sc=size/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*sc,h=im.naturalHeight*sc;
@@ -100,4 +103,4 @@ function faceSprite(id,mood,faceW,dir){
  if(SPR.size>400)SPR.clear();SPR.set(key,e);return e;
 }
 
-Object.assign(exports,{headFacts,lookDir,flipFor,faceFit,drawFace,faceGeom,faceHeight,drawFaceById,faceSprite});
+Object.assign(exports,{headFacts,lookDir,flipFor,faceFit,drawFace,faceGeom,faceHeight,drawFaceById,faceSprite,facesLoading});

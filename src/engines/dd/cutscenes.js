@@ -71,20 +71,22 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
  // nobody is cut off), sq = sideways squeeze on narrow screens (people keep their size, the spacing between them shrinks so a
  // shot shows the same people as on a wide screen), gy = the ground line (80% down on wide screens, the scene band centred on tall ones)
  function geom(z){const w=W(),h=H(),u=Math.min(h/400,w/470),sq=Math.min(1,w/(u*860));return {w,h,u,sq,S:u*z,gy:h/2+120*u+(z-1)*70*u};}
- function start(key,done){const shots=CUTS[key];if(!shots){done();return;}cur={shots,si:0,t:0,li:0,done,crowd:null,last:performance.now(),fired:new Set(),typed:0};}
+ function start(key,done){const shots=CUTS[key];if(!shots){done();return;}cur={shots,si:0,t:0,li:0,done,crowd:null,last:performance.now(),fired:new Set(),typed:0,hold:performance.now()+3000,holding:true};}
  function finish(){const d=cur?.done;cur=null;d?.();}
- function nextShot(){if(!cur)return;cur.si++;cur.t=0;cur.fired=new Set();if(cur.si>=cur.shots.length)finish();}
+ function nextShot(){if(!cur)return;cur.si++;cur.t=0;cur.fired=new Set();cur.hold=performance.now()+1200;cur.holding=true;if(cur.si>=cur.shots.length)finish();}
  // ---- the crowd (cached: one picture standing, one cheering; redrawn when the screen size changes)
  // drawn once per screen height at a fixed scale CS and stretched to the camera's zoom (a cache per zoom step would
  // repaint ~150 bodies every frame of a zoom)
  const CROWD_ROWS=[[-150,.4],[-112,.48],[-66,.56],[-18,.66]],CROWD_H=280,CROWD_GROUND=262;
- function crowdCanvas(CS,cheer,panic,sq){const key=`${H()}:${W()}:${cheer}:${panic}`;cur.crowdCache=cur.crowdCache||{};if(cur.crowdCache[key])return cur.crowdCache[key];
+ function crowdCanvas(CS,cheer,panic,sq){const key=`${H()}:${W()}:${cheer}:${panic}`,now=performance.now();cur.crowdCache=cur.crowdCache||{};const old=cur.crowdCache[key];
+  // painted while some faces were still loading = painted again (every .3 s) until they are all in
+  if(old&&(!old.stale||now-old.at<300))return old.cv;
   const cv=document.createElement('canvas');cv.width=Math.ceil(WW*CS*sq);cv.height=Math.ceil(CROWD_H*CS);const g=cv.getContext('2d');let n=0;
   for(let r=0;r<CROWD_ROWS.length;r++){const [yy,k0]=CROWD_ROWS[r],step=44*k0;
    for(let xx=20+(r%2)*step/2/sq;xx<WW-20;xx+=step/sq){if(Math.abs(xx-STAGE_X)<150*Math.max(sq,.7)/sq)continue;n++;const gi=Math.min(GANGS.length-1,Math.floor(xx/WW*GANGS.length)),G=GANGS[gi],
      face=panic?((n*7)%3?-1:1):xx<STAGE_X?1:-1,pose=panic?(n%2?'run1':'run2'):cheer?'win':'stand';
     env.person(xx*CS*sq,(CROWD_GROUND+yy)*CS,k0*CS*1.45,{o:G[1],pose,face,head:G[2],id:'c'+n+gi,mood:cheer?'win':panic?'sad':'normal'},g);}}
-  return cur.crowdCache[key]=cv;}
+  cur.crowdCache[key]={cv,at:now,stale:(env.facesLoading?.()||0)>0};return cv;}
  // ---- backdrops
  // a painted backdrop is pinned to the scene (owner, Nov 25: the people slid all over a backdrop that never moved): it pans and
  // zooms with the camera exactly like the ground the people stand on. Its scale per shot = the smallest that keeps the screen
@@ -178,9 +180,9 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
   x.fillStyle='#2c2c30';x.beginPath();x.roundRect(cx+150*u,cy-10*u,60*u,110*u,30*u);x.fill();x.strokeStyle='#5c5c64';x.lineWidth=2;for(let i=0;i<6;i++){x.beginPath();x.moveTo(cx+156*u,cy+i*16*u);x.lineTo(cx+204*u,cy+i*16*u);x.stroke();}
   x.fillStyle=Math.floor(t*2)%2?'#ff2c3c':'#8c1c24';x.beginPath();x.roundRect(w*.06,h*.08,120*u,34*u,6);x.fill();x.fillStyle='#fff';x.font=`900 ${18*u}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText('ON AIR',w*.06+60*u,h*.08+17*u);}
  // ---- one frame
- function draw(){if(!cur)return;const now=performance.now(),dt=Math.min(.05,(now-cur.last)/1000);cur.last=now;cur.t+=dt;
+ function draw(){if(!cur)return;const now=performance.now(),dt=Math.min(.05,(now-cur.last)/1000);cur.last=now;if(!cur.holding)cur.t+=dt;
   const sh=cur.shots[cur.si],q=ease(clamp(cur.t/sh.dur,0,1)),cam=sh.cam||[700,1.4,700,1.4],camX=cam[0]+(cam[2]-cam[0])*q,z=cam[1]+(cam[3]-cam[1])*q,{w,h,u,sq,S,gy}=geom(z);
-  for(const [at,what] of sh.at||[])if(cur.t>=at&&!cur.fired.has(at+what)){cur.fired.add(at+what);sound(what);}
+  for(const [at,what] of sh.at||[])if(!cur.holding&&cur.t>=at&&!cur.fired.has(at+what)){cur.fired.add(at+what);sound(what);}
   x.save();drawBg(sh,camX,z);
   if(sh.bg==='radio'){if(!drawDJPic(cur.t))drawDJ(cur.t);}
   else{// scene space: unit u*z, scene x camX at the screen centre
@@ -228,6 +230,8 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
   // skip
   x.fillStyle='rgba(255,255,255,.75)';x.font=`800 ${clamp(h*.028,10,15)}px "SC Nunito",sans-serif`;x.textAlign='left';x.textBaseline='middle';x.fillText('SKIP ▸▸',12,bar/2);
   x.restore();
+  // a shot waits (black, max 3 s at the start, 1.2 s later) until the faces it shows have loaded: the frame above asked for them
+  if(cur.holding){const wait=(env.facesLoading?.()||0)>0&&now<cur.hold;if(wait){x.fillStyle='#000';x.fillRect(0,0,w,h);return;}cur.holding=false;cur.last=performance.now();}
   const lastAt=lines.length?lines[lines.length-1][0]:0,lastLen=lines.length?lines[lines.length-1][2].length/30+1.4:0;
   if(cur.t>Math.max(sh.dur,lastAt+lastLen)||env.auto&&cur.t>.3)nextShot();}
  function wrap(text,cx,y,maxW,lh){const words=text.split(' ');let line='',yy=y;for(const wd of words){const tt=line?line+' '+wd:wd;if(x.measureText(tt).width>maxW&&line){x.fillText(line,cx,yy);line=wd;yy+=lh;}else line=tt;}if(line)x.fillText(line,cx,yy);}

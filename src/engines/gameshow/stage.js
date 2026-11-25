@@ -10,7 +10,11 @@ const TAU=Math.PI*2;
 // ---- pictures
 function cover(g,img,W,H){const k=Math.max(W/img.width,H/img.height),w=img.width*k,h=img.height*k;g.drawImage(img,(W-w)/2,(H-h)/2,w,h);}
 // the studio behind everything; kind 'plinko' | 'wheel'
-function drawStage(g,W,H,kind,t){const pic=require("src/bgShape.js").pick(W,H,{tall:`stage-${kind}-tall`,wide:`stage-${kind}`,fold:`stage-${kind}-fold`},SS.picture);
+// a game without its own (empty) studio picture borrows another game's empty studio before the drawn one (Nov 25: GPT's first
+// Range/Safe/Race/Punch studios had the props painted in, so they were held back until empty versions come)
+const STAGE_BORROW={range:'wheel',race:'wheel',row:'wheel',punch:'plinko',safe:'clock'};
+function drawStage(g,W,H,kind,t){const pk=k=>require("src/bgShape.js").pick(W,H,{tall:`stage-${k}-tall`,wide:`stage-${k}`,fold:`stage-${k}-fold`},SS.picture);
+ const pic=pk(kind)||(STAGE_BORROW[kind]&&pk(STAGE_BORROW[kind]));
  if(pic){cover(g,pic,W,H);return;}
  if(kind==='cliff')return drawAlpine(g,W,H,t);
  const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,kind==='wheel'?'#1a0a3a':'#2a0a2e');bg.addColorStop(.62,kind==='wheel'?'#3a1666':'#5a1240');bg.addColorStop(.63,'#1a1410');bg.addColorStop(1,'#060504');g.fillStyle=bg;g.fillRect(0,0,W,H);
@@ -249,4 +253,4 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   g.gain.setValueAtTime(.0001,a.currentTime);g.gain.linearRampToValueAtTime(own?(TPIR_GAIN[own]??.5)*.6:.16,a.currentTime+1.2);
   if(!clipOut){clipOut=a.createGain();clipOut.connect(a.destination);}src.connect(lp);lp.connect(g);g.connect(clipOut);src.start(a.currentTime,Math.random()*b.duration*.5);mur={src,g};}
  return {sfx,music,title,clip,crowd,voice,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
-Object.assign(exports,{createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});
+Object.assign(exports,{STAGE_BORROW,createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});

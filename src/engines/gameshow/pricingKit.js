@@ -66,7 +66,7 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  // the show: start card, curtain + title + the host's rules, then each contestant, then the winner
  K.run=async({title,sub,col='#ffe23a',pass,intro=[],ready=[],play,result})=>{
   if(!s.fromMenu&&!await s.pass(0,pass,'Come on down!'))return;
-  await SS.ready(ready.concat(['curtain']),5000);if(!s.alive)return;
+  const bk=ST.STAGE_BORROW[kind];await SS.ready(ready.concat(['curtain',...['','-tall','-fold'].flatMap(f=>[`stage-${kind}${f}`,...(bk?[`stage-${bk}${f}`]:[])])]),5000);if(!s.alive)return;
   if(!s.fromMenu)snd.title(true);snd.crowd(3,.9,{at:.3});K.mode='intro';K.introT=0;
   K.show(title+'!',sub,2.6,col);snd.voice('say-lets-play',{at:.6});await K.wait(2600);
   for(const [line,ms] of intro){if(!s.alive)return;K.say(line,ms);K.introT=Math.max(K.introT,2.3);await K.wait(ms-200);}

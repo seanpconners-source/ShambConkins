@@ -15,6 +15,7 @@ const {fullBleed}=require("src/engines/fullBleed.js");
 const TAU=Math.PI*2;
 // the pricing games: id (= its own game id, for scores), card title, its show-art logo slot, one line, the engine
 const PRICING_GAMES=[
+ {id:'contestants-row',title:'CONTESTANTS\' ROW',logo:'cr-logo',sub:'Come on down! One bid each, closest without going over',col:'#ff7a1a',run:s=>require("src/engines/contestantsRow.js").contestantsRow(s)},
  {id:'range-game',title:'RANGE GAME',logo:'range-logo',sub:'One press to stop the range finder on the price',col:'#e88a1a',run:s=>require("src/engines/rangeGame.js").rangeGame(s)},
  {id:'safe-crackers',title:'SAFE CRACKERS',logo:'safe-logo',sub:'Three digits, one try to open the safe',col:'#5a6a7a',run:s=>require("src/engines/safeCrackers.js").safeCrackers(s)},
  {id:'race-game',title:'RACE GAME',logo:'race-logo',sub:'Tag four prizes before 45 seconds run out',col:'#1a8ac8',run:s=>require("src/engines/raceGame.js").raceGame(s)},

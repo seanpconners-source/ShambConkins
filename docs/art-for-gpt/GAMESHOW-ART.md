@@ -1,4 +1,4 @@
-# The Price Is Right games (Plinko, The Big Wheel, Cliff Hangers, The Clock Game, Range Game, Safe Crackers, Race Game, Punch-a-Bunch): art for GPT
+# The Price Is Right games (Plinko, The Big Wheel, Cliff Hangers, The Clock Game, Range Game, Safe Crackers, Race Game, Punch-a-Bunch, Contestants' Row): art for GPT
 
 Two TV-game-show games: **Plinko** (`plinko-show`) and **The Big Wheel** (`big-wheel`). They share one studio, one host and two
 show assistants. Everything is **our own**: an original host and original assistants (not any real host, model or celebrity),
@@ -120,3 +120,21 @@ Higher or lower on four small prizes; every right answer is a punch on a 50-hole
 | `punch-paper` | 200x200 | One hole covered with shiny gold foil paper (not punched), seen straight on, filling the pink circle. |
 | `punch-slip` | 640x320 | The unfolded paper slip that comes out of a hole: crisp cream paper with a red border and a fold line; blank in the pink box (the game prints the $). Transparent around. |
 | `punch-logo` | 1400x500 | PUNCH-A-BUNCH in big lit-up game-show letters. Transparent. |
+
+## Contestants' Row (`contestants-row`, inside The Price Is Right)
+
+The show's One Bid: four contestants are called down from the audience ("SEAN, COME ON DOWN!"), the house goes nuts, they run down the
+aisle to the four podiums of Contestants' Row, a prize comes out and everybody bids once; closest without going over wins. The owner
+wants it to look exactly like the classic show (the four 1970s-90s Contestants' Row podiums with their small lit bid displays, the
+bright studio, a packed and screaming audience). Generated look-alikes only: no real broadcast frames, no real people's faces.
+
+| Slot | Size | Prompt (after the style text) |
+|---|---|---|
+| `cr-audience` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The studio AUDIENCE seen from the stage: steep bleachers packed with excited people in bright T-shirts (homemade name tags, some shirts with slogans), studio lights over them. The game draws three rows of cheering fans along the bottom half and the called contestant in the middle, so keep the lower middle simple. No faces in focus (blurry crowd is fine). |
+| `stage-row` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The studio seen from the audience: the turntable stage, the big colourful doors and bulb-lit 70s set in the upper half (the game puts the prize turntable in the middle and the host + model beside it), the shiny floor of Contestants' Row in the bottom half where the game draws the four podiums. Keep the dashed box calm. |
+| `cr-podium` | 600x500 | ONE Contestants' Row podium seen from the front, like the classic show: a small dark bid display on top exactly in the pink BID box (the game prints the bid in orange), a colourful front panel below (the game writes the name in the lower pink box). The four podiums are the same picture. Transparent around. |
+| `cr-body-1` ... `cr-body-4` | 2304x512 each | One contestant per sheet, WITHOUT a head (the game puts the player's or guest's face on the pink circle at the neck): 1 = T-shirt and jeans, 2 = sweater and khakis, 3 = bright tracksuit, 4 = blouse and skirt. 9 poses left to right, one per 256 px box, feet on the dots: STAND, RUN 1-4 (running toward us down the aisle, arms pumping), JUMP (both arms straight up), CHEER (fists pumping), CLAP, SAD (shoulders down). Same size in every box, the neck exactly under the pink circle. Transparent. |
+| `cr-comeondown` | 1400x500 | COME ON DOWN! in big 70s game-show lettering (yellow with a red outline and a sparkle). Transparent. |
+| `cr-logo` | 1400x500 | CONTESTANTS' ROW in big lit-up game-show letters. Transparent. |
+
+The prize stands on the existing `clock-platform` turntable; the host and models are the existing `host` / `model` sheets.

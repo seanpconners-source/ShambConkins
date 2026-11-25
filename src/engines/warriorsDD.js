@@ -29,7 +29,7 @@ const CUT=require("src/engines/dd/cutscenes.js");
 const MAP=require("src/engines/dd/subwayMap.js");
 const {NECKS}=require("src/data/ddNecks.js");
 const {HEADS}=require("src/data/ddHeads.js");
-const {faceSprite,drawFace,faceHeight,headFacts}=require("src/headFacts.js");
+const {faceSprite,drawFace,faceHeight,headFacts,facesLoading}=require("src/headFacts.js");
 // a character with a picture of their own (not the emoji card): gang members wear their gang's face only then
 const hasArt=id=>{try{return !!id&&require("src/data/userPortraits.js").isRasterArt(require("src/assets.js").portraitURL(id,'normal'));}catch{return false;}};
 
@@ -850,7 +850,7 @@ async function warriorsDD(s){
   if(isP){drawFace(s,x,C.pi,cx,cy,size/.6,'normal',1,.6);return;}
   const fid=cutFace(C.id,C.char),sp=fid?faceSprite(fid,'normal',size,1):null;if(sp){x.drawImage(sp.cv,cx+sp.x,cy+sp.y);return;}
   BD.drawGangHead(x,cx,cy,size*1.1,C.head||'thug',{face:1,id:C.id||'x',skin:C.skin});}
- const cuts=CUT.makeCuts({x,s,W:()=>s.W,H:()=>s.H,person:drawPerson,portrait:drawPortrait,sfx,noise,snd,DS,BD,names,solo:s.players.length<2||solo,get auto(){return bot.on;}});
+ const cuts=CUT.makeCuts({x,s,W:()=>s.W,H:()=>s.H,person:drawPerson,portrait:drawPortrait,facesLoading,sfx,noise,snd,DS,BD,names,solo:s.players.length<2||solo,get auto(){return bot.on;}});
  const seenCut=new Set();
  // a story scene before a chapter (not online or on the board: those jump straight into a fight); each one once per game
  function playCut(key){if(online||board||seenCut.has(key))return Promise.resolve();seenCut.add(key);musicOn=false;
