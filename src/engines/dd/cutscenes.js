@@ -17,7 +17,7 @@ const CAST={
  cyrus:{name:'CYRUS',col:'#e8c84c',head:'cyrus',o:'cyrus',skin:'#7c5034'},
  cleon:{name:'CLEON',col:'#e8a04c',char:'cleon',o:'warrior'},
  swan:{name:'SWAN',col:'#e8a04c',char:'swan',o:'warrior'},
- ajax:{name:'AJAX',col:'#e8a04c',char:'ajax',o:'warrior'},
+ ajax:{name:'AJAX',col:'#e8a04c',char:'ajax-warriors',o:'warrior'},
  cochise:{name:'COCHISE',col:'#e8a04c',char:'cochise',o:'warrior'},
  fox:{name:'FOX',col:'#e8a04c',o:'warrior',head:'thug'},
  luther:{name:'LUTHER',col:'#c84cff',char:'luther',o:'rogue',head:'rogue'},
@@ -62,6 +62,9 @@ const CUTS={
  end:[{bg:'coney',dur:7,cam:[750,1.2,750,1.5],warriors:1,riffs:1,luther:'down',lines:[[.3,'masai','The Riffs know the truth now. Luther fired that shot.'],[3.4,'masai','You\'re good, Warriors. Go home.']],at:[[.1,'riffs']]},
   {bg:'radio',dur:5,lines:[[.3,'dj','Good morning, Warriors. You made it home.']]}]};
 
+// where a shot's people stand in the scene: the middle of its camera move (fixed, so the camera moves past them and the
+// backdrop together; only a running group travels with the camera)
+function anchorX(sh){const c=sh.cam||[700,1.4,700,1.4];return (c[0]+c[2])/2;}
 function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
  const W=()=>env.W(),H=()=>env.H();
  // screen geometry for a camera zoom z: u = scene unit (sized by the height on wide screens, by the width on tall phones so
@@ -83,7 +86,19 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
     env.person(xx*CS*sq,(CROWD_GROUND+yy)*CS,k0*CS*1.45,{o:G[1],pose,face,head:G[2],id:'c'+n+gi,mood:cheer?'win':panic?'sad':'normal'},g);}}
   return cur.crowdCache[key]=cv;}
  // ---- backdrops
- function picBg(name){const im=DS.picture('cut-'+name);if(!im)return false;const w=W(),h=H(),k=Math.max(w/im.width,h/im.height);x.drawImage(im,(w-im.width*k)/2,(h-im.height*k)/2,im.width*k,im.height*k);return true;}
+ // a painted backdrop is pinned to the scene (owner, Nov 25: the people slid all over a backdrop that never moved): it pans and
+ // zooms with the camera exactly like the ground the people stand on. Its scale per shot = the smallest that keeps the screen
+ // covered over the whole camera move; FLOOR_Y = how far down the picture the people stand, anchored on the ground line
+ const FLOOR_Y={conclave:.72,coney:.7,dawn:.76,lizzies:.72,park:.72,restroom:.76,riffs:.74,street:.72,subway:.84};
+ function bgAnchor(sh){return sh.bg==='conclave'?STAGE_X:anchorX(sh);}
+ function picFit(sh,im){const key=`${cur.si}:${W()}:${H()}`;if(cur.fit?.key===key)return cur.fit.A;const cam=sh.cam||[700,1.4,700,1.4],xa=bgAnchor(sh),fy=FLOOR_Y[sh.bg]??.78;let A=0;
+  for(let i=0;i<=16;i++){const q=ease(i/16),cx=cam[0]+(cam[2]-cam[0])*q,z=cam[1]+(cam[3]-cam[1])*q,{w,h,u,sq,gy}=geom(z);
+   A=Math.max(A,(w/z+2*Math.abs(xa-cx)*u*sq)/im.width*1.002,(gy-h*.08)/(fy*im.height*z),(h*.92-gy)/((1-fy)*im.height*z));}
+  cur.fit={key,A};return A;}
+ function picBg(sh,camX,z){const im=DS.picture('cut-'+sh.bg);if(!im)return false;
+  if(sh.bg==='radio'){const w=W(),h=H(),k=Math.max(w/im.width,h/im.height);x.drawImage(im,(w-im.width*k)/2,(h-im.height*k)/2,im.width*k,im.height*k);return true;}
+  const {w,h,u,sq,gy}=geom(z),sc=picFit(sh,im)*z,fy=FLOOR_Y[sh.bg]??.78,cx=w/2+(bgAnchor(sh)-camX)*u*z*sq;
+  const y0=gy-fy*im.height*sc;x.fillStyle='#000';x.fillRect(0,0,w,h);x.drawImage(im,cx-im.width*sc/2,y0,im.width*sc,im.height*sc);return true;}
  function sky(top,bot){const g=x.createLinearGradient(0,0,0,H());g.addColorStop(0,top);g.addColorStop(1,bot);x.fillStyle=g;x.fillRect(0,0,W(),H());}
  function skyline(y,col,seed){x.fillStyle=col;let xx=-20,i=seed;while(xx<W()+20){const w=30+((i*37)%50),h=40+((i*53)%120);x.fillRect(xx,y-h,w,h+2);i++;xx+=w+4;}}
  function windows(y,seed){let xx=-20,i=seed;while(xx<W()){const w=30+((i*37)%50),h=40+((i*53)%120);for(let a=6;a<w-6;a+=9)for(let b=8;b<h-6;b+=12)if(((a*7+b*13+i)%9)===0){x.fillStyle='rgba(255,220,140,.55)';x.fillRect(xx+a,y-h+b,3,4);}i++;xx+=w+4;}}
@@ -97,7 +112,7 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
   tile(wall,ft-wh,wh,.6);tile(floor,ft,Math.max(h-ft,40*u),1);
   x.fillStyle='rgba(0,0,0,.18)';x.fillRect(0,0,w,h);return true;}
  function drawBg(sh,camX,z){const {w,h,u,sq}=geom(z);
-  if(picBg(sh.bg)||stageBg(sh.bg,camX,z))return;
+  if(picBg(sh,camX,z)||stageBg(sh.bg,camX,z))return;
   if(sh.bg==='conclave'||sh.bg==='riffs'){sky('#05060e','#1a1430');skyline(h*.5,'#0c0c18',3);windows(h*.5,3);
    // trees left and right, the park lawn
    x.fillStyle='#0a140c';for(let i=0;i<9;i++){const tx=((i*173-camX*.3)%(w+200)+w+200)%(w+200)-100;x.beginPath();x.ellipse(tx,h*.46,60*u,70*u,0,0,TAU);x.fill();}
@@ -187,11 +202,11 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
    // the Warriors group, a gang, Luther, the Riffs
    const people=[];
    if(sh.warriors){const list=env.solo?['hero','swan','ajax','cochise','cleon']:['hero','hero2','swan','ajax','cochise'];if(sh.bg!=='conclave'||cur.si>=6)list.pop();
-    const base=sh.bg==='conclave'?1000:camX-120;list.forEach((who,i)=>{const C=CAST[who];people.push({x:base+(i-list.length/2)*46,row:i%2,p:{o:C.o||'warrior',pose:sh.warriors==='run'?['run1','walk2','run2','walk2'][Math.floor(cur.t*10+i)%4]:'stand',face:sh.warriors==='run'?1:i<2?1:-1,char:C.char,pi:C.pi,id:who,mood:sh.warriors==='run'?'sad':'normal'}});});}
-   if(sh.gang){const [o,head,n,wpn]=sh.gang;for(let i=0;i<n;i++)people.push({x:camX+120+i*40-(sh.warriors?0:160),row:i%2,p:{o,pose:wpn&&i%2?'batReady':'stand',face:-1,head,id:o+i,mood:'angry',wpn}});}
-   if(sh.riffs){for(let i=0;i<7;i++)people.push({x:(sh.bg==='coney'?camX+60:camX-180)+i*42,row:i%2,p:{o:'riff',pose:'stand',face:sh.bg==='coney'?-1:1,head:'riff',id:'riff'+i}});
-    if(sh.bg==='riffs')people.push({x:camX,row:1,big:1.15,p:{o:'riff',pose:'stand',face:-1,head:'riff',id:'masai',skin:'#6c4428'}});}
-   if(sh.luther){const L=sh.luther;people.push({x:sh.bg==='conclave'?1180:camX+150,row:1,p:{o:'rogue',pose:L==='point'?'jab':L==='down'?'kneel':L===1&&cur.t>1.4?'aim':'stand',face:-1,char:'luther',head:'rogue',id:'luther',mood:L==='down'?'sad':'angry'},gun:L===1&&cur.t>1.4,bottles:L==='bottles'});}
+    const base=sh.bg==='conclave'?1000:(sh.warriors==='run'?camX:anchorX(sh))-120;list.forEach((who,i)=>{const C=CAST[who];people.push({x:base+(i-list.length/2)*46,row:i%2,p:{o:C.o||'warrior',pose:sh.warriors==='run'?['run1','walk2','run2','walk2'][Math.floor(cur.t*10+i)%4]:'stand',face:sh.warriors==='run'?1:i<2?1:-1,char:C.char,pi:C.pi,id:who,mood:sh.warriors==='run'?'sad':'normal'}});});}
+   if(sh.gang){const [o,head,n,wpn]=sh.gang;for(let i=0;i<n;i++){const lead=i===0?Object.keys(CAST).find(k=>CAST[k].o===o&&CAST[k].pi==null):null;people.push({x:anchorX(sh)+120+i*40-(sh.warriors?0:160),row:i%2,p:{o,pose:wpn&&i%2?'batReady':'stand',face:-1,head,id:lead||o+i,char:lead?CAST[lead].char:undefined,mood:'angry',wpn}});}}
+   if(sh.riffs){for(let i=0;i<7;i++)people.push({x:(sh.bg==='coney'?anchorX(sh)+60:anchorX(sh)-180)+i*42,row:i%2,p:{o:'riff',pose:'stand',face:sh.bg==='coney'?-1:1,head:'riff',id:'riff'+i}});
+    if(sh.bg==='riffs')people.push({x:anchorX(sh),row:1,big:1.15,p:{o:'riff',pose:'stand',face:-1,head:'riff',id:'masai',skin:'#6c4428'}});}
+   if(sh.luther){const L=sh.luther;people.push({x:sh.bg==='conclave'?1180:anchorX(sh)+150,row:1,p:{o:'rogue',pose:L==='point'?'jab':L==='down'?'kneel':L===1&&cur.t>1.4?'aim':'stand',face:-1,char:'luther',head:'rogue',id:'luther',mood:L==='down'?'sad':'angry'},gun:L===1&&cur.t>1.4,bottles:L==='bottles'});}
    people.sort((a,b)=>a.row-b.row);
    for(const P of people){const k=S*(P.row?1.5:1.38)*(P.big||1),px=X(P.x),py=gy+(P.row?14:0)*S;if(px<-80||px>w+80)continue;const sp=env.person(px,py,k,P.p);
     const wim=P.p.wpn&&DS.picture(P.p.wpn);if(wim&&sp){const L=46*k,a=Math.atan2(-30,-24*(P.p.face||1)),h2=L*wim.height/wim.width;x.save();x.translate(sp.hand.x,sp.hand.y);x.rotate(a);x.drawImage(wim,-L*.12,-h2/2,L,h2);x.restore();}
@@ -235,7 +250,7 @@ function makeCuts(env){const {x,s,BD,DS}=env;let cur=null;
   else sfx[what]?.();}catch{}}
  // tap: SKIP in the corner skips the whole scene, a tap elsewhere moves to the next shot
  function tap(px,py){if(!cur)return false;const h=H();if(px<120&&py<h*.1){finish();return true;}if(cur.t>.4)nextShot();return true;}
- return {start,draw,tap,get active(){return !!cur;},skip:finish,next:nextShot,info:()=>cur&&{si:cur.si,n:cur.shots.length,dur:cur.shots[cur.si]?.dur,bg:cur.shots[cur.si]?.bg}};}
+ return {start,draw,tap,get active(){return !!cur;},skip:finish,next:nextShot,seek:(si,t)=>{if(!cur)return;cur.si=si;cur.t=t;cur.fired=new Set();},info:()=>cur&&{si:cur.si,n:cur.shots.length,dur:cur.shots[cur.si]?.dur,bg:cur.shots[cur.si]?.bg}};}
 const CUT_PICTURES=['conclave','riffs','street','lizzies','park','subway','restroom','dawn','coney','radio'];
 // stage art standing in for a cut backdrop until its painted one comes: story area first, then the old biome set
 const CUT_STAGE={conclave:['conclave','forest'],riffs:['gothic'],street:['tenement','elstreet','nyc'],lizzies:['apartment'],park:['riverside','park','forest'],

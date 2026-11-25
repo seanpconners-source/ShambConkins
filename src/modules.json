@@ -600,7 +600,8 @@
   "src/engines/rangeGame.js",
   "src/engines/safeCrackers.js",
   "src/engines/raceGame.js",
-  "src/engines/punchABunch.js"
+  "src/engines/punchABunch.js",
+  "src/engines/dd/buttons.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

@@ -23,7 +23,7 @@ const {vibrate}=require("src/audio.js");
 const {store}=require("src/state.js");
 const BD=require("src/engines/dd/body.js");
 const SY_=require("src/engines/dd/story.js");
-const SC=require("src/engines/dd/scenes.js");
+const BTNS=require("src/engines/dd/buttons.js"),SC=require("src/engines/dd/scenes.js");
 const DS=require("src/data/ddSprites.js");
 const CUT=require("src/engines/dd/cutscenes.js");
 const MAP=require("src/engines/dd/subwayMap.js");
@@ -614,7 +614,7 @@ async function warriorsDD(s){
   if(phase==='title'||phase==='select'){drawTitle();return;}if(phase==='story'){drawStory();return;}if(phase==='cut'){cuts.draw();return;}if(!A)return;
   const sh=shakeT>0?(Math.random()-.5)*shakeT*20:0,sway=A.moving?Math.sin(t*2.2)*1.2+Math.sin(t*7.1)*.4:0;
   x.save();x.translate(sh,bandY+sway*k);x.scale(k,k);
-  SC.drawArea(x,A,cam.x,vw,BACK,FRONT,t);
+  SC.drawArea(x,A,cam.x,vw,BACK,FRONT,t,{top:-(bandY+sway*k+20)/k,bot:(H-bandY-sway*k+20)/k});
   // 96th Street: the warning down the platform edge, then the train roaring past in the track pit
   if(A.chase&&A.foxT&&!A.foxHit&&Math.floor(t*8)%2){const Y=BACK+A.dMin;x.fillStyle='rgba(255,60,40,.28)';x.fillRect(0,Y-16,vw,32);x.font='900 22px "SC Bangers",Impact';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#ffd23c';x.fillText('TRAIN!',40,Y);}
   if(A.trainPass!=null){const y0=BACK*.55-6;for(let i=0;i<5;i++)SC.drawTrainSide(x,A.trainPass-cam.x+i*384,y0,BACK,t,false);
@@ -809,9 +809,9 @@ async function warriorsDD(s){
   // context labels: what PUNCH / KICK / SPECIAL will do right now
   const h=hero,onItem=h&&!h.weapon&&items.some(i=>!FOOD[i.kind]&&Math.abs(i.x-h.x)<24&&Math.abs(i.d-h.d)<14&&i.z===0),nsp=h&&run?nextSpecial(h,inp.sx):null;
   const lab={punch:h?.carry?'THROW':onItem?'PICK UP':h?.weapon?'SWING':h?.st==='grabbing'?'KNEE':'PUNCH',kick:h?.carry||h?.weapon?'THROW':'KICK',jump:'JUMP',special:'SPECIAL'};
-  for(const [n,b] of Object.entries(BTN)){const on=inp.held[n],bars=Math.floor(run.meter/100),dis=n==='special'&&(bars<1||spCD>0||h?.mv?.def.special);x.save();x.globalAlpha=dis?.32:on?.95:.62;
-   x.fillStyle=on?'#fff':n==='special'&&bars>=3?`hsl(${(t*200)%360},80%,55%)`:b.col;x.strokeStyle='rgba(0,0,0,.6)';x.lineWidth=3;x.beginPath();x.arc(b.x,b.y,b.r*(on?.94:1),0,7);x.fill();x.stroke();
-   x.fillStyle=on?b.col:'#fff';x.font=`900 ${b.r*.32}px "SC Nunito",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(lab[n],b.x,b.y);
+  for(const [n,b] of Object.entries(BTN)){const on=inp.held[n],bars=Math.floor(run.meter/100),dis=n==='special'&&(bars<1||spCD>0||h?.mv?.def.special);x.save();
+   // an arcade button with its icon; the plate under it only when the button does something else right now (PICK UP, THROW...)
+   BTNS.drawButton(x,DS,n,b.x,b.y,b.r,{col:b.col,down:!!on,alpha:dis?.4:.92,label:lab[n]!==n.toUpperCase()?lab[n]:'',glow:n==='special'&&bars>=1&&!dis?(bars>=3?1:.35+.25*Math.sin(t*5)):0});
    if(n==='special'){x.globalAlpha=1;for(let i=0;i<3;i++){const a0=-Math.PI/2+i*2*Math.PI/3+.08,a1=a0+2*Math.PI/3-.16,f2=clamp(run.meter/100-i,0,1);x.lineWidth=5;x.strokeStyle='rgba(0,0,0,.6)';x.beginPath();x.arc(b.x,b.y,b.r+6,a0,a1);x.stroke();
      x.strokeStyle=bars>=3?`hsl(${(t*200)%360},90%,60%)`:'#ffd23c';x.beginPath();x.arc(b.x,b.y,b.r+6,a0,a0+(a1-a0)*f2);x.stroke();}
     if(nsp&&!dis){const nm={rise:'RISING FIST',twister:'TWISTER',fury:'FURY!',burst:'BREAKAWAY'}[nsp];small(nm,b.x,b.y-b.r-15,Math.max(9,b.r*.3),'#ffd23c');}}
@@ -820,24 +820,34 @@ async function warriorsDD(s){
  // characters' pictures, the gangs' drawn heads); g = the canvas to draw on (the crowd is painted into its own)
  // a story-scene person: drawn from their sheet when it's in (the Warriors crew wear the hero sheets, each gang its own), else the drawn body
  function personSheet(p){if(p.sheet)return p.sheet;if(p.o==='warrior'){let h=0;for(const ch of String(p.id||''))h=(h*31+ch.charCodeAt(0))|0;return Math.abs(h)%2?'hero-p2':'hero-p1';}return PERSON_SHEET[p.o];}
+ // the face a story-scene person wears: their own picture when it's in the game, else (owner, Nov 25: "replace drawings") a
+ // character's face picked from the id (the same one every time), like the nameless fighters in play
+ const cutFaces=new Map();
+ function cutFace(id,char){if(char&&hasArt(char)&&headFacts(char,'normal'))return char;const key=String(id||char||'x');if(cutFaces.has(key))return cutFaces.get(key);
+  let h=7;for(const ch of key)h=(h*131+ch.charCodeAt(0))>>>0;const f=facePool.length?facePool[h%facePool.length]:null;cutFaces.set(key,f);return f;}
  function drawPerson(sx,sy,kk,p,g=x){const face=p.face||1,big=p.big||1,pose=BD.P[p.pose]||BD.P.stand;
-  const SC=sheetCell(personSheet(p),p.pose||'stand');let spots;
+  const isP=p.pi!=null&&p.pi<s.players.length,fid=isP?s.players[p.pi]?.character:cutFace(p.id,p.char);let fm=p.mood||'normal';if(fid&&fm!=='normal'&&!headFacts(fid,fm))fm='normal';
+  // the head: the player's face, a character's picture, or (no picture at all) the gang's drawn head
+  const headAt=(cx,cy,tilt,w)=>{const sp=!isP&&fid?faceSprite(fid,fm,w,face):null;
+   if(isP){g.save();g.translate(cx,cy);g.rotate(tilt);drawFace(s,g,p.pi,0,0,w/.6,fm==='angry'?'happy':fm,face,.6);g.restore();}
+   else if(sp){g.save();g.translate(cx,cy);g.rotate(tilt);g.drawImage(sp.cv,sp.x,sp.y);g.restore();}
+   else BD.drawGangHead(g,cx,cy-w*.08,w*1.02,p.head||'thug',{face,tilt,mood:fm,id:p.id||'x',skin:p.skin});};
+  const SC=sheetCell(personSheet(p),p.pose||'stand');let spots,hd=null,HD=null;
   if(SC){const sc=kk*big/DS.UNIT,ft=DS.footOf(SC.name);g.save();g.globalAlpha*=.3;g.fillStyle='#000';g.beginPath();g.ellipse(sx,sy,22*kk*big,6*kk,0,0,7);g.fill();g.restore();
+   // the head where the owner placed it on this cell in the Head Placer (as in play): spot, turn, size, behind the body
+   HD=HEADS[SC.sheet]?.[SC.name];if(HD){hd={x:sx+(HD[0]-ft[0])*sc*face,y:sy+(HD[1]-ft[1])*sc,a:HD[2]*Math.PI/180*face,w:FACE_W*kk*big*HD[3]};if(HD[4])headAt(hd.x,hd.y,hd.a,hd.w);}
    g.save();g.translate(sx,sy);g.scale(face*sc,sc);g.drawImage(SC.img,SC.cell.sx,SC.cell.sy,DS.CELL,DS.CELL,-ft[0],-ft[1],DS.CELL,DS.CELL);g.restore();
    const J=BD.joints(pose),tp=q=>({x:sx+q[0]*face*kk*big,y:sy+q[1]*kk*big});spots={head:tp(J.head),neck:tp(J.neck),hand:tp(J.B[2]),hand2:tp(J.A[2]),sheet:1};
-   const cn=cellNeck(SC.sheet,SC.name,sx,sy,face,sc,0);if(cn){spots.neck=cn.neck;spots.head=cn.head;}}
+   const cn=cellNeck(SC.sheet,SC.name,sx,sy,face,sc,0);if(cn){spots.neck=cn.neck;spots.head=cn.head;if(cn.hand)spots.hand=cn.hand;}}
   else spots=BD.drawBody(g,pose,{x:sx,y:sy,face,k:kk,o:BD.OUTFIT[p.o]||BD.OUTFIT.thug,big});
+  if(hd){if(!HD[4])headAt(hd.x,hd.y,hd.a,hd.w);spots.face={x:hd.x,y:hd.y};return spots;}
   const fw=FACE_W*kk*big,nk=spots.neck||spots.head,ux=spots.head.x-nk.x,uy=spots.head.y-nk.y,ul=Math.hypot(ux,uy)||1;
-  const isP=p.pi!=null&&p.pi<s.players.length,fid=isP?s.players[p.pi]?.character:p.char;let fm=p.mood||'normal';if(fid&&fm!=='normal'&&!headFacts(fid,fm))fm='normal';
-  const sp=!isP&&fid?faceSprite(fid,fm,fw,face):null,fh=(isP||sp)&&fid?faceHeight(fid,fm,fw):fw*1.25,cx=nk.x+ux/ul*fh*FACE_UP,cy=nk.y+uy/ul*fh*FACE_UP;
-  const tilt=Math.atan2(ux,-uy);
-  if(isP){g.save();g.translate(cx,cy);g.rotate(tilt);drawFace(s,g,p.pi,0,0,fw/.6,fm==='angry'?'happy':fm,face,.6);g.restore();}
-  else if(sp){g.save();g.translate(cx,cy);g.rotate(tilt);g.drawImage(sp.cv,sp.x,sp.y);g.restore();}
-  else BD.drawGangHead(g,cx,cy-fw*.08,fw*1.02,p.head||'thug',{face,tilt,mood:fm,id:p.id||'x',skin:p.skin});
+  const fh=fid?faceHeight(fid,fm,fw):fw*1.25,cx=nk.x+ux/ul*fh*FACE_UP,cy=nk.y+uy/ul*fh*FACE_UP;
+  headAt(cx,cy,Math.atan2(ux,-uy),fw);spots.face={x:cx,y:cy};
   return spots;}
  function drawPortrait(C,cx,cy,size){const isP=C.pi!=null&&C.pi<s.players.length;
   if(isP){drawFace(s,x,C.pi,cx,cy,size/.6,'normal',1,.6);return;}
-  const sp=C.char?faceSprite(C.char,'normal',size,1):null;if(sp){x.drawImage(sp.cv,cx+sp.x,cy+sp.y);return;}
+  const fid=cutFace(C.id,C.char),sp=fid?faceSprite(fid,'normal',size,1):null;if(sp){x.drawImage(sp.cv,cx+sp.x,cy+sp.y);return;}
   BD.drawGangHead(x,cx,cy,size*1.1,C.head||'thug',{face:1,id:C.id||'x',skin:C.skin});}
  const cuts=CUT.makeCuts({x,s,W:()=>s.W,H:()=>s.H,person:drawPerson,portrait:drawPortrait,sfx,noise,snd,DS,BD,names,solo:s.players.length<2||solo,get auto(){return bot.on;}});
  const seenCut=new Set();
