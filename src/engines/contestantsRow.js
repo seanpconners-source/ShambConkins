@@ -8,14 +8,14 @@
 // vs CPU the second player is the CPU. Arcade 4 prizes, board 2. Score = what you won. Online: the bidder's phone sends {b:bid}.
 // Pictures (all optional, drawn fallback): cr-audience(-tall/-fold) the bleachers, stage-row(-tall/-fold) the studio, cr-podium (one
 // podium, the game prints the bid in its BID window), cr-body-1..4 (headless contestant sheets, the face goes on the FACE spot),
-// the studio audience (gameshow/audience.js: cr-fan-1..8, cr-riser, cr-audience), cr-comeondown (the COME ON DOWN! lettering), cr-logo; the prize on clock-platform.
+// the studio audience (gameshow/audience.js: cr-fan-1..8, cr-seat, cr-audience + cr-audience-front), cr-comeondown (the COME ON DOWN! lettering), cr-logo; the prize on clock-platform.
 const ST=require("src/engines/gameshow/stage.js");
 const SS=require("src/data/showSprites.js");
 const SP=require("src/data/showPrizes.js");
 const {createKit,txt,money}=require("src/engines/gameshow/pricingKit.js");
 const {seededRandom,clamp}=require("src/utils.js");
 const {faceSprite,headFacts,drawFace}=require("src/headFacts.js");
-const AUD=require("src/engines/gameshow/audience.js"),{drawnBody,drawnAudience}=AUD;
+const AUD=require("src/engines/gameshow/audience.js"),{drawnBody}=AUD;
 const TAU=Math.PI*2,ease=v=>1-Math.pow(1-clamp(v,0,1),3);
 const GUESTS=[['DOLORES','#e86a92'],['BIG RON','#3a86ff'],['GLADYS','#ff9f1c'],['TEDDY','#2ec4b6'],['MARGE','#9b5de5'],['SAL','#f15bb5'],['BEV','#ff6b6b'],
  ['EARL','#4cc9f0'],['RHONDA','#f77f00'],['VINNIE','#80ed99'],['PEGGY','#c77dff'],['DWAYNE','#ffd166'],['LORETTA','#ef476f'],['GUS','#06d6a0'],['TAMMY','#ff70a6'],['DUANE','#70d6ff']];
@@ -41,8 +41,7 @@ function drawRef(g,W,H,slot){const CB=SS.CR_BODY;
  if(slot==='cr-podium'){drawnPodium(g,{x:0,y:0,w:W,h:H},0,0);return;}
  if(slot==='cr-comeondown'){g.font=`900 ${H*.5}px Impact,sans-serif`;g.textAlign='center';g.textBaseline='middle';g.lineWidth=H*.05;g.strokeStyle='#c8102e';g.strokeText('COME ON DOWN!',W/2,H/2,W*.94);g.fillStyle='#ffe23a';g.fillText('COME ON DOWN!',W/2,H/2,W*.94);return;}
  if(slot.startsWith('cr-fan')){const D=SS.CR_FAN,col=SHIRTS[(Number(slot.slice(-1))*7)%SHIRTS.length];D.frames.forEach((f,i)=>drawnBody(g,col,i*D.w+D.feet[0],D.feet[1],D.unit,f,f.endsWith('2')?.18:.05));return;}
- if(slot==='cr-riser'){AUD.drawRiser(g,W,H*.15,H*.85);return;}
- if(slot.startsWith('cr-audience')){drawnAudience(g,W,H);}}
+ if(slot.startsWith('cr-audience')||slot==='cr-seat')AUD.drawRef(g,slot);}
 async function contestantsRow(s){
  const K=createKit(s,{kind:'row',clips:['come-on-down','perfect-bid','buzzer-overbid','buzzer-overbid-2','ding','bell'],song:null});
  const {x,net,me,cpu,board,names,snd,sfx}=K;const R=seededRandom(`${s.seed}:crow`);
@@ -129,19 +128,19 @@ async function contestantsRow(s){
  // ---- drawing
  K.frame(dt=>{const g=K.begin(),L=lay(),t=K.t;hype=Math.max(0,hype-dt*.25);warnT-=dt;if(item)itemT+=dt;
   seats.forEach(o=>{o.in=Math.min(1,o.in+dt*1.6);o.lit=Math.max(0,o.lit-dt*.5);o.poseT-=dt;if(o.poseT<=0&&o.pose!=='stand'){o.pose='stand';}});
-  if(scene==='crowd'&&call){const c=call;c.t+=dt;aud.draw(g,L.W,L.H,t,{hype:Math.max(hype,c.t>.3?1:0),skipCalled:true});const seat=aud.calledSeat(L.W,L.H);
-   // the called contestant: stands up in the middle row, jumps, then runs down the aisle toward the camera and off the bottom
-   const st=c.t,h0=seat.h,run=clamp((st-1.6)/1.6,0,1),x0=seat.x,y0=seat.y,xx=x0+Math.sin(run*3)*L.W*.05,yy=y0+run*run*L.H*.65,hh=h0*(1+run*1.6);
+  if(scene==='crowd'&&call){const c=call;c.t+=dt;aud.draw(g,L.W,L.H,t,{hype:Math.max(hype,c.t>.3?1:0),skipCalled:true,dpr:s.dpr||1});
+   // the called contestant: gets up cheering at their seat, steps into the red aisle and runs down the stairs toward the camera
+   const st=c.t,at=aud.calledAt(L.W,L.H,st),xx=at.x,yy=at.y,hh=at.h;
    // the house darkens round a spotlight that follows the contestant down the aisle
    g.save();const sr=hh*.75,sx=xx,sy=yy-hh*.55,vg=g.createRadialGradient(sx,sy,sr*.55,sx,sy,sr*1.6);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.5)');g.fillStyle=vg;g.fillRect(0,0,L.W,L.H);
    g.globalCompositeOperation='lighter';g.globalAlpha=.22+.08*Math.sin(t*5);const sg=g.createRadialGradient(sx,sy,sr*.1,sx,sy,sr);sg.addColorStop(0,'#fff8c0');sg.addColorStop(1,'rgba(255,248,192,0)');g.fillStyle=sg;g.fillRect(0,0,L.W,L.H);g.restore();
-   person(g,c.o,xx,yy,hh,st<1.6?(st<.35?'stand':'jump'):'run',st,1);
+   person(g,c.o,xx,yy,hh,at.pose,st,1);
    // the name in lights + COME ON DOWN!
    const ny=L.top+L.H*.08,big=Math.min(L.W*.16,L.H*.13),pop=ease(st*2.5);g.save();g.translate(L.W/2,ny+big*.5);g.scale(pop,pop);
    txt(g,c.o.name.toUpperCase()+'!',0,0,big*Math.min(1,7/Math.max(4,c.o.name.length)),'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:L.W*.92});g.restore();
    const cod=SS.picture('cr-comeondown'),cw=Math.min(L.W*.8,L.H*1.2);if(st>.5){const a=ease((st-.5)*3);g.save();g.globalAlpha=a;if(cod){const ch=cw*cod.height/cod.width;g.drawImage(cod,L.W/2-cw/2,ny+big*1.15,cw,ch);}
     else txt(g,'COME ON DOWN!',L.W/2,ny+big*1.55,big*.62,'#fff',{font:'"SC Bangers",Impact,sans-serif',w:400,max:L.W*.9});g.restore();}
-   K.overlay(g,null);return;}
+   K.overlay(g,null,{noCast:true});return;}
   // the row: prize up top, the four podiums with the contestants behind them, the panel
   drawPrize(g,L.prize,t);
   seats.forEach((o,i)=>{const b=L.pod[i],slide=(1-ease(o.in))*(i<2?-1:1)*K.W*.6,fx=b.x+b.w/2+slide,fy=b.y+b.h*.55;person(g,o,fx,fy,L.bodyH,o.pose,t+i,i<2?1:-1);});

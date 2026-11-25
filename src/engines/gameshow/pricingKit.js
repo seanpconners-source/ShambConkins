@@ -49,8 +49,8 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
   s.sprite(g,i,x0+fs*1.5,y0+th/2,th*.75,{exact:true,still:true,mood:moods[i]||'normal'});g.fillStyle=i===K.cur?'#14062e':'#fff';g.font=`900 ${fs*.9}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';
   g.fillText(n.slice(0,12).toUpperCase(),x0+fs*3,y0+th*.31);g.font=`900 ${fs*1.05}px "SC Bangers",Impact,sans-serif`;g.fillText(String(line(i)||'—').slice(0,18),x0+fs*3,y0+th*.69);});};
  // host bubble, curtain, banner (drawn last)
- K.overlay=(g,B)=>{const sp=K.spots||K.cast.spots(K.W,K.H,{foot:K.H-K.fs*3-10});K.cast.draw(g,K.W,K.H,K.t,sp,!!K.hostSay);
-  if(K.hostSay){if(K.cast.hv>.5){const b=K.cast.bubbleAt(K.W,K.H,sp,K.fs);ST.bubble(g,b.x,b.y,K.hostSay.text,b.w,K.fs*.85,b.tx,b.ty);}else if(B)ST.bubble(g,B.x,B.y,K.hostSay.text,B.w,K.fs*.85,B.x,B.y+K.fs*2.5);}if(K.mode==='intro')ST.drawCurtain(g,K.W,K.H,K.curtain,K.t);
+ K.overlay=(g,B,{noCast=false}={})=>{const sp=K.spots||K.cast.spots(K.W,K.H,{foot:K.H-K.fs*3-10});if(!noCast)K.cast.draw(g,K.W,K.H,K.t,sp,!!K.hostSay);
+  if(K.hostSay&&!noCast){if(K.cast.hv>.5){const b=K.cast.bubbleAt(K.W,K.H,sp,K.fs);ST.bubble(g,b.x,b.y,K.hostSay.text,b.w,K.fs*.85,b.tx,b.ty);}else if(B)ST.bubble(g,B.x,B.y,K.hostSay.text,B.w,K.fs*.85,B.x,B.y+K.fs*2.5);}if(K.mode==='intro')ST.drawCurtain(g,K.W,K.H,K.curtain,K.t);
   if(K.banner)ST.moneyBanner(g,K.W,K.H,K.banner.big,K.banner.small,Math.min(1,K.banner.t*3),K.banner.col);};
  K.inBox=(pt,b)=>pt.x>=b.x&&pt.x<=b.x+b.w&&pt.y>=b.y&&pt.y<=b.y+b.h;
  s.on(c,'pointerdown',ev=>{if(s.paused)return;ev.preventDefault();const pt=s.pointer(ev);for(let i=K.hits.length-1;i>=0;i--){const b=K.hits[i];if(K.inBox(pt,b)){b.fn();vibrate(8);return;}}

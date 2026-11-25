@@ -12,7 +12,7 @@ fs.mkdirSync(outDir, {recursive: true});
 const mods = {'src/data/userPortraits.js': 'exports.USER_PORTRAITS={};', 'src/audio.js': 'exports.audioContext=()=>null;', 'src/state.js': 'exports.store={profile:{settings:{}}};',
   'src/utils.js': 'exports.clamp=(v,a,b)=>Math.max(a,Math.min(b,v));exports.seededRandom=()=>Math.random;'};
 for (const f of ['src/data/showSprites.js', 'src/data/showPrizes.js', 'src/bgShape.js', 'src/engines/gameshow/stage.js', 'src/engines/plinkoShow.js', 'src/engines/cliffHangers.js', 'src/engines/clockGame.js', 'src/engines/gameshow/pricingKit.js', 'src/engines/rangeGame.js', 'src/engines/safeCrackers.js', 'src/engines/raceGame.js', 'src/engines/punchABunch.js', 'src/engines/contestantsRow.js', 'src/engines/gameshow/audience.js']) mods[f] = fs.readFileSync(path.join(root, f), 'utf8');
-mods['src/headFacts.js'] = 'exports.faceSprite=()=>null;exports.headFacts=()=>null;exports.drawFace=()=>{};';mods['src/engines/cpuKit.js'] = 'exports.isCpu=()=>false;exports.cpuSkill=()=>.5;exports.isOnline=()=>false;';mods['src/engines/fullBleed.js'] = 'exports.fullBleed=()=>({});';mods['src/audio.js'] = 'exports.audioContext=()=>null;exports.holdMusic=()=>{};exports.releaseMusic=()=>{};exports.vibrate=()=>{};';
+mods['src/headFacts.js'] = 'exports.faceSprite=()=>null;exports.headFacts=()=>null;exports.drawFace=()=>{};exports.faceGeom=()=>null;';mods['src/engines/cpuKit.js'] = 'exports.isCpu=()=>false;exports.cpuSkill=()=>.5;exports.isOnline=()=>false;';mods['src/engines/fullBleed.js'] = 'exports.fullBleed=()=>({});';mods['src/audio.js'] = 'exports.audioContext=()=>null;exports.holdMusic=()=>{};exports.releaseMusic=()=>{};exports.vibrate=()=>{};';
 const browser = await chromium.launch(browserLaunchOptions());
 const page = await browser.newPage();
 await page.setContent('<canvas id=c></canvas>');
@@ -72,6 +72,10 @@ const render = (slot, mode) => page.evaluate(({slot, mode}) => {
       if (wide) { box([W * .02, H * .06, W * .64, H * .46], 'prize + host + model here: keep calm'); box([W * .02, H * .52, W * .64, H * .46], 'the four podiums (game draws them)'); box([W * .68, H * .06, W * .3, H * .9], 'bids board / keypad'); }
       else { box([0, H * .06, W, H * .34], 'prize + host + model here: keep calm'); box([W * .02, H * .4, W * .96, H * .3], 'the four podiums (game draws them)'); box([W * .06, H * .71, W * .88, H * .28], 'bids board / keypad'); }
       x.setLineDash([]); }
+    return c.toDataURL('image/png'); }
+  if (slot.startsWith('cr-audience') || slot === 'cr-seat') { const A = require('src/engines/gameshow/audience.js'); faded(() => A.drawRef(x, slot));
+    if (T && slot !== 'cr-seat') A.drawGuides(x, slot, label);
+    if (T && slot === 'cr-seat') { const SG = SS.CR_SEAT; x.beginPath(); x.arc(SG.floor[0], SG.floor[1], 7, 0, 6.28); x.stroke(); label('ONE theater seat, front view, empty; FLOOR dot = where it stands; full width = one seat pitch; transparent around', 6, 6, 16); }
     return c.toDataURL('image/png'); }
   // the newer pricing games: the slot carries its own guides (showSprites.js) and the game module draws the reference
   if (S.kind && slot.startsWith('stage-')) { faded(() => ST.drawStage(x, W, H, S.kind, 0));
