@@ -690,7 +690,7 @@ async function warriorsDD(s){
   if(f.shield>0&&!['fall','down','dead'].includes(f.st)&&!(cell&&(name==='block'||name==='bash'))){const hx=spots.hand.x+face*4*kk,hy=spots.hand.y;x.fillStyle='rgba(160,190,220,.45)';x.strokeStyle='#2c3448';x.lineWidth=2;x.beginPath();x.roundRect(hx-4*kk,hy-34*kk,8*kk,52*kk,3*kk);x.fill();x.stroke();}
   if(spinning)drawSwoosh(f,sx,sy,kk,true);
   if(f.weapon)drawWeapon(f.weapon.kind,spots,face,kk,f);
-  if(f.carry){const im=DS.picture(f.carry.kind);const w=(f.carry.kind==='barrel'?30:26)*kk;if(im)x.drawImage(im,spots.head.x-w/2,spots.head.y-w*1.5,w,w*im.height/im.width);else{x.fillStyle=f.carry.kind==='barrel'?'#7c4c1c':'#8c8c8c';x.beginPath();x.roundRect(spots.head.x-w/2,spots.head.y-w*1.6,w,w*1.1,5);x.fill();}}
+  if(f.carry){const im=DS.picture(f.carry.kind);const w=(f.carry.kind==='barrel'?40:30)*kk;if(im)x.drawImage(im,spots.head.x-w/2,spots.head.y-w*1.5,w,w*im.height/im.width);else{x.fillStyle=f.carry.kind==='barrel'?'#7c4c1c':'#8c8c8c';x.beginPath();x.roundRect(spots.head.x-w/2,spots.head.y-w*1.6,w,w*1.1,5);x.fill();}}
   // the face on the neck: heroes and named characters wear their picture, the gangs a drawn head of their own look
   const fw=FACE_W*kk*f.big,mood=['hurt','fall','held','dizzy','grabbed','down','dead'].includes(f.st)?'sad':f.st==='win'?'win':f.st==='atk'?'angry':'normal';
   const nk=spots.neck||spots.head,ux=spots.head.x-nk.x,uy=spots.head.y-nk.y,ul=Math.hypot(ux,uy)||1;
@@ -729,7 +729,8 @@ async function warriorsDD(s){
   else if(i.kind==='rock'){x.fillStyle='#8c8c8c';x.strokeStyle='#000';x.beginPath();x.ellipse(sx,sy-6*k,9*k,7*k,0,0,7);x.fill();x.stroke();}
   else drawWeapon(i.kind,{hand:{x:sx-w*.45,y:sy-3*k},wa:90,wl:.8},1,k,{});
   x.fillStyle=`rgba(255,255,220,${.35+.3*Math.sin(t*6)})`;x.beginPath();x.arc(sx+w*.3,sy-8*k,2*k,0,7);x.fill();}
- function drawProp(p){const sx=SX(p.x),sy=SYw(BACK+p.d),im=DS.picture(p.kind),w=(p.kind==='barrel'?24:30)*k,h=(p.kind==='barrel'?30:26)*k;
+ function drawProp(p){const sx=SX(p.x),sy=SYw(BACK+p.d),im=DS.picture(p.kind),w=(p.kind==='barrel'?(im?43:28):(im?52:44))*k,h=(p.kind==='barrel'?(im?51:44):(im?43:38))*k;
+  // real size (Nov 25): a crate ~0.75 m, a barrel ~0.9 m next to a 1.8 m fighter (the pictures have a little clear margin)
   x.fillStyle='rgba(0,0,0,.3)';x.beginPath();x.ellipse(sx,sy,w*.6,4*k,0,0,7);x.fill();
   if(im)x.drawImage(im,sx-w/2,sy-h,w,h);else{x.fillStyle=p.kind==='barrel'?'#7c4c1c':'#a8783c';x.strokeStyle='#2c1c0c';x.lineWidth=2;x.beginPath();x.roundRect(sx-w/2,sy-h,w,h,p.kind==='barrel'?6:2);x.fill();x.stroke();
    x.strokeStyle='rgba(0,0,0,.4)';x.beginPath();if(p.kind==='barrel'){x.moveTo(sx-w/2,sy-h*.33);x.lineTo(sx+w/2,sy-h*.33);x.moveTo(sx-w/2,sy-h*.66);x.lineTo(sx+w/2,sy-h*.66);}else{x.moveTo(sx-w/2,sy-h);x.lineTo(sx+w/2,sy);x.moveTo(sx+w/2,sy-h);x.lineTo(sx-w/2,sy);}x.stroke();}}
@@ -981,7 +982,7 @@ async function warriorsDD(s){
    if(phase==='over'&&phaseT>2.4&&run.done){const d=run.done;run.done=null;d('over');}
    nf?.tick(dt);}
   draw();});
- s.debug={get phase(){return phase;},get run(){return run;},get hero(){return hero;},get area(){return A;},get st(){return A;},get foes(){return living('foe');},get allies(){return living('ally');},MV,CH,
+ s.debug={goArea:(c,a)=>{chapterNo=c;playArea(c,a);},get phase(){return phase;},get run(){return run;},get hero(){return hero;},get area(){return A;},get st(){return A;},get foes(){return living('foe');},get allies(){return living('ally');},MV,CH,
   set bot(v){bot.on=!!v;},get bot(){return online?()=>{bot.on=true;if(phase==='title')titleDone?.(0);}:bot.on;},
   start:(n=0)=>titleDone?.(n),press:b=>{pressBtn(b);setTimeout(()=>{inp.held[b]=false;},60);},stick:(sx,sy)=>{bot.stick={sx,sy};},
   killAll:()=>{for(const f of living('foe')){f.shield=0;f.inv=0;f.entering=null;damage(hero,f,999,'knock',100,{});}},lv:n=>{run.xp=LV_XP[n-1];run.lv=n;},meter:v=>{run.meter=v;},

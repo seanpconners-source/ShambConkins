@@ -203,10 +203,14 @@ function drawArea(g,A,camX,vw,BACK,FRONT,t,ext){const c={A,cam:camX,vw,B:BACK,F:
 // (Nov 24, GPT's photo props in: the small street pieces and graves were ~60% of real size next to a fighter, so they are drawn
 // ~1.4x their old width; the collision footprint is unchanged and the base still sits on its front edge)
 const PROP_W={car:1.05,wreck:1.05,newsstand:1.45,bench:1.15,couch:1.1,swings:1.1,hotdog:1.15,grave:1.75,hydrant:2.2,meter:2.8,mailbox:1.95,trashcan:1.9,phone:1.95,lamp:3.2,pylon:2,sink:1.8};
+// real size next to a fighter (owner, Nov 25: benches, graves, trash cans way too small): the width each painted prop picture
+// is drawn at so the thing in it stands its real height (a fighter is ~90 units = 1.8 m, so 50 units a metre; bench 0.95 m,
+// headstone 1 m, trash can 0.95 m, mailbox 1.25 m, newsstand 2 m, lamp post 4.4 m...). The footprints in story.js match.
+const PROP_FULLW={'bench':85,'grave-1':40,'grave-2':40,'grave-3':40,'grave-4':57,'hydrant':29,'trashcan':43,'mailbox':50,'meter':23,'newsstand':152,'phone':58,'lamp':66,'pylon':23,'hotdog':134,'car':210,'wreck':200,'couch':91,'swings':156,'sink':43};
 function drawBlock(g,b,X,yb,yf,t){const w=b.w,k=b.kind,box=(h,front,top)=>{rect(g,top,X,yb-h,w,yf-yb);rect(g,front,X,yf-h,w,h);g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1;g.strokeRect(X,yf-h,w,h);};
  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(X+w/2,yf,w*.6,4,0,0,7);g.fill();
  // a painted prop (ddSprites prop-<kind>): as wide as the footprint (cars/newsstands a touch wider), standing on the front edge
- const im=DS.picture('prop-'+k);if(im){const pw=w*(PROP_W[k.split('-')[0]]||1.2),ph=pw*im.height/im.width;g.drawImage(im,X+w/2-pw/2,yf-ph+2,pw,ph);return;}
+ const im=DS.picture('prop-'+k);if(im){const pw=PROP_FULLW[k]||PROP_FULLW[k.split('-')[0]]||w*(PROP_W[k.split('-')[0]]||1.2),ph=pw*im.height/im.width;g.drawImage(im,X+w/2-pw/2,yf-ph+2,pw,ph);return;}
  const kk=k.split('-')[0],v=+(k.split('-')[1]||1);
  if(kk==='grave'){const st=v===2?'#7c7c84':v===3?'#5c5c64':'#6c6c78',H=v===3?40:v===4?20:28;g.fillStyle=st;g.strokeStyle='#22222a';g.lineWidth=1;
   if(v===2){g.fillRect(X+w*.4,yf-H-6,w*.2,H+6);g.fillRect(X+w*.12,yf-H+4,w*.76,w*.2);g.fillRect(X,yf-6,w,6);g.strokeRect(X,yf-6,w,6);}
