@@ -78,7 +78,7 @@ the contestant hits the big red button. The game prints every $ number and moves
 
 | Slot | Size | Prompt (after the style text) |
 |---|---|---|
-| `stage-range` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Range Game studio: warm orange and gold set, bulbs, shiny floor on the pink line. Keep the dashed box calm (board + prize + button go there). |
+| `stage-range` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Range Game studio: warm orange and gold set, bulbs, shiny floor on the pink line. Keep the dashed box calm (board + prize + button go there). **EMPTY: no board, safe, podiums, punchboard, button, sign or prize in the picture (the game draws its own props; the first delivery had them painted in and could not be used).** |
 | `range-board` | 600x1600 | The tall price board seen straight on: a purple-and-gold frame lined with bulbs, a vertical SCALE STRIP inside the pink box (glowing green at the bottom fading to yellow then red at the top). NO numbers or $ signs. Transparent around. |
 | `range-finder` | 260x400 | The range finder: a bright lit yellow frame (chunky, with little bulbs) around a SEE-THROUGH window exactly in the pink box. Transparent inside the window and around. |
 | `range-button` | 400x400 | A big round red arcade-style stop button on a chrome pedestal, seen from the front, glossy. Transparent around. |
@@ -90,7 +90,7 @@ Two prizes go into a GIANT steel safe; the contestant puts three digits in order
 
 | Slot | Size | Prompt (after the style text) |
 |---|---|---|
-| `stage-safe` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Safe Crackers studio: a bank-vault look in game-show colours (steel, gold, spotlights, bulbs). Keep the dashed box calm. |
+| `stage-safe` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Safe Crackers studio: a bank-vault look in game-show colours (steel, gold, spotlights, bulbs). Keep the dashed box calm. **EMPTY: no board, safe, podiums, punchboard, button, sign or prize in the picture (the game draws its own props; the first delivery had them painted in and could not be used).** |
 | `safe` | 1000x1100 | The giant safe with the door SHUT, seen straight on: brushed steel, rivets, hinges on the left, a brass COMBINATION plate with three dark digit windows exactly in the pink DIAL box (no digits), a big spoked chrome handle at the pink circle. Transparent around. |
 | `safe-open` | 1000x1100 | The SAME safe with the door swung open to the left: inside (pink box) a warmly lit empty cabinet with two shelves (the game puts the prizes there). Same size and position as `safe`. Transparent around. |
 | `safe-tile` | 300x360 | A lit gold number tile with a dark centre panel (pink box) and NO number (the game prints the digit). Transparent around. |
@@ -102,7 +102,7 @@ Four prizes on podiums, four price tags, a 45-second clock and a lever board tha
 
 | Slot | Size | Prompt (after the style text) |
 |---|---|---|
-| `stage-race` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Race Game studio: racing-stripe set in blue, white and gold with checkered-flag touches, bulbs. Keep the dashed box calm. |
+| `stage-race` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Race Game studio: racing-stripe set in blue, white and gold with checkered-flag touches, bulbs. Keep the dashed box calm. **EMPTY: no board, safe, podiums, punchboard, button, sign or prize in the picture (the game draws its own props; the first delivery had them painted in and could not be used).** |
 | `race-podium` | 600x700 | A glossy blue prize podium seen from the front, gold top rim; the prize stands on top (pink box, leave it empty); a small hook on the front at the pink circle where a price tag hangs. Transparent around. |
 | `race-tag` | 520x240 | A big blank cream price tag with a red border and a hole on the left; the game prints the price in the pink box. Transparent around. |
 | `race-board` | 1000x500 | The lever board: a dark lit panel with CORRECTLY PRICED in gold letters across the top and four round lamps (OFF, dark amber glass) exactly at the four pink circles. Transparent around. |
@@ -115,7 +115,7 @@ Higher or lower on four small prizes; every right answer is a punch on a 50-hole
 
 | Slot | Size | Prompt (after the style text) |
 |---|---|---|
-| `stage-punch` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Punch-a-Bunch studio: hot pink and gold set, bulbs, a boxing-glove motif. Keep the dashed box calm. |
+| `stage-punch` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Punch-a-Bunch studio: hot pink and gold set, bulbs, a boxing-glove motif. Keep the dashed box calm. **EMPTY: no board, safe, podiums, punchboard, button, sign or prize in the picture (the game draws its own props; the first delivery had them painted in and could not be used).** |
 | `punch-board` | 2000x1160 | The punchboard seen straight on: a big red-and-gold frame with PUNCH-A-BUNCH in lit letters across the top, and inside the pink GRID box a dark backing with 50 round hole rims in 5 rows of 10 (the game draws the paper on each hole). Transparent around. |
 | `punch-paper` | 200x200 | One hole covered with shiny gold foil paper (not punched), seen straight on, filling the pink circle. |
 | `punch-slip` | 640x320 | The unfolded paper slip that comes out of a hole: crisp cream paper with a red border and a fold line; blank in the pink box (the game prints the $). Transparent around. |
@@ -131,7 +131,7 @@ bright studio, a packed and screaming audience). Generated look-alikes only: no 
 | Slot | Size | Prompt (after the style text) |
 |---|---|---|
 | `cr-audience` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The studio AUDIENCE seen from the stage: steep bleachers packed with excited people in bright T-shirts (homemade name tags, some shirts with slogans), studio lights over them. The game draws three rows of cheering fans along the bottom half and the called contestant in the middle, so keep the lower middle simple. No faces in focus (blurry crowd is fine). |
-| `stage-row` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The studio seen from the audience: the turntable stage, the big colourful doors and bulb-lit 70s set in the upper half (the game puts the prize turntable in the middle and the host + model beside it), the shiny floor of Contestants' Row in the bottom half where the game draws the four podiums. Keep the dashed box calm. |
+| `stage-row` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | **EMPTY of podiums, turntable and prize (the game draws them).** The studio seen from the audience: the turntable stage, the big colourful doors and bulb-lit 70s set in the upper half (the game puts the prize turntable in the middle and the host + model beside it), the shiny floor of Contestants' Row in the bottom half where the game draws the four podiums. Keep the dashed box calm. |
 | `cr-podium` | 600x500 | ONE Contestants' Row podium seen from the front, like the classic show: a small dark bid display on top exactly in the pink BID box (the game prints the bid in orange), a colourful front panel below (the game writes the name in the lower pink box). The four podiums are the same picture. Transparent around. |
 | `cr-body-1` ... `cr-body-4` | 2304x512 each | One contestant per sheet, WITHOUT a head (the game puts the player's or guest's face on the pink circle at the neck): 1 = T-shirt and jeans, 2 = sweater and khakis, 3 = bright tracksuit, 4 = blouse and skirt. 9 poses left to right, one per 256 px box, feet on the dots: STAND, RUN 1-4 (running toward us down the aisle, arms pumping), JUMP (both arms straight up), CHEER (fists pumping), CLAP, SAD (shoulders down). Same size in every box, the neck exactly under the pink circle. Transparent. |
 | `cr-comeondown` | 1400x500 | COME ON DOWN! in big 70s game-show lettering (yellow with a red outline and a sparkle). Transparent. |
