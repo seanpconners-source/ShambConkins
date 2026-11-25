@@ -51,7 +51,7 @@ async function clockGame(s){
  for(const p of P)for(const q of p.prizes)SP.prizePhoto(q.id);
  let W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=0,pk=0,entry='',banner=null,hostSay=null,hurry=false,running=false,lastTick=0,call=null,shown=null,keys=[];
  const wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||hurry||performance.now()>=end){hurry=false;r();return;}setTimeout(f,30);};f();});
- const say=(text,ms=2600)=>{hostSay={text,t:ms/1000};};
+ const say=(text,ms=2600)=>{hostSay={text,t:ms/1000};};const cast=ST.createCast();
  const txt=(g,str,x0,y0,size,col,{font='"SC Nunito",sans-serif',w=900,align='center',max=0}={})=>{g.save();g.font=`${w} ${size}px ${font}`;if(max){const m=g.measureText(str).width;if(m>max)g.font=`${w} ${size*max/m}px ${font}`;}g.textAlign=align;g.textBaseline='middle';g.lineWidth=size*.28;g.strokeStyle='rgba(0,0,0,.75)';g.lineJoin='round';g.strokeText(str,x0,y0);g.fillStyle=col;g.fillText(str,x0,y0);g.restore();};
  // ---- layout. wide: clock left, prize/display/keypad right. upright: logo, clock, prize + display side by side, keypad.
  // near-square (the open Fold): clock and the prize column side by side, the keypad under both.
@@ -97,7 +97,7 @@ async function clockGame(s){
   P.forEach((q2,i)=>{const T=L.tags,th=L.tagH,w=Math.min(T.w/2-6,fs*11),x0=i?T.x+T.w-w:T.x,y0=T.y;g.fillStyle=i===cur?'rgba(255,226,58,.92)':'rgba(20,6,46,.78)';g.beginPath();g.roundRect(x0,y0,w,th,10);g.fill();
    s.sprite(g,i,x0+fs*1.5,y0+th/2,th*.75,{exact:true,still:true,mood:q2.mood});g.fillStyle=i===cur?'#14062e':'#fff';g.font=`900 ${fs*.9}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';
    g.fillText(names[i].slice(0,12).toUpperCase(),x0+fs*3,y0+th*.31);g.font=`900 ${fs*1.1}px "SC Bangers",Impact,sans-serif`;g.fillText(q2.done||q2.won?money(q2.done?q2.score:q2.won):'—',x0+fs*3,y0+th*.69);});
-  if(hostSay)ST.bubble(g,W/2,L.wide?H*.18:L.clock.y-L.clock.d*.2,hostSay.text,Math.min(W*.86,fs*17),fs*.85,W/2,L.wide?H*.18+fs*2.5:L.clock.y);
+  {const sp=cast.spots(W,H,{foot:L.tags.y-6});cast.draw(g,W,H,t,sp,!!hostSay);if(hostSay){if(cast.hv>.5){const b=cast.bubbleAt(W,H,sp,fs);ST.bubble(g,b.x,b.y,hostSay.text,b.w,fs*.85,b.tx,b.ty);}else ST.bubble(g,W/2,L.wide?H*.18:L.clock.y-L.clock.d*.2,hostSay.text,Math.min(W*.86,fs*17),fs*.85,W/2,L.wide?H*.18+fs*2.5:L.clock.y);}}
   if(mode==='intro')ST.drawCurtain(g,W,H,curtain,t);
   if(banner)ST.moneyBanner(g,W,H,banner.big,banner.small,Math.min(1,banner.t*3),banner.col);}
  function drawPad(g){const fs=L.fs,b=L.pad,gap=fs*.35,kw=Math.min((b.w-gap*2)/3,fs*5.4),kh=Math.min((b.h-gap*3)/4,fs*3.2),x0=b.x+(b.w-(kw*3+gap*2))/2,y0=b.y;keys=[];
@@ -112,7 +112,7 @@ async function clockGame(s){
  function submit(v,left){if(mode!=='guess')return;const p=P[cur],q=p.prizes[pk];v=clamp(Math.round(v),1,999);if(left!=null)p.left=left;
   if(net&&mine(cur))net.send({kg:[pk,v,+p.left.toFixed(2)]});entry='';shown=String(v);
   if(v===q.price){q.guesses.push([v,'WIN']);q.won=true;p.won+=q.price;running=false;mode='won';call={k:'WIN',t:1};const d=prizeDone;prizeDone=null;d?.('won');return;}
-  const k=v<q.price?'HIGHER':'LOWER';q.guesses.push([v,k]);call={k,t:1};(k==='HIGHER'?sfx.higher:sfx.lower)?.();vibrate(k==='HIGHER'?[8,30,8]:12);}
+  const k=v<q.price?'HIGHER':'LOWER';q.guesses.push([v,k]);call={k,t:1};if(!snd.voice('say-'+k.toLowerCase()))(k==='HIGHER'?sfx.higher:sfx.lower)?.();snd.voice('crowd-'+k.toLowerCase(),{vol:.6,at:.12});vibrate(k==='HIGHER'?[8,30,8]:12);}
  function timeUp(){if(mode!=='guess')return;const p=P[cur];p.left=0;running=false;mode='timeup';if(net&&mine(cur))net.send({kt:[pk]});const d=prizeDone;prizeDone=null;d?.('time');}
  s.on(c,'pointerdown',ev=>{if(s.paused)return;ev.preventDefault();const pt=s.pointer(ev);
   for(const k of keys)if(pt.x>=k.x&&pt.x<=k.x+k.w&&pt.y>=k.y&&pt.y<=k.y+k.h){press(k.l);return;}
@@ -144,6 +144,11 @@ async function clockGame(s){
  s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;
   if(mode==='intro'){introT+=dt;curtain=clamp((introT-.4)/1.4,0,1);}
   if(hostSay){hostSay.t-=dt;if(hostSay.t<=0)hostSay=null;}
+  // the host and the models (stage.js createCast): he walks on to talk, she presents at each turn, both cheer at a win
+  cast.step(dt,{host:!!hostSay||(mode==='intro'&&introT>2)||mode==='over',model:mode==='intro'&&introT>2.4});
+  {const pl=mode!=='intro'&&mode!=='over';if(pl!==cast.mur){cast.mur=pl;snd.murmur?.(pl);}}
+  if(mode==='guess'){cast.yellT=(cast.yellT??2)-dt;if(cast.yellT<=0){cast.yellT=2.4+Math.random()*3.2;snd.voice?.('crowd-shout',{vol:.55+Math.random()*.3,pan:Math.random()*1.4-.7});}}
+  if(banner&&!banner.cast){banner.cast=1;if(banner.col==='#ff6a5a')snd.voice?.('crowd-aww');if(banner.col==='#7dff5a'||banner.col==='#ffe23a'){cast.cheer(Math.min(3,banner.t+.4));snd.voice?.('crowd-cheer',{vol:.8});}else if(/YOUR TURN/.test(banner.small||''))cast.present(3.4,'wave');}
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}
   if(call){call.t-=dt*1.1;if(call.t<=0)call=null;}
   // the clock: the player's phone (and the local game) runs it; the watcher's only shows and waits for {kt}

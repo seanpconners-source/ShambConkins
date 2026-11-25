@@ -23,14 +23,16 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  const snd=ST.createShowSound({clips,...(song?{song}:{})}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const K={c,x,fb,net,me,cpu,board,names,snd,sfx,kind,t:0,cur:0,mode:'intro',curtain:0,introT:0,banner:null,hostSay:null,hurry:false,
   W:s.W,H:s.H,fs:14,top:40,wide:false,fold:false,hits:[],onTap:null,onDown:null,onMove:null,onUp:null,skill:()=>cpuSkill(s),money,txt,TAU};
+ K.cast=ST.createCast();K.spots=null;
+ K.present=(secs,pose)=>K.cast.present(secs,pose);
  K.mine=i=>net?i===me:!(cpu&&i===1);
  K.cpuTurn=()=>cpu&&K.cur===1;
  K.waiting=()=>!K.mine(K.cur)||K.cpuTurn();
  K.wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||K.hurry||performance.now()>=end){K.hurry=false;r();return;}setTimeout(f,30);};f();});
  // real time (the hurry tap doesn't cut it short): clocks, the CPU's thinking
  K.sleep=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||performance.now()>=end){r();return;}setTimeout(f,30);};f();});
- K.say=(text,ms=2600)=>{K.hostSay={text,t:ms/1000};};
- K.show=(big,small,secs=1.8,col='#ffe23a')=>{K.banner={big,small,t:secs,col};};
+ K.say=(text,ms=2600)=>{K.hostSay={text,t:ms/1000};if(/actual retail price/i.test(text))snd.voice('say-actual-retail-price');else if(/new car/i.test(text))snd.voice('say-new-car');};
+ K.show=(big,small,secs=1.8,col='#ffe23a')=>{K.banner={big,small,t:secs,col};if(col==='#7dff5a'||col==='#ffe23a'){K.cast.cheer(Math.min(3,secs+.4));snd.voice('crowd-cheer',{vol:.8});}else if(col==='#ff6a5a')snd.voice('crowd-aww');};
  // the other phone's next message (online), or null once they've gone
  K.recv=async()=>{const m=await net.next();return m&&s.alive?m:null;};
  // sizes for this frame; a game calls it first in its draw
@@ -47,7 +49,8 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
   s.sprite(g,i,x0+fs*1.5,y0+th/2,th*.75,{exact:true,still:true,mood:moods[i]||'normal'});g.fillStyle=i===K.cur?'#14062e':'#fff';g.font=`900 ${fs*.9}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';
   g.fillText(n.slice(0,12).toUpperCase(),x0+fs*3,y0+th*.31);g.font=`900 ${fs*1.05}px "SC Bangers",Impact,sans-serif`;g.fillText(String(line(i)||'—').slice(0,18),x0+fs*3,y0+th*.69);});};
  // host bubble, curtain, banner (drawn last)
- K.overlay=(g,B)=>{if(K.hostSay&&B)ST.bubble(g,B.x,B.y,K.hostSay.text,B.w,K.fs*.85,B.x,B.y+K.fs*2.5);if(K.mode==='intro')ST.drawCurtain(g,K.W,K.H,K.curtain,K.t);
+ K.overlay=(g,B)=>{const sp=K.spots||K.cast.spots(K.W,K.H,{foot:K.H-K.fs*3-10});K.cast.draw(g,K.W,K.H,K.t,sp,!!K.hostSay);
+  if(K.hostSay){if(K.cast.hv>.5){const b=K.cast.bubbleAt(K.W,K.H,sp,K.fs);ST.bubble(g,b.x,b.y,K.hostSay.text,b.w,K.fs*.85,b.tx,b.ty);}else if(B)ST.bubble(g,B.x,B.y,K.hostSay.text,B.w,K.fs*.85,B.x,B.y+K.fs*2.5);}if(K.mode==='intro')ST.drawCurtain(g,K.W,K.H,K.curtain,K.t);
   if(K.banner)ST.moneyBanner(g,K.W,K.H,K.banner.big,K.banner.small,Math.min(1,K.banner.t*3),K.banner.col);};
  K.inBox=(pt,b)=>pt.x>=b.x&&pt.x<=b.x+b.w&&pt.y>=b.y&&pt.y<=b.y+b.h;
  s.on(c,'pointerdown',ev=>{if(s.paused)return;ev.preventDefault();const pt=s.pointer(ev);for(let i=K.hits.length-1;i>=0;i--){const b=K.hits[i];if(K.inBox(pt,b)){b.fn();vibrate(8);return;}}
@@ -56,17 +59,20 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  s.on(c,'pointerup',ev=>{if(s.paused||!K.onUp)return;K.onUp(s.pointer(ev));});
  s.on(c,'pointercancel',()=>{K.onUp&&K.onUp(null);});
  K.frame=fn=>s.frame(dt=>{dt=Math.min(dt,.05);K.t+=dt;if(K.mode==='intro'){K.introT+=dt;K.curtain=clamp((K.introT-.4)/1.4,0,1);}
-  if(K.hostSay){K.hostSay.t-=dt;if(K.hostSay.t<=0)K.hostSay=null;}if(K.banner){K.banner.t-=dt;if(K.banner.t<=0)K.banner=null;}fn(dt);});
+  if(K.hostSay){K.hostSay.t-=dt;if(K.hostSay.t<=0)K.hostSay=null;}const playing=K.mode!=='intro'&&K.mode!=='over';if(playing!==K.murOn){K.murOn=playing;snd.murmur(playing);}
+  // the audience yells advice while a contestant decides (drop-in crowd-shout takes)
+  if(K.mode==='input'){K.yellT=(K.yellT??2)-dt;if(K.yellT<=0){K.yellT=2.4+Math.random()*3.2;snd.voice('crowd-shout',{vol:.55+Math.random()*.3,pan:Math.random()*1.4-.7});}}
+  K.cast.step(dt,{host:!!K.hostSay||(K.mode==='intro'&&K.introT>2)||K.mode==='over',model:K.mode==='intro'&&K.introT>2.4});if(K.banner){K.banner.t-=dt;if(K.banner.t<=0)K.banner=null;}fn(dt);});
  // the show: start card, curtain + title + the host's rules, then each contestant, then the winner
  K.run=async({title,sub,col='#ffe23a',pass,intro=[],ready=[],play,result})=>{
   if(!s.fromMenu&&!await s.pass(0,pass,'Come on down!'))return;
   await SS.ready(ready.concat(['curtain']),5000);if(!s.alive)return;
   if(!s.fromMenu)snd.title(true);snd.crowd(3,.9,{at:.3});K.mode='intro';K.introT=0;
-  K.show(title+'!',sub,2.6,col);await K.wait(2600);
+  K.show(title+'!',sub,2.6,col);snd.voice('say-lets-play',{at:.6});await K.wait(2600);
   for(const [line,ms] of intro){if(!s.alive)return;K.say(line,ms);K.introT=Math.max(K.introT,2.3);await K.wait(ms-200);}
   snd.title(false);K.mode='play';
   for(let i=0;i<2;i++){if(!s.alive)return;K.cur=i;if(i===1&&!net&&!cpu&&!board){if(!await s.pass(1,`${names[1]}, come on down! Your turn at ${title}.`,'Play'))return;}
-   K.show(names[i].toUpperCase(),`IT'S YOUR TURN AT ${title}!`,1.6,'#fff');sfx.applause(1.6,.5);await K.wait(1600);if(!s.alive)return;await play(i);}
+   K.show(names[i].toUpperCase(),`IT'S YOUR TURN AT ${title}!`,1.6,'#fff');K.cast.present(3.4,'wave');sfx.applause(1.6,.5);await K.wait(1600);if(!s.alive)return;await play(i);}
   if(!s.alive)return;K.mode='over';const {scores,summary,lines=[]}=result(),[a,b]=scores,w=a===b?-1:a>b?0:1;
   if(w>=0){K.show(`${names[w].toUpperCase()} WINS!`,lines[w]||money(scores[w]),3,'#ffe23a');sfx.winner();s.react?.(w,'win');}else K.show(a?'IT\'S A TIE!':'NOBODY WON','Both '+money(a),3,'#fff');
   await K.wait(3000);s.finish([a,b],summary);};

@@ -81,7 +81,7 @@ async function cliffHangers(s){
  // the climber: shown position (steps, may be fractional), pose, fall animation
  let cl={pos:0,pose:'stand',walkT:0,fall:null},climb=null,music=null,musicOff=0;
  const wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||hurry||performance.now()>=end){hurry=false;r();return;}setTimeout(f,30);};f();});
- const say=(text,ms=2600)=>{hostSay={text,t:ms/1000};};
+ const say=(text,ms=2600)=>{hostSay={text,t:ms/1000};};const cast=ST.createCast();
  // ---- layout: mountain box, prize stands, keypad
  // wide: the mountain fills the left column (logo as a sign over its sky, name tags under it), prizes + keypad on the right.
  // tall: logo, mountain, the three stands, then the keypad; name tags along the bottom.
@@ -118,7 +118,7 @@ async function cliffHangers(s){
   P.forEach((q,i)=>{const T=L.tags,th=L.tagH,w=Math.min(T.w/2-6,fs*11),x0=i?T.x+T.w-w:T.x,y0=T.y;g.fillStyle=i===cur?'rgba(255,226,58,.92)':'rgba(20,6,46,.78)';g.beginPath();g.roundRect(x0,y0,w,th,10);g.fill();
    s.sprite(g,i,x0+fs*1.5,y0+th/2,th*.75,{exact:true,still:true,mood:q.mood});g.fillStyle=i===cur?'#14062e':'#fff';g.font=`900 ${fs*.9}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';
    g.fillText(names[i].slice(0,12).toUpperCase(),x0+fs*3,y0+th*.31);g.font=`900 ${fs*1.1}px "SC Bangers",Impact,sans-serif`;g.fillText(q.done?(q.fell?'FELL OFF!':money(q.score)):q.steps?`${q.steps} STEPS`:'—',x0+fs*3,y0+th*.69);});
-  if(hostSay){const B=L.bub;ST.bubble(g,B.x,B.y,hostSay.text,B.w,fs*.85,B.x,B.y+fs*2.5);}
+  {const sp=cast.spots(W,H,{foot:L.tags.y-6});cast.draw(g,W,H,t,sp,!!hostSay);if(hostSay){if(cast.hv>.5){const b=cast.bubbleAt(W,H,sp,fs);ST.bubble(g,b.x,b.y,hostSay.text,b.w,fs*.85,b.tx,b.ty);}else{const B=L.bub;ST.bubble(g,B.x,B.y,hostSay.text,B.w,fs*.85,B.x,B.y+fs*2.5);}}}
   if(mode==='intro')ST.drawCurtain(g,W,H,curtain,t);
   if(banner)ST.moneyBanner(g,W,H,banner.big,banner.small,Math.min(1,banner.t*3),banner.col);}
  function drawStands(g){const fs=L.fs,S=SS.STAND_GEOM,b=L.stands,sw=b.w/3,k=Math.min(sw/S.w,b.h/S.h);
@@ -173,6 +173,11 @@ async function cliffHangers(s){
  s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;
   if(mode==='intro'){introT+=dt;curtain=clamp((introT-.4)/1.4,0,1);}
   if(hostSay){hostSay.t-=dt;if(hostSay.t<=0)hostSay=null;}
+  // the host and the models (stage.js createCast): he walks on to talk, she presents at each turn, both cheer at a win
+  cast.step(dt,{host:!!hostSay||(mode==='intro'&&introT>2)||mode==='over',model:mode==='intro'&&introT>2.4});
+  {const pl=mode!=='intro'&&mode!=='over';if(pl!==cast.mur){cast.mur=pl;snd.murmur?.(pl);}}
+  if(mode==='guess'){cast.yellT=(cast.yellT??2)-dt;if(cast.yellT<=0){cast.yellT=2.4+Math.random()*3.2;snd.voice?.('crowd-shout',{vol:.55+Math.random()*.3,pan:Math.random()*1.4-.7});}}
+  if(banner&&!banner.cast){banner.cast=1;if(banner.col==='#ff6a5a')snd.voice?.('crowd-aww');if(banner.col==='#7dff5a'||banner.col==='#ffe23a'){cast.cheer(Math.min(3,banner.t+.4));snd.voice?.('crowd-cheer',{vol:.8});}else if(/YOUR TURN/.test(banner.small||''))cast.present(3.4,'wave');}
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}
   if(climb){climb.t+=dt*(hurry?3:1);const f=Math.min(1,climb.t/climb.dur);const prev=Math.floor(cl.pos);cl.pos=climb.from+(climb.to-climb.from)*f;cl.walkT+=dt/STEP_S*(hurry?3:1);cl.pose=['walk1','walk2','walk3','walk4'][Math.floor(cl.walkT*4)%4];
    if(Math.floor(cl.pos)!==prev&&Math.floor(cl.pos)<=SAFE)vibrate(4);

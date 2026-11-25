@@ -117,12 +117,39 @@ const TPIR_GAIN={'applause':0.6,'first-chip':0.92,'gay-winner':4.0,'barkers-barg
 const clipBufs={},clipLoading={};
 function loadClip(a,n){const url=USERP['music:tpir-'+n];if(!url||clipBufs[n]||clipLoading[n]||typeof fetch==='undefined')return;clipLoading[n]=1;
  fetch(url).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(buf=>{clipBufs[n]=buf;}).catch(()=>{clipLoading[n]=0;});}
+// VOICES AND THE AUDIENCE YELLING (owner, Nov 25: speech soundbites + "more crowd sounds yelling prices and chatter and cheering";
+// he'll find recordings): drop-in recordings assets/music/tpir-<key>.mp3 (or several takes tpir-<key>-1, -2 ... picked at random).
+// Every key is optional: a game asks for one and nothing plays when it isn't in. Keys: say-come-on-down, say-lets-play,
+// say-actual-retail-price, say-higher, say-lower, say-new-car, say-winner, say-sorry, say-showcase, say-pet-population,
+// crowd-shout (people yelling prices/advice), crowd-higher, crowd-lower, crowd-chatter (a murmur bed), crowd-ooh, crowd-aww, crowd-cheer.
+const VOICE_KEYS=['say-come-on-down','say-lets-play','say-actual-retail-price','say-higher','say-lower','say-new-car','say-winner','say-sorry','say-showcase','say-pet-population','crowd-shout','crowd-higher','crowd-lower','crowd-chatter','crowd-ooh','crowd-aww','crowd-cheer'];
+const takesOf=k=>[k,...[1,2,3,4,5,6,7,8].map(i=>k+'-'+i)].filter(n=>USERP['music:tpir-'+n]);
 const SHOW_CLIPS=['theme','applause','gay-winner','come-on-down','bell','ding','buzzer','buzzer-wrong','buzzer-losing-horn','losing-horn','big-winner','winner','wheel-beep'];
 // opts.song = the recording looped under play ('plinko', 'showcase-showdown'); opts.clips = more to load
+// THE HOST AND THE MODELS IN EVERY PRICING GAME (owner, Nov 25: "include Bob Barker and the girls in each of the games...
+// just like the real show"). The host walks in from the side of the screen whenever he talks (and stays for the intro and
+// the result), a model glides in to present the prize, both cheer at a win. A game gives the spots each frame:
+// spots = {host:{x,y,h,side}, model:{x,y,h,side}} (y = feet, h = full height, side -1 = comes from the left edge, 1 = right).
+// Without spots they stand at the bottom corners. cast.step(dt,{host,model}) eases them in/out; cast.draw(g,W,H,t,spots).
+function createCast(){const C={hv:0,mv:0,mt:0,joy:0,hostPose:'talk',modelPose:'present',variant:0};
+ C.present=(secs=2.8,pose='present')=>{C.mt=Math.max(C.mt,secs);C.modelPose=pose;};
+ C.cheer=(secs=2.6)=>{C.joy=secs;C.mt=Math.max(C.mt,secs);};
+ C.step=(dt,{host=false,model=false}={})=>{C.mt=Math.max(0,C.mt-dt);C.joy=Math.max(0,C.joy-dt);const ht=host||C.joy>0?1:0,mt=model||C.mt>0?1:0;
+  C.hv+=(ht-C.hv)*Math.min(1,dt*(ht?5:3.5));C.mv+=(mt-C.mv)*Math.min(1,dt*(mt?4.5:3));};
+ C.spots=(W,H,o={})=>{const h=o.h||(W>H*1.15?H*.58:Math.min(H*.33,W*.52)),foot=o.foot??H-4;return {host:{x:h*.2,y:foot,h,side:-1},model:{x:W-h*.19,y:foot,h:h*.96,side:1}};};
+ C.draw=(g,W,H,t,sp,talking=false)=>{sp=sp||C.spots(W,H);const ease=v=>1-Math.pow(1-Math.max(0,Math.min(1,v)),3);
+  if(C.mv>.01){const M=sp.model,off=(1-ease(C.mv))*(M.side>0?W-M.x+M.h*.3:-(M.x+M.h*.3));g.save();g.globalAlpha=Math.min(1,C.mv*1.6);
+   drawModel(g,M.x+off,M.y,M.h,C.joy>0?'clap':C.modelPose,t,C.variant,M.side<0);g.restore();}
+  if(C.hv>.01){const Hs=sp.host,off=(1-ease(C.hv))*(Hs.side>0?W-Hs.x+Hs.h*.3:-(Hs.x+Hs.h*.3));g.save();g.globalAlpha=Math.min(1,C.hv*1.6);
+   drawHost(g,Hs.x+off,Hs.y,Hs.h,C.joy>0?'cheer':talking?(Math.floor(t*.7)%3===2?'point':'talk'):'point',t,Hs.side>0);g.restore();}};
+ // where his speech bubble goes: over his shoulder toward the middle of the screen, the tail at his mouth
+ C.bubbleAt=(W,H,sp,fs)=>{sp=sp||C.spots(W,H);const Hs=sp.host,mx=Hs.x+Hs.side*-Hs.h*.02,my=Hs.y-Hs.h*.9,w=Math.min(W*.62,fs*15);
+  const x=Math.max(w/2+6,Math.min(W-w/2-6,Hs.x-Hs.side*(Hs.h*.22+w*.4))),y=Math.max(fs*5,my-fs*.6);return {x,y,w,tx:mx,ty:my};};
+ return C;}
 function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;let A=null,out=null,musicOn=false,musicT=0,timer=null,noiseB=null;
  const ac=()=>{if(!on())return null;A=audioContext();if(!A)return null;if(!out){out=A.createGain();out.gain.value=.55;out.connect(A.destination);}return A;};
  let clipOut=null,bed=null,bedTimer=null,holdTo=0;const playing=new Set();
- const want=[...SHOW_CLIPS,...(opts.song?[opts.song]:[]),...(opts.clips||[])];
+ const want=[...SHOW_CLIPS,...VOICE_KEYS.flatMap(takesOf),...(opts.song?[opts.song]:[]),...(opts.clips||[])];
  if(on()){const a=audioContext();if(a)want.forEach(n=>loadClip(a,n));}
  // play recording n now (or `at` s later); max = cut it short with a fade. Returns null if it isn't loaded (= use the synth)
  function clip(n,o={}){const a=ac(),b=clipBufs[n];if(!a||!b)return null;if(!clipOut){clipOut=a.createGain();clipOut.gain.value=1;clipOut.connect(a.destination);}
@@ -211,5 +238,15 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
    if(!themeOn)return;themeH=clip('theme',{vol:1.15,fin:.05});if(themeH&&loop){const h=themeH,src=h.src;src.onended=()=>{playing.delete(src);if(themeOn&&themeH===h)setTimeout(()=>{if(themeOn&&themeH===h){themeOn=false;title(true,{loop:true});}},2500);};}if(!themeH){themeOn=false;const m=musicOn;musicOn=false;if(m)music(true);}return;}
   if(!themeOn)return;themeOn=false;const a=A,h=themeH;themeH=null;if(h&&a){const t=a.currentTime;try{h.g.gain.cancelScheduledValues(t);h.g.gain.setValueAtTime(h.g.gain.value,t);h.g.gain.linearRampToValueAtTime(.0001,t+1.4);h.src.stop(t+1.5);}catch{}}
   holdTo=(a?a.currentTime:0)+1;if(musicOn){musicOn=false;music(true);}}
- return {sfx,music,title,clip,crowd,loaded:n=>!!clipBufs[n],stop:()=>{musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
-Object.assign(exports,{drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});
+ // one of the takes of a voice/crowd recording (null = none in: the caller carries on without it); never the same take twice running
+ const lastTake={};function voice(key,o={}){const ns=takesOf(key).filter(n=>clipBufs[n]);if(!ns.length)return null;let n=ns[Math.floor(Math.random()*ns.length)];
+  if(ns.length>1&&n===lastTake[key])n=ns[(ns.indexOf(n)+1)%ns.length];lastTake[key]=n;return clip(n,o);}
+ // the audience murmuring under a game: the chatter recording looped if it's in, else the applause recording slowed and muffled
+ // into a low rumble of voices
+ let mur=null;function murmur(on){const a=ac();if(!on||!a){if(mur){try{const t=a?.currentTime||0;mur.g.gain.setTargetAtTime(.0001,t,.3);mur.src.stop(t+1.2);}catch{}mur=null;}return;}
+  if(mur)return;const own=takesOf('crowd-chatter').find(n=>clipBufs[n]),b=clipBufs[own||'applause'];if(!b)return;const src=a.createBufferSource(),g=a.createGain(),lp=a.createBiquadFilter();
+  src.buffer=b;src.loop=true;if(!own){src.playbackRate.value=.5;lp.type='lowpass';lp.frequency.value=620;}else{lp.type='allpass';}
+  g.gain.setValueAtTime(.0001,a.currentTime);g.gain.linearRampToValueAtTime(own?(TPIR_GAIN[own]??.5)*.6:.16,a.currentTime+1.2);
+  if(!clipOut){clipOut=a.createGain();clipOut.connect(a.destination);}src.connect(lp);lp.connect(g);g.connect(clipOut);src.start(a.currentTime,Math.random()*b.duration*.5);mur={src,g};}
+ return {sfx,music,title,clip,crowd,voice,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
+Object.assign(exports,{createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});

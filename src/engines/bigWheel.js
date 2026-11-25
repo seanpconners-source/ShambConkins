@@ -44,7 +44,7 @@ async function bigWheel(s){
  const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gs[0],guest:true,color:gs[1],face:gid}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
  const order=[0,1,2];for(let k=2;k>0;k--){const j=Math.floor(R()*(k+1));[order[k],order[j]]=[order[j],order[k]];}
  const human=ci=>ci<2&&(net?ci===me:!(cpu&&ci===1));
- let W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=-1,ang=Math.floor(R()*N),spin=null,banner=null,hostSay=null,hostPose='talk',modelPose='present',hurry=false,choice=null,chooseBtns=[],drag=null,shake=0;
+ let murOn=false,W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=-1,ang=Math.floor(R()*N),spin=null,banner=null,hostSay=null,hostPose='talk',modelPose='present',hurry=false,choice=null,chooseBtns=[],drag=null,shake=0;
  const wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||hurry||performance.now()>=end){hurry=false;r();return;}setTimeout(f,30);};f();});
  const say=(text,ms=2400,pose='talk')=>{hostSay={text,t:ms/1000};hostPose=pose;};
  let L={};function layout(){W=s.W;H=s.H;const wide=W>H*1.15,top=(fb.top||40)+6,fs=clamp(Math.min(W,H)*.04,12,20);
@@ -152,7 +152,7 @@ async function bigWheel(s){
   const v=await oneSpin(ci,true);if(v==null)return;const win=v===100?25000:v===5||v===15?10000:0;c2.bonus=1000+win;
   if(win){sfx.jackpot(true);banner={big:money(win)+'!',small:'BONUS SPIN WINNER!',t:2.6,col:'#ffe23a'};modelPose='clap';say('Unbelievable!',2200,'cheer');}else{sfx.ding();banner={big:label(v),small:'Still $1,000!',t:1.8,col:'#fff'};}await wait(2400);}
  // ---- frame
- s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;
+ s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;{const pl=mode!=='intro'&&mode!=='over';if(pl!==murOn){murOn=pl;snd.murmur?.(pl);}}
   if(mode==='intro'){introT+=dt;curtain=clamp((introT-.4)/1.4,0,1);}
   if(hostSay){hostSay.t-=dt;if(hostSay.t<=0){hostSay=null;hostPose='talk';}}
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}
