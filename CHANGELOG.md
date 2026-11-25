@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.99.63
+
+- **The Warriors, two players online:** play the story together on two phones in one shared world, like Sean of a Gun, Mario and Seanic. You fight the same gangs side by side, lost lives come back next to your partner, and if you're out you watch until the area is cleared.
+- **The Warriors, spin kick:** the spinning kick now has its own painted animation for both heroes.
+- **Four new Price Is Right games:**
+  - **Range Game:** stop the rising red finder so the prize's price is inside it.
+  - **Safe Crackers:** put the prize's price digits in the right order to open the safe and win what's inside.
+  - **Race Game:** race the clock to put four price tags on four prizes, then pull the lever to see how many are right.
+  - **Punch-a-Bunch:** call higher or lower on four small prizes to earn punches, then punch the board for up to $25,000.
+- All four use the show's own music, play against the CPU, on one phone, online and on the board.
+- **The Big Wheel:** the made-up studio guest now wears the face of a random character from the game (still with a random name).
+
 ## v0.99.62
 
 - **The Warriors, heads placed by hand:** every one of the 563 fighter poses now has its head where it belongs on the neck, turned and sized to fit (placed one by one in the Head Placer).
