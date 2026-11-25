@@ -40,7 +40,9 @@ async function rangeGame(s){
     logo:{x:(bx+bw+W)/2,y:top+fs*2.2,w:Math.min(W-bx-bw-fs*2,fs*16)},button:{x:(bx+bw+W)/2,y:by+bh*.58,w:Math.min(W-bx-bw-fs*2,fs*11)},info:{x:(bx+bw+W)/2,y:by+bh*.3},bub:{x:W*.2,y:top+fs*3,w:Math.min(W*.36,fs*14)}};}
   else{const lw=Math.min(W*.6,fs*14),bh=H-top-lw*.36-tagH-fs*2.2,bw=Math.min(W*.42,bh*RG.w/RG.h),bh2=bw*RG.h/RG.w,by=top+lw*.36+fs*.6;
    L={tags:{x:8,y:H-tagH-8,w:W-16,h:tagH},board:{x:W*.03,y:by,k:bh2/RG.h},prize:{x:W*.03+bw+fs*.4,y:by,w:W-bw-W*.06-fs*.4,h:bh2*.42},
-    logo:{x:W/2,y:top+lw*.18,w:lw},button:{x:W*.03+bw+(W-bw-W*.03)/2,y:by+bh2*.72,w:Math.min(W-bw-W*.08,fs*10)},info:{x:W*.03+bw+(W-bw-W*.03)/2,y:by+bh2*.48},bub:{x:W*.62,y:by+bh2*.12,w:Math.min(W*.6,fs*14)}};}}
+    logo:{x:W/2,y:top+lw*.18,w:lw},button:{x:W*.03+bw+(W-bw-W*.03)/2,y:by+bh2*.72,w:Math.min(W-bw-W*.08,fs*10)},info:{x:W*.03+bw+(W-bw-W*.03)/2,y:by+bh2*.48},bub:{x:W*.62,y:by+bh2*.12,w:Math.min(W*.6,fs*14)}};}
+  // the board stands on the stage floor (owner, Nov 25: nothing floating): the studio picture's floor line goes just behind its foot
+  K.floorY=L.board.y+RG.h*L.board.k*.97;}
  const by2=(p,v)=>{const [,b,,d]=RG.scale;return L.board.y+(d-(d-b)*(v-p.lo)/SCALE)*L.board.k;};
  function draw(){const g=K.begin();layout();const {fs,t}=K,p=P[K.cur],B=L.board,k=B.k;
   // the prize on its turntable

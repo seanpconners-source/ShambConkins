@@ -26,22 +26,18 @@ function simSpin(a0,w0){const DT=1/240,out=[[a0,0]],clicks=[];let a=a0,w=w0,t=0,
  // the flapper settles it into the middle of the section it rests in
  const end=Math.round(a);for(let k=1;k<=12;k++){t+=1/60;out.push([a+(end-a)*(1-Math.pow(1-k/12,2)),t]);}
  return {path:out,clicks,end,travel:end-a0,value:valueAt(end),dur:t};}
-// the studio contestant (third podium): a made-up audience name (owner, Nov 25: keep the random name) wearing the face of a random
-// character from the game (any character with its own picture + measured face, not the two players'); the drawn face is the fallback
-const GUESTS=[['DOLORES','#e86a92'],['BIG RON','#3a86ff'],['GLADYS','#ff9f1c'],['TEDDY','#2ec4b6'],['MARGE','#9b5de5'],['SAL','#f15bb5'],['BEV','#ff6b6b'],
- ['EARL','#4cc9f0'],['RHONDA','#f77f00'],['VINNIE','#80ed99'],['PEGGY','#c77dff'],['DWAYNE','#ffd166'],['LORETTA','#ef476f'],['GUS','#06d6a0']];
+// the studio contestant (third podium): a random character from the game under its own name (owner, Nov 25: "use the real character
+// names from the game instead of the random names"; gameshow/guests.js: own picture + measured face, not the players'); drawn face = fallback
 const {faceSprite,headFacts}=require("src/headFacts.js");
-function guestCharacter(seed,taken){try{const UP=require("src/data/userPortraits.js"),A=require("src/assets.js");
- const pool=require("src/contentPolicy.js").ACTIVE_CATALOG.characters.filter(c=>c.unlockBy!=='dogs'&&!taken.has(c.id)&&headFacts(c.id,'normal')&&UP.isRasterArt(A.portraitURL(c.id,'normal'))).map(c=>c.id);
- if(!pool.length)return null;const R=seededRandom(`${seed}:bigwheel:face`);return pool[Math.floor(R()*pool.length)];}catch{return null;}}
+const {guestDeck}=require("src/engines/gameshow/guests.js");
 async function bigWheel(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#1a0a3a'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
  const snd=ST.createShowSound({song:'showcase-showdown'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
- const R=seededRandom(`${s.seed}:bigwheel`),gs=GUESTS[Math.floor(R()*GUESTS.length)];
+ const R=seededRandom(`${s.seed}:bigwheel`);
  // contestants: 0/1 players, 2 the studio guest (played by the game on every phone)
- const gid=guestCharacter(s.seed,new Set(s.players.map(p=>p.character)));
- const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gs[0],guest:true,color:gs[1],face:gid}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
+ const gst=guestDeck(s.seed,s.players.map(p=>p.character),'bigwheel:guest')()||{name:'Guest',short:'Guest',col:'#e86a92',id:null};
+ const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gst.short,full:gst.name,guest:true,color:gst.col,face:gst.id}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
  const order=[0,1,2];for(let k=2;k>0;k--){const j=Math.floor(R()*(k+1));[order[k],order[j]]=[order[j],order[k]];}
  const human=ci=>ci<2&&(net?ci===me:!(cpu&&ci===1));
  let murOn=false,W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=-1,ang=Math.floor(R()*N),spin=null,banner=null,hostSay=null,hostPose='talk',modelPose='present',hurry=false,choice=null,chooseBtns=[],drag=null,shake=0;

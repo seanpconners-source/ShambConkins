@@ -23,7 +23,7 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  const snd=ST.createShowSound({clips,...(song?{song}:{})}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const K={c,x,fb,net,me,cpu,board,names,snd,sfx,kind,t:0,cur:0,mode:'intro',curtain:0,introT:0,banner:null,hostSay:null,hurry:false,
   W:s.W,H:s.H,fs:14,top:40,wide:false,fold:false,hits:[],onTap:null,onDown:null,onMove:null,onUp:null,skill:()=>cpuSkill(s),money,txt,TAU};
- K.cast=ST.createCast();K.spots=null;
+ K.cast=ST.createCast();K.spots=null;K.floorY=null;
  K.present=(secs,pose)=>K.cast.present(secs,pose);
  K.mine=i=>net?i===me:!(cpu&&i===1);
  K.cpuTurn=()=>cpu&&K.cur===1;
@@ -37,7 +37,9 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  K.recv=async()=>{const m=await net.next();return m&&s.alive?m:null;};
  // sizes for this frame; a game calls it first in its draw
  K.base=()=>{K.W=s.W;K.H=s.H;K.top=(fb.top||40)+6;K.fs=clamp(Math.min(K.W,K.H)*.04,12,20);K.wide=K.W>K.H*1.15;K.fold=!K.wide&&K.W>K.H*.78;return K;};
- K.begin=()=>{K.base();const g=x;g.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);K.hits=[];ST.drawStage(g,K.W,K.H,kind,K.t);return g;};
+ K.begin=()=>{K.base();const g=x;g.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);K.hits=[];ST.drawStage(g,K.W,K.H,kind,K.t,{floorY:K.floorY});return g;};
+ // the stage floor line on screen (K.floorY = where the game wants it: the picture is moved/zoomed to put its floor there)
+ K.floor=()=>ST.floorAt(K.W,K.H,kind,K.floorY);
  // a lit game-show button; tapping it calls fn (only while it is drawn)
  K.button=(g,b,label,fn,{col='#c8102e',dim=false,size=0}={})=>{const fs=size||Math.min(b.h*.42,K.fs*1.3);g.save();if(dim)g.globalAlpha=.45;
   const gr=g.createLinearGradient(0,b.y,0,b.y+b.h);gr.addColorStop(0,col);gr.addColorStop(1,'#14062e');g.fillStyle=gr;g.beginPath();g.roundRect(b.x,b.y,b.w,b.h,Math.min(b.h*.35,K.fs));g.fill();

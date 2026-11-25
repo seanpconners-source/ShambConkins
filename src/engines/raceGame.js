@@ -43,7 +43,9 @@ async function raceGame(s){
     clock:{x:W*.73+bw/2,y:top+fs*1.2},bub:{x:W*.36,y:py+ph*.25,w:Math.min(W*.5,fs*15)}};}
   else{const lw=Math.min(W*.6,fs*13),ly=top+lw*.17,by=ly+lw*.2+fs*.4,bw=W*.5,bh=bw*BG.h/BG.w,pw=Math.min(W*.44,(H-by-bh-tagH-fs*8)*.5*PG.w/PG.h),ph=pw*PG.h/PG.w,py=by+bh+fs*.6;
    L={tags:{x:8,y:H-tagH-8,w:W-16,h:tagH},logo:{x:W/2,y:ly,w:lw},board:{x:W*.06,y:by,w:bw,h:bh},lever:{x:W*.06+bw+W*.1,y:by+bh*.08,h:bh*.95},clock:{x:W*.06+bw+W*.26,y:by+bh*.5},
-    pods:[0,1,2,3].map(i=>({x:W/2+(i%2?W*.02:-W*.02-pw),y:py+Math.floor(i/2)*(ph+fs*.2),w:pw,h:ph})),rack:{x:W*.04,y:py+2*ph+fs*.6,w:W*.92,h:Math.min(fs*3.2,H-tagH-py-2*ph-fs*1.4)},bub:{x:W/2,y:py+ph*.3,w:Math.min(W*.86,fs*15)}};}}
+    pods:[0,1,2,3].map(i=>({x:W/2+(i%2?W*.02:-W*.02-pw),y:py+Math.floor(i/2)*(ph+fs*.2),w:pw,h:ph})),rack:{x:W*.04,y:py+2*ph+fs*.6,w:W*.92,h:Math.min(fs*3.2,H-tagH-py-2*ph-fs*1.4)},bub:{x:W/2,y:py+ph*.3,w:Math.min(W*.86,fs*15)}};}
+  // the podiums stand on the stage floor (owner, Nov 25: nothing floating): the floor line goes behind the first podiums' foot
+  K.floorY=L.pods[0].y+L.pods[0].h*.95;}
  // where tag ti is drawn: on its podium's hook, else in the rack
  function tagBox(p,ti){const fs=K.fs,on=onPodium(p,ti);if(on>=0){const b=L.pods[on],k=b.w/PG.w,tw=TG.w*k*.75;return {x:b.x+PG.tag[0]*k-tw/2,y:b.y+PG.tag[1]*k-tw*TG.h/TG.w/2,w:tw,h:tw*TG.h/TG.w};}
   const R=L.rack,free=p.tags.map((_,j)=>j).filter(j=>onPodium(p,j)<0),idx=free.indexOf(ti),tw=Math.min(R.w/4-fs*.4,R.h*TG.w/TG.h),th=tw*TG.h/TG.w;return {x:R.x+R.w/4*(idx+.5)-tw/2,y:R.y+(R.h-th)/2,w:tw,h:th};}

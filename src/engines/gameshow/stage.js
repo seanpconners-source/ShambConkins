@@ -13,9 +13,27 @@ function cover(g,img,W,H){const k=Math.max(W/img.width,H/img.height),w=img.width
 // a game without its own (empty) studio picture borrows another game's empty studio before the drawn one (Nov 25: GPT's first
 // Range/Safe/Race/Punch studios had the props painted in, so they were held back until empty versions come)
 const STAGE_BORROW={range:'wheel',race:'wheel',row:'wheel',punch:'plinko',safe:'clock'};
-function drawStage(g,W,H,kind,t){const pk=k=>require("src/bgShape.js").pick(W,H,{tall:`stage-${k}-tall`,wide:`stage-${k}`,fold:`stage-${k}-fold`},SS.picture);
- const pic=pk(kind)||(STAGE_BORROW[kind]&&pk(STAGE_BORROW[kind]));
- if(pic){cover(g,pic,W,H);return;}
+// where the stage floor meets the back wall in each studio picture (fraction of its height; wide, tall, fold), measured on GPT's
+// pictures (the colourful sets by eye, the pink ones where the saturated wall stops). Things that stand on the stage (the host, the
+// models, the safe, the prize turntable...) stand at or below this line, never on the wall (owner, Nov 25: "not floating")
+const STAGE_FLOOR={safe:[.625,.644,.635],range:[.606,.659,.661],race:[.65,.654,.649],punch:[.658,.659,.658],row:[.626,.647,.626],
+ plinko:[.66,.65,.66],wheel:[.66,.66,.67],clock:[.65,.66,.66],cliff:[.66,.66,.66]};
+// the stage picture for this screen + how it's laid on it. floorY = put the picture's floor line at that screen y (zooms in as far as
+// it has to so the picture still covers the screen, at most ZMAX x); without it = plain cover. Drawn stage (no picture): floor at .63 H
+const ZMAX=1.7;
+function stageFit(W,H,kind,floorY){const pk=k=>require("src/bgShape.js").pick(W,H,{tall:`stage-${k}-tall`,wide:`stage-${k}`,fold:`stage-${k}-fold`},SS.picture);
+ let pic=pk(kind),fk=kind;if(!pic&&STAGE_BORROW[kind]){pic=pk(STAGE_BORROW[kind]);fk=STAGE_BORROW[kind];}
+ if(!pic)return {pic:null,floor:kind==='cliff'?H*.66:H*.63};
+ const iw=pic.width,ih=pic.height,sh=iw>ih*1.3?0:ih>iw*1.3?1:2,f=(STAGE_FLOOR[fk]||[.65,.65,.65])[sh],k0=Math.max(W/iw,H/ih);let k=k0,oy=(H-ih*k)/2;
+ if(floorY!=null){k=Math.min(k0*ZMAX,Math.max(k0,floorY/(f*ih),(H-floorY)/((1-f)*ih)));oy=Math.min(0,Math.max(H-ih*k,floorY-f*ih*k));}
+ return {pic,k,ox:(W-iw*k)/2,oy,floor:oy+f*ih*k};}
+// the floor line on screen for this game's stage (o.floorY as passed to drawStage)
+function floorAt(W,H,kind,floorY){return stageFit(W,H,kind,floorY).floor;}
+// a soft contact shadow on the floor under something standing at (x,y), w wide
+function floorShadow(g,x,y,w,a=.38){g.save();const r=g.createRadialGradient(x,y,0,x,y,w/2);r.addColorStop(0,`rgba(0,0,0,${a})`);r.addColorStop(.6,`rgba(0,0,0,${a*.45})`);r.addColorStop(1,'rgba(0,0,0,0)');
+ g.fillStyle=r;g.translate(x,y);g.scale(1,.16);g.translate(-x,-y);g.beginPath();g.arc(x,y,w/2,0,TAU);g.fill();g.restore();}
+function drawStage(g,W,H,kind,t,o={}){const F=stageFit(W,H,kind,o.floorY);
+ if(F.pic){g.drawImage(F.pic,F.ox,F.oy,F.pic.width*F.k,F.pic.height*F.k);return;}
  if(kind==='cliff')return drawAlpine(g,W,H,t);
  const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,kind==='wheel'?'#1a0a3a':'#2a0a2e');bg.addColorStop(.62,kind==='wheel'?'#3a1666':'#5a1240');bg.addColorStop(.63,'#1a1410');bg.addColorStop(1,'#060504');g.fillStyle=bg;g.fillRect(0,0,W,H);
  // big round bulb discs and colour stripes like a 70s set
@@ -140,12 +158,12 @@ function createCast(){const C={hv:0,mv:0,mt:0,joy:0,hostPose:'talk',modelPose:'p
  C.cheer=(secs=2.6)=>{C.joy=secs;C.mt=Math.max(C.mt,secs);};
  C.step=(dt,{host=false,model=false}={})=>{C.mt=Math.max(0,C.mt-dt);C.joy=Math.max(0,C.joy-dt);const ht=host||C.joy>0?1:0,mt=model||C.mt>0?1:0;
   C.hv+=(ht-C.hv)*Math.min(1,dt*(ht?5:3.5));C.mv+=(mt-C.mv)*Math.min(1,dt*(mt?4.5:3));};
- C.spots=(W,H,o={})=>{const h=o.h||(W>H*1.15?H*.58:Math.min(H*.33,W*.52)),foot=o.foot??H-4;return {host:{x:h*.2,y:foot,h,side:-1},model:{x:W-h*.19,y:foot,h:h*.96,side:1}};};
+ C.spots=(W,H,o={})=>{const h=o.h||(W>H*1.15?H*.74:Math.min(H*.42,W*.62)),foot=o.foot??H-4;return {host:{x:h*.2,y:foot,h,side:-1},model:{x:W-h*.19,y:foot,h:h*.96,side:1}};};
  C.draw=(g,W,H,t,sp,talking=false)=>{sp=sp||C.spots(W,H);const ease=v=>1-Math.pow(1-Math.max(0,Math.min(1,v)),3);
   if(C.mv>.01){const M=sp.model,off=(1-ease(C.mv))*(M.side>0?W-M.x+M.h*.3:-(M.x+M.h*.3));g.save();g.globalAlpha=Math.min(1,C.mv*1.6);
-   drawModel(g,M.x+off,M.y,M.h,C.joy>0?'clap':C.modelPose,t,C.variant,M.side<0);g.restore();}
+   floorShadow(g,M.x+off,M.y,M.h*.36,.34*Math.min(1,C.mv*1.6));drawModel(g,M.x+off,M.y,M.h,C.joy>0?'clap':C.modelPose,t,C.variant,M.side<0);g.restore();}
   if(C.hv>.01){const Hs=sp.host,off=(1-ease(C.hv))*(Hs.side>0?W-Hs.x+Hs.h*.3:-(Hs.x+Hs.h*.3));g.save();g.globalAlpha=Math.min(1,C.hv*1.6);
-   drawHost(g,Hs.x+off,Hs.y,Hs.h,C.joy>0?'cheer':talking?(Math.floor(t*.7)%3===2?'point':'talk'):'point',t,Hs.side>0);g.restore();}};
+   floorShadow(g,Hs.x+off,Hs.y,Hs.h*.38,.36*Math.min(1,C.hv*1.6));drawHost(g,Hs.x+off,Hs.y,Hs.h,C.joy>0?'cheer':talking?(Math.floor(t*.7)%3===2?'point':'talk'):'point',t,Hs.side>0);g.restore();}};
  // where his speech bubble goes: over his shoulder toward the middle of the screen, the tail at his mouth
  C.bubbleAt=(W,H,sp,fs)=>{sp=sp||C.spots(W,H);const Hs=sp.host,mx=Hs.x+Hs.side*-Hs.h*.02,my=Hs.y-Hs.h*.9,w=Math.min(W*.62,fs*15);
   const x=Math.max(w/2+6,Math.min(W-w/2-6,Hs.x-Hs.side*(Hs.h*.22+w*.4))),y=Math.max(fs*5,my-fs*.6);return {x,y,w,tx:mx,ty:my};};
@@ -253,4 +271,4 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   g.gain.setValueAtTime(.0001,a.currentTime);g.gain.linearRampToValueAtTime(own?(TPIR_GAIN[own]??.5)*.6:.16,a.currentTime+1.2);
   if(!clipOut){clipOut=a.createGain();clipOut.connect(a.destination);}src.connect(lp);lp.connect(g);g.connect(clipOut);src.start(a.currentTime,Math.random()*b.duration*.5);mur={src,g};}
  return {sfx,music,title,clip,crowd,voice,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
-Object.assign(exports,{STAGE_BORROW,createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});
+Object.assign(exports,{STAGE_FLOOR,stageFit,floorAt,floorShadow,STAGE_BORROW,createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});

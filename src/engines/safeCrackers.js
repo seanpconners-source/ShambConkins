@@ -46,9 +46,12 @@ async function safeCrackers(s){
     prizes:{x:col,y:top+fs*4,w:W-col-fs,h:fs*4.4},tiles:{x:col,y:top+fs*9.6,w:W-col-fs,h:Math.min(fs*5.6,(H-top-tagH)*.28)},btn:{x:col+(W-col)*.18,y:top+fs*9.6+Math.min(fs*5.6,(H-top-tagH)*.28)+fs*.8,w:(W-col)*.64,h:fs*2.6},bub:{x:W*.27,y:top+fs*2.5,w:Math.min(W*.42,fs*15)}};}
   else{const lw=Math.min(W*.6,fs*14),ly=top+lw*.17,sy=ly+lw*.2+fs*.3,rest=H-sy-tagH-fs*1.2,tilesH=Math.min(fs*5.4,W*.22),sw=Math.min(W*.86,(rest-tilesH-fs*7.4)*SG.w/SG.h),sk=sw/SG.w,sh=SG.h*sk;
    L={tags:{x:8,y:H-tagH-8,w:W-16,h:tagH},safe:{x:(W-sw)/2,y:sy,k:sk},logo:{x:W/2,y:ly,w:lw},prizes:{x:W*.04,y:sy+sh+fs*.3,w:W*.92,h:fs*2.4},
-    tiles:{x:W*.15,y:sy+sh+fs*2.9,w:W*.7,h:tilesH},btn:{x:W*.2,y:sy+sh+fs*3.3+tilesH,w:W*.6,h:fs*2.5},bub:{x:W/2,y:sy+sh*.25,w:Math.min(W*.86,fs*16)}};}}
+    tiles:{x:W*.15,y:sy+sh+fs*2.9,w:W*.7,h:tilesH},btn:{x:W*.2,y:sy+sh+fs*3.3+tilesH,w:W*.6,h:fs*2.5},bub:{x:W/2,y:sy+sh*.25,w:Math.min(W*.86,fs*16)}};}
+  // the safe stands on the stage floor (owner, Nov 25: "the safe [is] floating above the floor"): the studio picture is laid with its
+  // floor line just behind the safe's foot
+  L.foot=L.safe.y+SG.h*L.safe.k*.975;K.floorY=L.foot-SG.h*L.safe.k*.05;}
  function draw(){const g=K.begin();layout();const {fs,t}=K,p=P[K.cur],Sf=L.safe,k=Sf.k;
-  g.save();g.translate(Sf.x,Sf.y);g.scale(k,k);drawSafe(g,doorOpen,spin);
+  ST().floorShadow(g,Sf.x+SG.w*k/2,L.foot,SG.w*k*1.05,.5);g.save();g.translate(Sf.x,Sf.y);g.scale(k,k);drawSafe(g,doorOpen,spin);
   if(doorOpen){const [a,b,c,d]=SG.inside,mid=(b+d)/2;[[p.big,b+20,mid-20],[p.small,mid+20,d-20]].forEach(([q,y0,y1])=>{const ph=SP.prizePhoto(q.id),bw=(c-a)*.8,bh=y1-y0-30;
    if(ph){const kk=Math.min(bw/ph.width,bh/ph.height);g.drawImage(ph,(a+c)/2-ph.width*kk/2,y1-ph.height*kk,ph.width*kk,ph.height*kk);}else{g.font=`${bh*.75}px serif`;g.textAlign='center';g.textBaseline='alphabetic';g.fillText(q.em,(a+c)/2,y1-bh*.05);}});}
   else{const [a,b,c,d]=SG.dial,w=(c-a)/3;for(let j=0;j<3;j++){const v=p.slots[j];let dg=v==null?'':p.digits[v];if(dialRoll>=0&&j>=dialRoll)dg=String(Math.floor(t*30+j*3)%10);

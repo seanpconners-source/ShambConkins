@@ -4,7 +4,8 @@
 // down the aisle to a podium), a prize comes out, everybody bids once in turn (no two bids alike, $1 is allowed), closest to the actual
 // retail price without going over wins it (+$500 for a PERFECT BID); everybody over = they all bid again under the lowest bid.
 // A studio guest who wins goes up on stage and the next guest is called down to the empty podium; the newest contestant bids first.
-// Players: the two players + two studio guests (characters from the game wearing made-up names, played by the game on every phone);
+// Players: the two players + two studio guests (characters from the game under their own names, gameshow/guests.js, never the same one
+// twice in a game; played by the game on every phone);
 // vs CPU the second player is the CPU. Arcade 4 prizes, board 2. Score = what you won. Online: the bidder's phone sends {b:bid}.
 // Pictures (all optional, drawn fallback): cr-audience(-tall/-fold) the bleachers, stage-row(-tall/-fold) the studio, cr-podium (one
 // podium, the game prints the bid in its BID window), cr-body-1..4 (headless contestant sheets, the face goes on the FACE spot),
@@ -16,14 +17,9 @@ const {createKit,txt,money}=require("src/engines/gameshow/pricingKit.js");
 const {seededRandom,clamp}=require("src/utils.js");
 const {faceSprite,headFacts,drawFace}=require("src/headFacts.js");
 const AUD=require("src/engines/gameshow/audience.js"),{drawnBody}=AUD;
+const {guestDeck}=require("src/engines/gameshow/guests.js");
 const TAU=Math.PI*2,ease=v=>1-Math.pow(1-clamp(v,0,1),3);
-const GUESTS=[['DOLORES','#e86a92'],['BIG RON','#3a86ff'],['GLADYS','#ff9f1c'],['TEDDY','#2ec4b6'],['MARGE','#9b5de5'],['SAL','#f15bb5'],['BEV','#ff6b6b'],
- ['EARL','#4cc9f0'],['RHONDA','#f77f00'],['VINNIE','#80ed99'],['PEGGY','#c77dff'],['DWAYNE','#ffd166'],['LORETTA','#ef476f'],['GUS','#06d6a0'],['TAMMY','#ff70a6'],['DUANE','#70d6ff']];
 const SHIRTS=['#e63946','#3a86ff','#ffbe0b','#8338ec','#06d6a0','#fb5607','#ff006e','#4cc9f0','#80b918','#f15bb5'];
-// characters with their own picture and measured face, not the players' (guests and the faces in the crowd)
-let poolCache=null;
-function facePool(){if(poolCache)return poolCache;try{const UP=require("src/data/userPortraits.js"),A=require("src/assets.js");
- poolCache=require("src/contentPolicy.js").ACTIVE_CATALOG.characters.filter(c=>c.unlockBy!=='dogs'&&headFacts(c.id,'normal')&&UP.isRasterArt(A.portraitURL(c.id,'normal'))).map(c=>c.id);}catch{poolCache=[];}return poolCache;}
 const ITEMS=[...SP.MID_PRIZES,...SP.GRAND_PRIZES];
 function nice(v,R){v=Math.max(1,v);const r=R();if(v<100)return Math.round(v);if(r<.35)return Math.round(v/50)*50||50;if(r<.6)return Math.max(1,Math.round(v/100)*100-1);if(r<.8)return Math.round(v/10)*10;return Math.round(v);}
 // a studio guest's / the CPU's bid: a guess near the price (better with skill), the last bidder plays the show's tricks ($1 over
@@ -46,15 +42,15 @@ async function contestantsRow(s){
  const K=createKit(s,{kind:'row',clips:['come-on-down','perfect-bid','buzzer-overbid','buzzer-overbid-2','ding','bell'],song:null});
  const {x,net,me,cpu,board,names,snd,sfx}=K;const R=seededRandom(`${s.seed}:crow`);
  const aud=AUD.createAudience({seed:s.seed,exclude:s.players.map(p=>p.character)});
- const pool=facePool().filter(id=>!s.players.some(p=>p.character===id));
- const pickFace=k=>pool.length?pool[Math.floor(seededRandom(`${s.seed}:crow:face:${k}`)()*pool.length)]:null;
+ // the guests: characters from the game under their own names, one deck per game (nobody comes down twice)
+ const dealGuest=guestDeck(s.seed,s.players.map(p=>p.character),'crow:guests');
  // the seats left to right: the two players in the middle, a guest at each end
  // bodies: any of the 12 show bodies (cr-body-1..4 contestants, cr-fan-1..8 audience members), dealt from a shuffled deck so nobody
  // on the row matches; now and then (CAMEO_K) a body from one of our other games instead
  const CAMEO_K=1/50,deck=[];let cameos=null;
  const nextBody=()=>{if(!deck.length){const d=[...Array(12).keys()];for(let i=d.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[d[i],d[j]]=[d[j],d[i]];}deck.push(...d.filter(b=>!seats_?.some(o=>o.body===b)));}
   const body=deck.shift();let cameo=null;if(R()<CAMEO_K){cameos=cameos||aud.cameoList();if(cameos.length)cameo=cameos[Math.floor(R()*cameos.length)];}return {body,cameo};};
- let seats_=null,guestN=0;const newGuest=()=>{const g=GUESTS[(Math.floor(R()*GUESTS.length)+guestN*5)%GUESTS.length];const o={name:g[0],col:g[1],face:pickFace(guestN),guest:true,...nextBody()};guestN++;return o;};
+ let seats_=null;const newGuest=()=>{const g=dealGuest()||{name:'Guest',short:'Guest',col:'#e86a92',id:null};return {name:g.short,full:g.name,col:g.col,face:g.id,guest:true,...nextBody()};};
  const short=n=>String(n).replace(/\s*\(CPU\)\s*$/i,'');
  const seats=[newGuest(),{p:0,name:short(names[0]),col:'#e63946',...nextBody()},{p:1,name:short(names[1]),col:'#3a86ff',...nextBody()},newGuest()].map(o=>({...o,bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0}));seats_=seats;
  const N=board?2:4,items=[];{const bag=ITEMS.slice();for(let i=0;i<N;i++)items.push(bag.splice(Math.floor(R()*bag.length),1)[0]);}
@@ -93,8 +89,18 @@ async function contestantsRow(s){
  function lay(){const W=K.W,H=K.H,fs=K.fs,top=K.top;const L={W,H,fs,top};
   if(K.wide){L.row={x:W*.02,y:H*.52,w:W*.64,h:H*.46};L.panel={x:W*.68,y:top,w:W*.3,h:H-top-8};L.prize={x:W*.02,y:top,w:W*.64,h:H*.52-top};}
   else{L.prize={x:0,y:top,w:W,h:H*.4-top};L.row={x:W*.02,y:H*.4,w:W*.96,h:H*.3};L.panel={x:W*.06,y:H*.71,w:W*.88,h:H*.28};}
-  const sw=L.row.w/4,pw=Math.min(sw*.86,L.row.h*.62/(SS.CR_PODIUM.h/SS.CR_PODIUM.w)),ph=pw*SS.CR_PODIUM.h/SS.CR_PODIUM.w;
-  L.pod=seats.map((o,i)=>({x:L.row.x+sw*(i+.5)-pw/2,y:L.row.y+L.row.h-ph-4,w:pw,h:ph}));L.bodyH=Math.min(ph*2.15,L.row.h*1.25);return L;}
+  const sw=L.row.w/4,pw=Math.min(sw*.9,L.row.h*.72/(SS.CR_PODIUM.h/SS.CR_PODIUM.w)),ph=pw*SS.CR_PODIUM.h/SS.CR_PODIUM.w;
+  L.bodyH=Math.min(ph*1.8,L.row.h*1.3);
+  // podiums at the bottom of the row, but no lower than needed to keep heads under the stage floor (upright phones: no empty floor
+  // band between the stage and the row; the bids panel moves up under the podiums)
+  const py=Math.min(L.row.y+L.row.h-ph-4,L.row.y+L.bodyH*.44);
+  L.pod=seats.map((o,i)=>({x:L.row.x+sw*(i+.5)-pw/2,y:py,w:pw,h:ph}));
+  if(!K.wide){const y0=py+ph+K.fs*.6;L.panel={x:L.panel.x,y:y0,w:L.panel.w,h:Math.min(H-y0-8,L.panel.h+(L.panel.y-y0))};}
+  // the prize turntable, the host and the model stand on the stage floor: the studio picture is laid so its floor line is at the
+  // turntable's foot (owner, Nov 25: "not floating and on the floor")
+  L.stageY=L.prize.y+L.prize.h;K.floorY=L.stageY-L.prize.h*.05;return L;}
+ // the contestants stand behind their podiums with the podium top at the waist, like the show (owner, Nov 25): feet near the podium foot
+ const feetY=(b,bh)=>b.y+Math.min(b.h*.96,bh*.54);
  // ---- podium: the picture (bid printed in its window) or a drawn one; the bid in orange LED figures
  function podium(g,b,o,i,t){const PG=SS.CR_PODIUM,pic=SS.picture('cr-podium'),k=b.w/PG.w,[a,bb,c,d]=PG.bid;
   if(o.lit>0){g.save();g.globalAlpha=Math.min(1,o.lit)*(.6+.4*Math.sin(t*14));g.fillStyle='#fff3a0';g.beginPath();g.roundRect(b.x-6,b.y-6,b.w+12,b.h+12,12);g.fill();g.restore();}
@@ -103,11 +109,11 @@ async function contestantsRow(s){
   const fs=(d-bb)*k*.72,cx=b.x+(a+c)/2*k,cy=b.y+(bb+d)/2*k;g.save();g.font=`900 ${fs}px "Courier New",monospace`;g.textAlign='center';g.textBaseline='middle';
   const str=o.bid==null?(cur===i?'_'.repeat(1+Math.floor(t*2)%3):''):money(o.bid).slice(0,7);g.fillStyle='rgba(255,120,20,.25)';g.fillText('8888'.slice(0,Math.max(4,str.length)),cx,cy);
   g.shadowColor='#ff7a1a';g.shadowBlur=fs*.35;g.fillStyle=o.over?'#ff3a2a':'#ffb03a';g.fillText(str,cx,cy);g.restore();
-  // the name under the window
-  txt(g,o.name.slice(0,10).toUpperCase(),cx,b.y+b.h*.62,Math.min(b.w*.15,K.fs*1.05),cur===i?'#ffe23a':'#fff',{font:'"SC Bangers",Impact,sans-serif',w:400,max:b.w*.9});}
+  // the name under the window, once they've been called down to it
+  if(o.here)txt(g,o.name.toUpperCase(),cx,b.y+b.h*.62,Math.min(b.w*.15,K.fs*1.05),cur===i?'#ffe23a':'#fff',{font:'"SC Bangers",Impact,sans-serif',w:400,max:b.w*.9});}
  // ---- the prize on the turntable (+ the actual retail price card once it's shown)
  function drawPrize(g,P,t){if(!item)return;const a=ease(itemT*1.6),pk=SS.PLATFORM_GEOM,plat=SS.picture('clock-platform'),pw=Math.min(P.w*.46,P.h*1.25),ph=pw*pk.h/pk.w,cx=P.x+P.w/2,by=P.y+P.h-4;
-  g.save();g.globalAlpha=a;g.translate(cx,by-ph+(1-a)*P.h*.3);const k=pw/pk.w;
+  ST.floorShadow(g,cx,by-ph*.06,pw*.95,.4*a);g.save();g.globalAlpha=a;g.translate(cx,by-ph+(1-a)*P.h*.3);const k=pw/pk.w;
   if(plat)g.drawImage(plat,-pw/2,0,pw,ph);else{g.fillStyle='#c8c8d8';g.beginPath();g.ellipse(0,ph*.68,pw*.48,ph*.16,0,0,TAU);g.fill();g.fillStyle='#8a8aa0';g.fillRect(-pw*.48,ph*.68,pw*.96,ph*.18);}
   const ty=pk.top[1]*k,ph2=SP.prizePhoto(item[0]),bh=Math.min(P.h*.62,pw*.75);
   if(ph2){const kk=Math.min(pw*.8/ph2.width,bh/ph2.height),w=ph2.width*kk,h=ph2.height*kk;g.fillStyle='#fff';g.beginPath();g.roundRect(-w/2-8,ty-h-16,w+16,h+16,12);g.fill();g.drawImage(ph2,-w/2,ty-h-8,w,h);}
@@ -149,16 +155,17 @@ async function contestantsRow(s){
    person(g,c.o,xx,yy,hh,at.pose,st,1);
    // the name in lights + COME ON DOWN!
    const ny=L.top+L.H*.08,big=Math.min(L.W*.16,L.H*.13),pop=ease(st*2.5);g.save();g.translate(L.W/2,ny+big*.5);g.scale(pop,pop);
-   txt(g,c.o.name.toUpperCase()+'!',0,0,big*Math.min(1,7/Math.max(4,c.o.name.length)),'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:L.W*.92});g.restore();
+   txt(g,(c.o.full||c.o.name).toUpperCase()+'!',0,0,big*Math.min(1,7/Math.max(4,(c.o.full||c.o.name).length)),'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:L.W*.92});g.restore();
    const cod=SS.picture('cr-comeondown'),cw=Math.min(L.W*.8,L.H*1.2);if(st>.5){const a=ease((st-.5)*3);g.save();g.globalAlpha=a;if(cod){const ch=cw*cod.height/cod.width;g.drawImage(cod,L.W/2-cw/2,ny+big*1.15,cw,ch);}
     else txt(g,'COME ON DOWN!',L.W/2,ny+big*1.55,big*.62,'#fff',{font:'"SC Bangers",Impact,sans-serif',w:400,max:L.W*.9});g.restore();}
    K.overlay(g,null,{noCast:true});return;}
   // the row: prize up top, the four podiums with the contestants behind them, the panel
   drawPrize(g,L.prize,t);
-  seats.forEach((o,i)=>{if(!o.here)return;const b=L.pod[i],slide=(1-ease(o.in))*(i<2?-1:1)*K.W*.6,fx=b.x+b.w/2+slide,fy=b.y+b.h*.55;person(g,o,fx,fy,L.bodyH,o.in<.98?'run':o.pose,t+i,i<2?1:-1);});
+  seats.forEach((o,i)=>{if(!o.here)return;const b=L.pod[i],slide=(1-ease(o.in))*(i<2?-1:1)*K.W*.6,fx=b.x+b.w/2+slide,fy=feetY(b,L.bodyH);person(g,o,fx,fy,L.bodyH,o.in<.98?'run':o.pose,t+i,i<2?1:-1);});
   seats.forEach((o,i)=>podium(g,L.pod[i],o,i,t));
   drawPanel(g,L.panel,t);
-  K.spots={host:{x:L.prize.x+L.prize.h*.22,y:L.prize.y+L.prize.h,h:L.prize.h*.95,side:-1},model:{x:L.prize.x+L.prize.w-L.prize.h*.2,y:L.prize.y+L.prize.h,h:L.prize.h*.92,side:1}};
+  // the host and the model: on the stage floor either side of the turntable, as tall as the contestants (owner, Nov 25)
+  K.spots={host:{x:L.prize.x+L.bodyH*.22,y:L.stageY,h:L.bodyH*1.02,side:-1},model:{x:L.prize.x+L.prize.w-L.bodyH*.2,y:L.stageY,h:L.bodyH,side:1}};
   K.overlay(g,null);});
  // ---- the flow
  let cueUntil=0;
