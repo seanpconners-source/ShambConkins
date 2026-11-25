@@ -6,6 +6,7 @@
 - **The Warriors, real faces on the nameless:** enemies without their own art now wear real character faces from the game, and every so often beating one unlocks that character.
 - **Cliff Hangers and The Clock Game get their show look:** the painted mountain, the yodeler with his feathered hat, the contestant stand, the big lighted clock, the price display, the platform, both logos and the studio sets on every screen size.
 - **The Price Is Right:** the host and the models are much bigger in Plinko and The Big Wheel, and The Clock Game's clock now ticks out loud.
+- **Plinko scoreboard:** Hannah's $22,000 Plinko game (the one that closed before it could save) is now on the board.
 
 ## v0.99.61
 
