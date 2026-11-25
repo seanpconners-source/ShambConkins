@@ -70,7 +70,7 @@ async function plinko(s){
  function draw(){layout();x.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);const g=x,fs=L.fs;ST.drawStage(g,W,H,'plinko',t);
   const showBoard=mode!=='intro'||introT>2.2;
   // host and models: beside the board when wide, small at the bottom corners when tall
-  const hostH=L.wide?H*.86:Math.min(H*.44,W*.66),hx=L.wide?L.bx*.45:W*.13,hy=L.wide?H*.96:H-4;
+  const hostH=L.wide?H*.86:Math.min(H*.44,W*.88),hx=L.wide?L.bx*.45:Math.max(W*.13,hostH*.19),hy=L.wide?H*.96:H-4;
   if(showBoard){const bc=boardLayer();g.drawImage(bc,L.bx,L.by,bc.width/(Math.min(2,window.devicePixelRatio||1)),bc.height/(Math.min(2,window.devicePixelRatio||1)));
    for(const [i,v] of lit){const [px,py]=PEGS[i];g.fillStyle=`rgba(255,247,170,${v})`;g.beginPath();g.arc(bxp(px),byp(py),(PEG_R+6*v)*L.k,0,TAU);g.fill();}
    ST.drawLogo(g,'plinko-logo','PLINKO',L.logo.x,L.logo.y,L.logo.w,t);
@@ -79,7 +79,7 @@ async function plinko(s){
    if(chip){const q=chip.pos;drawChip(g,bxp(q[0]),byp(q[1]),CHIP_R*L.k);}
    for(const l of landed)drawChip(g,bxp(l[0]),byp(l[1]),CHIP_R*L.k*.92,.85);
    for(const p of pops){g.save();g.globalAlpha=Math.min(1,p.t*3)*Math.min(1,(1.6-p.t)*2);g.font=`900 ${fs*2.2}px "SC Bangers",Impact,sans-serif`;g.textAlign='center';g.lineWidth=fs*.3;g.strokeStyle='#000';const yy=byp(SLOT_Y-40)-p.t*fs*3;g.strokeText(p.v?money(p.v):'$0',bxp(p.x),yy);g.fillStyle=p.v>=10000?'#ffe23a':p.v?'#fff':'#ff6a5a';g.fillText(p.v?money(p.v):'$0',bxp(p.x),yy);g.restore();}}
-  if(L.wide||mode==='intro'||mode==='price'){ST.drawHost(g,hx,hy,hostH,hostPose,t);ST.drawModel(g,W-(L.wide?L.bx*.45:W*.12),hy,hostH*.95,modelPose,t,0,true);if(L.wide)ST.drawModel(g,W-L.bx*.18,hy,hostH*.9,modelPose,t+1,1,true);}
+  if(L.wide||mode==='intro'||mode==='price'){ST.drawHost(g,hx,hy,hostH,hostPose,t);ST.drawModel(g,W-(L.wide?L.bx*.45:Math.max(W*.12,hostH*.18)),hy,hostH*.95,modelPose,t,0,true);if(L.wide)ST.drawModel(g,W-L.bx*.18,hy,hostH*.9,modelPose,t+1,1,true);}
   // contestants' tags + money
   P.forEach((p,i)=>{const w=Math.min(W*.42,fs*11),x0=i?W-w-8:8,y0=H-fs*3.4-8;if(L.wide&&mode!=='over'){}g.fillStyle=i===cur?'rgba(255,226,58,.92)':'rgba(20,6,46,.78)';g.beginPath();g.roundRect(x0,y0,w,fs*3.2,10);g.fill();
    s.sprite(g,i,x0+fs*1.5,y0+fs*1.6,fs*2.4,{exact:true,still:true,mood:p.mood||'normal'});g.fillStyle=i===cur?'#14062e':'#fff';g.font=`900 ${fs*.9}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';
