@@ -11,7 +11,7 @@ const outDir = path.resolve(args.find(a => !a.startsWith('--')) || path.join(roo
 fs.mkdirSync(outDir, {recursive: true});
 const mods = {'src/data/userPortraits.js': 'exports.USER_PORTRAITS={};', 'src/audio.js': 'exports.audioContext=()=>null;', 'src/state.js': 'exports.store={profile:{settings:{}}};',
   'src/utils.js': 'exports.clamp=(v,a,b)=>Math.max(a,Math.min(b,v));exports.seededRandom=()=>Math.random;'};
-for (const f of ['src/data/showSprites.js', 'src/data/showPrizes.js', 'src/bgShape.js', 'src/engines/gameshow/stage.js', 'src/engines/plinkoShow.js', 'src/engines/cliffHangers.js', 'src/engines/clockGame.js']) mods[f] = fs.readFileSync(path.join(root, f), 'utf8');
+for (const f of ['src/data/showSprites.js', 'src/data/showPrizes.js', 'src/bgShape.js', 'src/engines/gameshow/stage.js', 'src/engines/plinkoShow.js', 'src/engines/cliffHangers.js', 'src/engines/clockGame.js', 'src/engines/gameshow/pricingKit.js', 'src/engines/rangeGame.js', 'src/engines/safeCrackers.js', 'src/engines/raceGame.js', 'src/engines/punchABunch.js']) mods[f] = fs.readFileSync(path.join(root, f), 'utf8');
 mods['src/engines/cpuKit.js'] = 'exports.isCpu=()=>false;exports.cpuSkill=()=>.5;exports.isOnline=()=>false;';mods['src/engines/fullBleed.js'] = 'exports.fullBleed=()=>({});';mods['src/audio.js'] = 'exports.audioContext=()=>null;exports.holdMusic=()=>{};exports.releaseMusic=()=>{};exports.vibrate=()=>{};';
 const browser = await chromium.launch(browserLaunchOptions());
 const page = await browser.newPage();
@@ -67,6 +67,15 @@ const render = (slot, mode) => page.evaluate(({slot, mode}) => {
     if (T) { x.strokeRect(S.top[0] - 160, S.top[1] - 220, 320, 220); label('the prize photo stands here (game draws it)', S.top[0] - 156, S.top[1] - 214, 18); x.beginPath(); x.arc(S.top[0], S.top[1], 8, 0, 6.28); x.stroke();
       x.strokeRect(a, b, cc - a, d - b); label('PRICE WINDOW: dark, game prints the price', a + 4, b + 4, 18); label('transparent around the pedestal', 8, H - 28, 18); }
     return c.toDataURL('image/png'); }
+  // the newer pricing games: the slot carries its own guides (showSprites.js) and the game module draws the reference
+  if (S.kind && slot.startsWith('stage-')) { faded(() => ST.drawStage(x, W, H, S.kind, 0));
+    if (T) { const tall = H > W * 1.15, fold = !tall && W < H * 1.15; x.setLineDash([14, 10]); const r = tall || fold ? [W * .04, H * .12, W * .92, H * .7] : [W * .02, H * .08, W * .96, H * .78]; x.strokeRect(...r); x.setLineDash([]);
+      label('the game puts its props, prizes and buttons in the dashed box: keep it calm', r[0] + 8, r[1] + 8); label('the floor / stage line', 20, H * .66); x.beginPath(); x.moveTo(0, H * .66); x.lineTo(W, H * .66); x.stroke(); }
+    return c.toDataURL('image/png'); }
+  if (S.mod) { faded(() => require(S.mod).drawRef(x, W, H, slot)); const fsz = Math.max(14, Math.min(26, W / 32));
+    if (T) { for (const gd of S.guides || []) { if (gd.r) { x.strokeRect(...gd.r); label(gd.t, gd.r[0] + 6, gd.r[1] + 6, fsz); } else if (gd.c) { x.beginPath(); x.arc(gd.c[0], gd.c[1], gd.c[2], 0, 6.28); x.stroke(); label(gd.t, gd.c[0] + gd.c[2] + 4, gd.c[1] - fsz / 2, fsz); } }
+      label('transparent around it', 8, H - fsz - 10, fsz); }
+    return c.toDataURL('image/png'); }
   if (slot.startsWith('stage-')) { faded(() => ST.drawStage(x, W, H, slot.includes('wheel') ? 'wheel' : 'plinko', 0));
     if (T) { const tall = H > W; x.setLineDash([14, 10]); x.strokeRect(W * (tall ? .05 : .3), H * (tall ? .1 : .05), W * (tall ? .9 : .4), H * (tall ? .72 : .9)); x.setLineDash([]); label('the ' + (slot.includes('wheel') ? 'wheel' : 'board') + ' stands here: keep it calm', W * (tall ? .07 : .31), H * (tall ? .11 : .06)); label('floor / stage line', 20, H * .63); x.beginPath(); x.moveTo(0, H * .63); x.lineTo(W, H * .63); x.stroke(); }
     return c.toDataURL('image/png'); }
@@ -78,7 +87,7 @@ const render = (slot, mode) => page.evaluate(({slot, mode}) => {
     return c.toDataURL('image/png'); }
   if (slot === 'plinko-chip') { faded(() => { const r = W * .44; x.fillStyle = '#e8ebf0'; x.beginPath(); x.arc(W / 2, H / 2, r, 0, 6.28); x.fill(); x.strokeStyle = '#8a93a3'; x.lineWidth = r * .1; x.beginPath(); x.arc(W / 2, H / 2, r * .72, 0, 6.28); x.stroke(); });
     if (T) { x.strokeStyle = pink; x.beginPath(); x.arc(W / 2, H / 2, W * .45, 0, 6.28); x.stroke(); label('round chip fills the circle', 6, 6, 16); } return c.toDataURL('image/png'); }
-  if (slot.endsWith('-logo')) { faded(() => ST.drawLogo(x, '__none', slot === 'plinko-logo' ? 'PLINKO' : slot === 'cliff-logo' ? 'CLIFF HANGERS' : slot === 'clock-logo' ? 'CLOCK GAME' : 'THE BIG WHEEL', W / 2, H / 2, W * .92, 0)); if (T) label('transparent around the sign', 20, 20, 26); return c.toDataURL('image/png'); }
+  if (slot.endsWith('-logo')) { faded(() => ST.drawLogo(x, '__none', ({'plinko-logo': 'PLINKO', 'cliff-logo': 'CLIFF HANGERS', 'clock-logo': 'CLOCK GAME', 'range-logo': 'RANGE GAME', 'safe-logo': 'SAFE CRACKERS', 'race-logo': 'RACE GAME', 'punch-logo': 'PUNCH-A-BUNCH'})[slot] || 'THE BIG WHEEL', W / 2, H / 2, W * .92, 0)); if (T) label('transparent around the sign', 20, 20, 26); return c.toDataURL('image/png'); }
   if (slot === 'wheel-frame') { const G = SS.WHEEL_GEOM, w = G.window; faded(() => { x.fillStyle = '#c9cdd3'; x.beginPath(); x.roundRect(60, 40, W - 120, H - 80, 60); x.fill(); x.clearRect(w[0], w[1], w[2] - w[0], w[3] - w[1]); });
     if (T) { x.strokeRect(w[0], w[1], w[2] - w[0], w[3] - w[1]); label('SEE-THROUGH window: the game draws the turning', w[0] + 10, w[1] + 20, 22); label('sections inside (5 ... 1.00)', w[0] + 10, w[1] + 52, 22); x.beginPath(); x.moveTo(w[0] - 60, (w[1] + w[3]) / 2); x.lineTo(w[0], (w[1] + w[3]) / 2); x.stroke(); label('pointer line (game draws the pointer)', 20, (w[1] + w[3]) / 2 + 10, 20); }
     return c.toDataURL('image/png'); }

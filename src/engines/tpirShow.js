@@ -15,6 +15,10 @@ const {fullBleed}=require("src/engines/fullBleed.js");
 const TAU=Math.PI*2;
 // the pricing games: id (= its own game id, for scores), card title, its show-art logo slot, one line, the engine
 const PRICING_GAMES=[
+ {id:'range-game',title:'RANGE GAME',logo:'range-logo',sub:'One press to stop the range finder on the price',col:'#e88a1a',run:s=>require("src/engines/rangeGame.js").rangeGame(s)},
+ {id:'safe-crackers',title:'SAFE CRACKERS',logo:'safe-logo',sub:'Three digits, one try to open the safe',col:'#5a6a7a',run:s=>require("src/engines/safeCrackers.js").safeCrackers(s)},
+ {id:'race-game',title:'RACE GAME',logo:'race-logo',sub:'Tag four prizes before 45 seconds run out',col:'#1a8ac8',run:s=>require("src/engines/raceGame.js").raceGame(s)},
+ {id:'punch-a-bunch',title:'PUNCH-A-BUNCH',logo:'punch-logo',sub:'Higher or lower for punches, up to $25,000',col:'#d81e4a',run:s=>require("src/engines/punchABunch.js").punchABunch(s)},
  {id:'clock-game',title:'THE CLOCK GAME',logo:'clock-logo',sub:'30 seconds to price two prizes: higher or lower?',col:'#d7101e',run:s=>require("src/engines/clockGame.js").clockGame(s)},
  {id:'cliff-hangers',title:'CLIFF HANGERS',logo:'cliff-logo',sub:'Every dollar off is a step: don\'t let him fall off the mountain',col:'#2a7ab8',run:s=>require("src/engines/cliffHangers.js").cliffHangers(s)},
  {id:'plinko-show',title:'PLINKO',logo:'plinko-logo',sub:'Price small prizes for chips, drop them for up to $50,000',col:'#1b4fd0',run:s=>require("src/engines/plinkoShow.js").plinko(s)},
@@ -27,7 +31,7 @@ async function tpirShow(s){
  const net=isOnline(s)?s.online:null,picker=!net||net.me===0,names=s.players.map(p=>p.name||'Player');
  const snd=ST.createShowSound({}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  let W=s.W,H=s.H,t=0,open=0,closing=0,chosen=-1,chosenT=0,done=false,cards=[],L={};
- await SS.ready([BG,LOGO,'curtain','plinko-logo','wheel-logo'],4000);if(!s.alive)return;
+ await SS.ready([BG,LOGO,'curtain',...PRICING_GAMES.map(g=>g.logo)],4000);if(!s.alive)return;
  snd.title(true,{loop:true});snd.crowd(3,.8,{at:.4});
  // the cards go in a grid that fits the box: one column while each card can stay at least MIN_CH font sizes tall, then 2, then 3
  // (more pricing games keep coming), and the coming-soon card drops out once there are 9 or more games.
@@ -62,7 +66,7 @@ async function tpirShow(s){
    const gr=g.createLinearGradient(0,bx.y,0,bx.y+bx.h);gr.addColorStop(0,soon?'#3a2a50':pg.col);gr.addColorStop(1,soon?'#1a1028':'#14062e');g.fillStyle=gr;g.beginPath();g.roundRect(bx.x,bx.y,bx.w,bx.h,fs*.8);g.fill();
    g.strokeStyle=isChosen&&Math.floor(chosenT*10)%2?'#fff':soon?'#8a7aa0':'#ffd75a';g.lineWidth=Math.max(2,fs*.2);g.stroke();
    if(!soon)bulbs(g,{x:bx.x+fs*.5,y:bx.y+fs*.5,w:bx.w-fs,h:bx.h-fs},Math.max(1.6,fs*.13),Math.round((bx.w+bx.h)/(fs*1.1)),isChosen);
-   if(soon){txt(g,'MORE GAMES COMING SOON',0,-fs*.55,fs*1.05,'#d8c8f0',{max:bx.w*.86});txt(g,'Contestants’ Row · Hi-Lo · Showcase…',0,fs*.85,fs*.66,'#b9a8d8',{w:800,max:bx.w*.86});}
+   if(soon){txt(g,'MORE GAMES COMING SOON',0,-fs*.55,fs*1.05,'#d8c8f0',{max:bx.w*.86});txt(g,'Hi-Lo · 3 Strikes · Showcase…',0,fs*.85,fs*.66,'#b9a8d8',{w:800,max:bx.w*.86});}
    else{const pic=SS.picture(pg.logo),lh=bx.h*.52;let ly=-bx.h*.14;
     if(pic){const k=Math.min(lh/pic.height,bx.w*.7/pic.width);g.drawImage(pic,-pic.width*k/2,ly-pic.height*k/2,pic.width*k,pic.height*k);}
     else txt(g,pg.title,0,ly,Math.min(lh*.7,fs*2),'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:bx.w*.8});

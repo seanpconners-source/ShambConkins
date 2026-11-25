@@ -1,4 +1,4 @@
-# The Price Is Right games (Plinko, The Big Wheel, Cliff Hangers, The Clock Game): art for GPT
+# The Price Is Right games (Plinko, The Big Wheel, Cliff Hangers, The Clock Game, Range Game, Safe Crackers, Race Game, Punch-a-Bunch): art for GPT
 
 Two TV-game-show games: **Plinko** (`plinko-show`) and **The Big Wheel** (`big-wheel`). They share one studio, one host and two
 show assistants. Everything is **our own**: an original host and original assistants (not any real host, model or celebrity),
@@ -70,3 +70,53 @@ under the prize, and the host calling HIGHER / LOWER. Same layout as the show, p
 | `stage-clock` | 1920x1080 | The Clock Game studio, wide: the show's bright set, bulbs and coloured panels, a shiny stage floor along the pink line. The clock stands in the left dashed box (keep it calm), the prize and keypad on the right. |
 | `stage-clock-tall` | 1080x1920 | The same studio for an upright phone: clock in the top dashed box. |
 | `stage-clock-fold` | 1504x1670 | The same studio for near-square screens (Sean's open Fold). |
+
+## Range Game (`range-game`, inside The Price Is Right)
+
+A big prize on a turntable, a TALL price board with a vertical scale, and a lit $1,500 RANGE FINDER that slowly rises up the board until
+the contestant hits the big red button. The game prints every $ number and moves the finder; the prize stands on `clock-platform`.
+
+| Slot | Size | Prompt (after the style text) |
+|---|---|---|
+| `stage-range` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Range Game studio: warm orange and gold set, bulbs, shiny floor on the pink line. Keep the dashed box calm (board + prize + button go there). |
+| `range-board` | 600x1600 | The tall price board seen straight on: a purple-and-gold frame lined with bulbs, a vertical SCALE STRIP inside the pink box (glowing green at the bottom fading to yellow then red at the top). NO numbers or $ signs. Transparent around. |
+| `range-finder` | 260x400 | The range finder: a bright lit yellow frame (chunky, with little bulbs) around a SEE-THROUGH window exactly in the pink box. Transparent inside the window and around. |
+| `range-button` | 400x400 | A big round red arcade-style stop button on a chrome pedestal, seen from the front, glossy. Transparent around. |
+| `range-logo` | 1400x500 | RANGE GAME in big lit-up game-show letters (our own design). Transparent. |
+
+## Safe Crackers (`safe-crackers`, inside The Price Is Right)
+
+Two prizes go into a GIANT steel safe; the contestant puts three digits in order on the combination plate and gets one try.
+
+| Slot | Size | Prompt (after the style text) |
+|---|---|---|
+| `stage-safe` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Safe Crackers studio: a bank-vault look in game-show colours (steel, gold, spotlights, bulbs). Keep the dashed box calm. |
+| `safe` | 1000x1100 | The giant safe with the door SHUT, seen straight on: brushed steel, rivets, hinges on the left, a brass COMBINATION plate with three dark digit windows exactly in the pink DIAL box (no digits), a big spoked chrome handle at the pink circle. Transparent around. |
+| `safe-open` | 1000x1100 | The SAME safe with the door swung open to the left: inside (pink box) a warmly lit empty cabinet with two shelves (the game puts the prizes there). Same size and position as `safe`. Transparent around. |
+| `safe-tile` | 300x360 | A lit gold number tile with a dark centre panel (pink box) and NO number (the game prints the digit). Transparent around. |
+| `safe-logo` | 1400x500 | SAFE CRACKERS in big lit-up game-show letters. Transparent. |
+
+## Race Game (`race-game`, inside The Price Is Right)
+
+Four prizes on podiums, four price tags, a 45-second clock and a lever board that lights up how many tags are right.
+
+| Slot | Size | Prompt (after the style text) |
+|---|---|---|
+| `stage-race` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Race Game studio: racing-stripe set in blue, white and gold with checkered-flag touches, bulbs. Keep the dashed box calm. |
+| `race-podium` | 600x700 | A glossy blue prize podium seen from the front, gold top rim; the prize stands on top (pink box, leave it empty); a small hook on the front at the pink circle where a price tag hangs. Transparent around. |
+| `race-tag` | 520x240 | A big blank cream price tag with a red border and a hole on the left; the game prints the price in the pink box. Transparent around. |
+| `race-board` | 1000x500 | The lever board: a dark lit panel with CORRECTLY PRICED in gold letters across the top and four round lamps (OFF, dark amber glass) exactly at the four pink circles. Transparent around. |
+| `race-lever` | 200x520 | A big upright lever: chrome bar with a red ball handle at the top, the pivot at the pink circle at the bottom. Transparent. |
+| `race-logo` | 1400x500 | RACE GAME in big lit-up game-show letters. Transparent. |
+
+## Punch-a-Bunch (`punch-a-bunch`, inside The Price Is Right)
+
+Higher or lower on four small prizes; every right answer is a punch on a 50-hole punchboard (5 rows of 10) hiding cash slips up to $25,000.
+
+| Slot | Size | Prompt (after the style text) |
+|---|---|---|
+| `stage-punch` / `-tall` / `-fold` | 1920x1080 / 1080x1920 / 1504x1670 | The Punch-a-Bunch studio: hot pink and gold set, bulbs, a boxing-glove motif. Keep the dashed box calm. |
+| `punch-board` | 2000x1160 | The punchboard seen straight on: a big red-and-gold frame with PUNCH-A-BUNCH in lit letters across the top, and inside the pink GRID box a dark backing with 50 round hole rims in 5 rows of 10 (the game draws the paper on each hole). Transparent around. |
+| `punch-paper` | 200x200 | One hole covered with shiny gold foil paper (not punched), seen straight on, filling the pink circle. |
+| `punch-slip` | 640x320 | The unfolded paper slip that comes out of a hole: crisp cream paper with a red border and a fold line; blank in the pink box (the game prints the $). Transparent around. |
+| `punch-logo` | 1400x500 | PUNCH-A-BUNCH in big lit-up game-show letters. Transparent. |
