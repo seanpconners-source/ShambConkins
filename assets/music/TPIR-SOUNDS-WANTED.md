@@ -33,3 +33,4 @@ and the Showcase. They are `tpir-v-<key>-<n>.mp3`; the list of lines, who says t
 
 A real recording always wins: drop `tpir-say-come-on-down.mp3` (or any `tpir-say-*` above) in and the game plays it instead of the
 generated stand-in.
+Every show sound we have and where it came from: docs/SOUND-SOURCES-TPIR.md

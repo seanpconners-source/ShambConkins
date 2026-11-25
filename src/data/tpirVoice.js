@@ -59,9 +59,8 @@ const LINES=[
  // ---- Safe Crackers
  ['safe-intro-1',BOB,'Two prizes are going into our safe...','Two prizes are going into our safe…',['safe'],1],
  ['safe-intro-2',BOB,'The combination is the price of the smaller one. Three different digits, one try!','The combination is the price of the smaller one. Three different digits, one try!',['safe'],1],
- ['safe-digits',BOB,'Use each one once. You get one try!',/^Your digits are /i,['safe'],1],
+ ['safe-digits',BOB,'Here are your three digits. Use each one once. You get one try!','Here are your three digits. Use each one once. You get one try!',['safe'],1],
  ['safe-try',BOB,'Let\'s try it...','Let\'s try it…',['safe'],1],
- ['safe-in',BOB,'Two prizes in the safe! The combination is the price of the smaller one.',/^In the safe: /i,['safe'],1],
  // ---- the Race Game
  ['race-intro-1',BOB,'Four prizes, four price tags, and forty-five seconds on the clock...','Four prizes, four price tags, and 45 seconds on the clock…',['race'],1],
  ['race-intro-2',BOB,'Pull the lever and the board lights up how many are right. Keep going until you get all four!','Pull the lever and the board lights up how many are right. Keep going until you get all four!',['race'],1],
@@ -97,6 +96,10 @@ for(const [id,name] of [...SP.MID_PRIZES,...SP.GRAND_PRIZES])LINES.push([`its-${
 for(const [id,name] of SP.GRAND_PRIZES){
  LINES.push([`range-for-${id}`,BOB,`You're playing for ${name}! The range finder covers fifteen hundred dollars. Stop it when you think the price is inside.`,`You're playing for ${name}! The range finder covers $1,500. Stop it when you think the price is inside.`,['range'],1]);
  LINES.push([`cliff-won-${id}`,BOB,`He made it! You win ${name}!`,`He made it! You win ${name}!`,['cliff'],1]);}
+// Safe Crackers says exactly what its bubble says: one line per pair it can deal (smaller prize = a MID prize whose price has three
+// different digits, the game's own rule; bigger = a grand prize)
+for(const [sid,sname,sprice] of SP.MID_PRIZES.filter(q=>new Set(String(q[2])).size===String(q[2]).length&&String(q[2]).length===3))for(const [gid,gname] of SP.GRAND_PRIZES)
+ LINES.push([`safe-in-${sid}--${gid}`,BOB,`In the safe: ${sname} and ${gname}! The combination is the price of the ${sname}.`,`In the safe: ${sname} and ${gname}! The combination is the price of the ${sname}.`,['safe'],1]);
 const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const EXACT=new Map(LINES.filter(l=>typeof l[3]==='string').map(l=>[norm(l[3]),l[0]]));
 const PATTERNS=LINES.filter(l=>l[3] instanceof RegExp);

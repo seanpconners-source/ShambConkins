@@ -33,7 +33,7 @@ const {guestDeck}=require("src/engines/gameshow/guests.js");
 async function bigWheel(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#1a0a3a'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({song:'showcase-showdown',voice:'wheel'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({song:'showcase-showdown',voice:'wheel',clips:['wheel-dollar','showcase-win']}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const R=seededRandom(`${s.seed}:bigwheel`);
  // contestants: 0/1 players, 2 the studio guest (played by the game on every phone)
  const gst=guestDeck(s.seed,s.players.map(p=>p.character),'bigwheel:guest')()||{name:'Guest',short:'Guest',col:'#e86a92',id:null};
@@ -142,7 +142,7 @@ async function bigWheel(s){
  function shouldSpin(ci){const c2=C[ci],best=bestSoFar(),left=order.slice(order.indexOf(ci)+1).length,v=c2.total;if(v<best||v===best&&left===0)return true;
   const sk=c2.guest?.85:cpuSkill(s);return v<(left?60:50)+(1-sk)*10;}
  function reactTo(ci,v,second){const c2=C[ci],tot=c2.total;
-  if(tot===100){c2.mood='win';sfx.dollar();banner={big:'ONE DOLLAR!',small:'$1,000 and a bonus spin!',t:2.4,col:'#ffe23a'};say('A DOLLAR! You win a thousand dollars!',2400,'cheer');modelPose='clap';vibrate([40,60,40,60,120]);}
+  if(tot===100){c2.mood='win';if(snd.clip('wheel-dollar'))sfx.cheer(2.4,.2);else sfx.dollar();banner={big:'ONE DOLLAR!',small:'$1,000 and a bonus spin!',t:2.4,col:'#ffe23a'};say('A DOLLAR! You win a thousand dollars!',2400,'cheer');modelPose='clap';vibrate([40,60,40,60,120]);}
   else if(c2.over){c2.mood='sad';sfx.over();banner={big:'OVER!',small:`${label(tot)}: over a dollar`,t:2,col:'#ff6a5a'};say('Oh, you went over. I\'m sorry.',2000);}
   else{sfx.ding();c2.mood=tot>=80?'win':'normal';banner={big:label(v),small:second?`TOTAL ${label(tot)}`:'',t:1.4,col:'#fff'};if(tot>=85)sfx.applause(1.4);}}
  async function bonusSpin(ci){const c2=C[ci];cur=ci;banner={big:'BONUS SPIN!',small:'5 or 15 wins $10,000 · the dollar wins $25,000',t:2.2,col:'#7dff5a'};await wait(2200);
@@ -175,7 +175,7 @@ async function bigWheel(s){
   for(const ci of top){cur=ci;const v=await oneSpin(ci,true);if(v==null)return;got.push(v);banner={big:label(v),small:C[ci].name.toUpperCase(),t:1.4,col:'#fff'};sfx.ding();await wait(1400);}
   const mx=Math.max(...got);top=top.filter((ci,k)=>got[k]===mx);}
  const w=top[0];mode='over';cur=w;snd.music(false);C[w].mood='win';
- banner={big:`${C[w].name.toUpperCase()} WINS!`,small:'On to the Showcase!',t:3,col:'#ffe23a'};if(w<2)sfx.winner();else sfx.jackpot();modelPose='clap';say(`${C[w].name}, you're going to the Showcase!`,3000,'cheer');if(w<2)s.react?.(w,'win');
+ banner={big:`${C[w].name.toUpperCase()} WINS!`,small:'On to the Showcase!',t:3,col:'#ffe23a'};if(!snd.clip('showcase-win',{max:9,fout:1.4})){if(w<2)sfx.winner();else sfx.jackpot();}else sfx.applause(3,.7);modelPose='clap';say(`${C[w].name}, you're going to the Showcase!`,3000,'cheer');if(w<2)s.react?.(w,'win');
  await wait(3200);
  const score=i=>(C[i].over?0:C[i].total)+(i===w?200:0)+Math.round(C[i].bonus/100);
  s.finish([score(0),score(1)],`THE BIG WHEEL · ${C.map(o=>`${o.name} ${o.over?'over':label(o.total)}`).join(' · ')} · ${C[w].name} wins`);}

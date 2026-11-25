@@ -33,7 +33,7 @@ function drawTile(g,digit='',lit=false){const pic=SS.picture('safe-tile');if(pic
  else{g.save();g.fillStyle=lit?'#fff6c0':'#ffd23f';g.beginPath();g.roundRect(10,10,TG.w-20,TG.h-20,40);g.fill();g.strokeStyle='#8a5a10';g.lineWidth=12;g.stroke();g.fillStyle='#14062e';g.beginPath();g.roundRect(50,50,TG.w-100,TG.h-100,24);g.fill();g.restore();}
  if(digit!==''){g.save();g.font='900 220px "SC Bangers",Impact,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillStyle='#ff3a2a';g.shadowColor='#ff3a2a';g.shadowBlur=24;g.fillText(digit,TG.w/2,TG.h/2+10);g.restore();}}
 async function safeCrackers(s){
- const K=createKit(s,{kind:'safe',clips:['safe-crackers','big-winner','losing-horn','buzzer','bell','ding'],song:'safe-crackers'}),{net,names,snd,sfx}=K;
+ const K=createKit(s,{kind:'safe',clips:['safe-crackers','big-winner','losing-horn','buzzer','bell','ding','safe-creak','safe-slam'],song:'safe-crackers'}),{net,names,snd,sfx}=K;
  const smalls=SP.MID_PRIZES.filter(p=>uniq(p[2]));
  const P=names.map((n,i)=>{const R=seededRandom(`${s.seed}:safe:${i}`),sm=smalls[Math.floor(R()*smalls.length)],bg=SP.GRAND_PRIZES[Math.floor(R()*SP.GRAND_PRIZES.length)],code=String(sm[2]);
   let dg=shuffle(code.split(''),R);if(dg.join('')===code)dg=[dg[1],dg[2],dg[0]];
@@ -79,9 +79,13 @@ async function safeCrackers(s){
  s.on(document,'keydown',ev=>{if(s.paused||K.mode!=='input'||K.waiting())return;const p=P[K.cur];if(/^\d$/.test(ev.key)){const j=p.digits.findIndex((d,k)=>d===ev.key&&!p.slots.includes(k));if(j>=0)put(j);}
   else if(ev.key==='Backspace'){const at=[2,1,0].find(a=>p.slots[a]!=null);if(at!=null)take(at);}else if(ev.key==='Enter'&&p.slots.every(v=>v!=null))tryIt();});
  K.frame(dt=>{if(dialRoll>=0)spin+=dt*6;draw();});
- async function play(i){const p=P[i];K.cur=i;doorOpen=true;dialRoll=-1;
+ async function play(i){const p=P[i];K.cur=i;if(!doorOpen)snd.clip('safe-creak',{max:2,fout:.5});doorOpen=true;dialRoll=-1;
   K.say(`In the safe: ${p.small.name} and ${p.big.name}! The combination is the price of the ${p.small.name}.`,3600);await K.wait(3600);if(!s.alive)return;
-  doorOpen=false;sfx.over?.();vibrate(30);K.say(`Your digits are ${p.digits.join(', ')}. Use each one once. You get one try!`,3000);await K.wait(1200);
+  // the show's own door: tpir-safe-slam = the door swinging, a beat, then the slam (at 1.9 s); start it 1.2 s in so the slam lands as
+  // the door shuts on screen; drawn thud if the recording isn't in
+  if(snd.clip('safe-slam',{off:1.2})){await K.sleep(650);doorOpen=false;vibrate(30);await K.sleep(500);}else{doorOpen=false;sfx.clunk?.();vibrate(30);await K.sleep(450);}
+  // the digits are on the tiles: the host says only what's in his bubble (owner, Nov 25: lines must match the screen)
+  K.say('Here are your three digits. Use each one once. You get one try!',3000);await K.wait(1200);
   K.mode='input';snd.music(true);
   if(K.cpuTurn()){const sk=K.skill(),R=seededRandom(`${s.seed}:safecpu`),perms=[...new Set(['012','021','102','120','201','210'].map(o=>o.split('').map(n=>p.digits[+n]).join('')))];
    const pick=R()<.2+.45*sk?p.code:perms.filter(x=>x!==p.code)[Math.floor(R()*5)%Math.max(1,perms.length-1)]||p.code;
@@ -91,7 +95,7 @@ async function safeCrackers(s){
   if(!s.alive)return;K.mode='play';snd.music(false);K.say('Let\'s try it…',1600);dialRoll=0;sfx.drumroll?.(1.6);
   for(let j=0;j<3;j++){await K.sleep(550);dialRoll=j+1;sfx.click?.();}dialRoll=-1;await K.sleep(500);
   p.open=p.tried===p.code;p.done=true;
-  if(p.open){spin=0;for(let k2=0;k2<14;k2++){spin+=.12;await K.sleep(40);}doorOpen=true;p.score=p.small.price+p.big.price;p.mood='win';sfx.bell?.();if(!snd.clip('bell'))sfx.ding();
+  if(p.open){spin=0;for(let k2=0;k2<14;k2++){spin+=.12;await K.sleep(40);}snd.clip('safe-creak',{max:2.6,fout:.6});doorOpen=true;p.score=p.small.price+p.big.price;p.mood='win';sfx.bell?.();if(!snd.clip('bell'))sfx.ding();
    K.show('THE SAFE IS OPEN!',`${p.small.name} + ${p.big.name.replace(/^an? /,'')} · ${K.money(p.score)}`,3,'#7dff5a');sfx.jackpot(true);vibrate([30,40,30]);}
   else{p.mood='sad';sfx.buzz();await K.sleep(500);K.show('LOCKED!',`The combination was ${p.code}`,2.6,'#ff6a5a');if(!snd.clip('losing-horn'))sfx.aww?.();}
   await K.wait(3000);}

@@ -4,7 +4,7 @@
 // Each contestant plays for their own prize (real products, showPrizes.js GRAND_PRIZES). 1P = you, then a CPU; 2P one phone; board.
 // Online: the contestant's phone sends {rg:f} (where the finder stopped, 0..1) and both phones show the same finish.
 // Pictures (optional, drawn fallback): range-board / range-finder / range-button / range-logo / stage-range(-tall/-fold), the prize on the
-// clock-platform; sounds: tpir-range-game (the finder music, looped while it rises), ding/bell/losing-horn, the crowd.
+// clock-platform; sounds: tpir-range-game-full (the show's full 56 s finder music from 101soundboards, looped while it rises; tpir-range-game = the old 3.9 s cut), ding/bell/losing-horn, the crowd.
 const SS=require("src/data/showSprites.js");
 const SP=require("src/data/showPrizes.js");
 const {createKit,shuffle,txt}=require("src/engines/gameshow/pricingKit.js");
@@ -27,7 +27,7 @@ function drawButton(g,down=false){const pic=SS.picture('range-button'),S=SS.BUTT
  g.save();g.fillStyle='#3a3a44';g.beginPath();g.ellipse(200,300,170,70,0,0,Math.PI*2);g.fill();g.fillStyle='#8a8a96';g.fillRect(30,240,340,60);g.beginPath();g.ellipse(200,240,170,70,0,0,Math.PI*2);g.fill();
  const top=down?215:175;g.fillStyle='#8a0a10';g.fillRect(70,top,260,240-top+10);g.fillStyle='#e8202a';g.beginPath();g.ellipse(200,top,130,52,0,0,Math.PI*2);g.fill();g.fillStyle='rgba(255,255,255,.35)';g.beginPath();g.ellipse(170,top-14,60,18,-.2,0,Math.PI*2);g.fill();g.restore();}
 async function rangeGame(s){
- const K=createKit(s,{kind:'range',clips:['range-game','losing-horn','big-winner','ding','bell'],song:'range-game'}),{net,names,snd,sfx}=K;
+ const K=createKit(s,{kind:'range',clips:['range-game','losing-horn','big-winner','ding','bell'],song:'range-game-full'}),{net,names,snd,sfx}=K;
  const R0=seededRandom(`${s.seed}:range`),order=shuffle(SP.GRAND_PRIZES,R0);
  const P=names.map((n,i)=>{const [id,name,price,em]=order[i%order.length],R=seededRandom(`${s.seed}:range:${i}`),lo=Math.max(0,Math.floor((price-300-R()*(SCALE-1100))/500)*500);
   return {prize:{id,name,price,em},lo,f:0,stopped:false,shown:0,won:false,score:0,done:false,mood:'normal'};});

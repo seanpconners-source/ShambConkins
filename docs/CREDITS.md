@@ -19,6 +19,10 @@
 The Doom engine in `src/engines/doom/` is a JS rebuild modelled closely on the original engine's published source
 (id Software, GPL-2.0), so treat that folder as GPL-2.0 if it is ever distributed. DOOM and DOOM II are id Software's; their WADs are never stored in this repo (see `src/engines/doom/README.md`).
 
+## The Price Is Right show sounds (assets/music/tpir-*)
+
+From two soundboards: realmofdarkness.net/sb/tpir and 101soundboards.com board 33350. Every sound on both, with links and what the game uses: docs/SOUND-SOURCES-TPIR.md.
+
 ## The Price Is Right voices (assets/music/tpir-v-*)
 
 Made with fish.audio text-to-speech (s2.1-pro-free) from two community voice models on fish.audio: "Bob Barker (Himself)" and "Rich Fields (TPIR 2007-2010 voice) (Announcing)". Lines written for this game (src/data/tpirVoice.js).

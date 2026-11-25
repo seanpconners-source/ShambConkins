@@ -30,7 +30,7 @@ function drawLever(g,pull=0){const pic=SS.picture('race-lever'),[px,py]=LG.pivot
  if(pic)g.drawImage(pic,0,0,LG.w,LG.h);else{g.fillStyle='#c0c4cc';g.fillRect(px-14,60,28,py-60);g.fillStyle='#e8202a';g.beginPath();g.arc(px,60,52,0,TAU);g.fill();g.fillStyle='rgba(255,255,255,.4)';g.beginPath();g.arc(px-16,44,16,0,TAU);g.fill();}
  g.restore();if(!pic){g.fillStyle='#3a3f46';g.beginPath();g.arc(px,py,40,0,TAU);g.fill();}}
 async function raceGame(s){
- const K=createKit(s,{kind:'race',clips:['race-game','big-winner','buzzer','bell','ding','losing-horn'],song:'race-game'}),{net,names,snd,sfx}=K;
+ const K=createKit(s,{kind:'race',clips:['race-game','big-winner','buzzer','bell','ding','losing-horn','ding-ding-ding'],song:'race-game'}),{net,names,snd,sfx}=K;
  const P=names.map((n,i)=>{const R=seededRandom(`${s.seed}:race:${i}`),pool=shuffle(SP.MID_PRIZES,R),seen=new Set(),pr=[];for(const q of pool){if(seen.has(q[2]))continue;seen.add(q[2]);pr.push({id:q[0],name:q[1],price:q[2],em:q[3]});if(pr.length===4)break;}
   return {prizes:pr,tags:shuffle(pr.map(q=>q.price),R),at:[null,null,null,null],lights:-1,pulls:0,left:CLOCK,done:false,won:[],score:0,mood:'normal'};});
  for(const p of P)for(const q of p.prizes)SP.prizePhoto(q.id);
@@ -105,7 +105,7 @@ async function raceGame(s){
   await done;if(!s.alive)return;K.mode='play';snd.music(false);sel=null;
   if(net&&K.mine(i))net.send({rf:[p.at.slice(),Math.round(p.left*10)/10]});
   p.won=[0,1,2,3].filter(k=>p.at[k]!=null&&p.tags[p.at[k]]===p.prizes[k].price);p.score=p.won.reduce((a,k)=>a+p.prizes[k].price,0);p.done=true;p.lights=p.won.length;
-  if(p.won.length===4){p.mood='win';K.show('ALL FOUR!',`With ${Math.ceil(p.left)} seconds left · ${K.money(p.score)}`,3,'#7dff5a');sfx.jackpot(true);vibrate([30,40,30]);}
+  if(p.won.length===4){p.mood='win';K.show('ALL FOUR!',`With ${Math.ceil(p.left)} seconds left · ${K.money(p.score)}`,3,'#7dff5a');snd.clip('ding-ding-ding');sfx.jackpot(true);vibrate([30,40,30]);}
   else{sfx.buzz();await K.sleep(400);p.mood=p.won.length?'normal':'sad';K.show('TIME!',p.won.length?`You win ${p.won.length} of 4 · ${K.money(p.score)}`:'No prizes this time',2.8,p.won.length?'#ffe23a':'#ff6a5a');if(!p.won.length&&!snd.clip('losing-horn'))sfx.aww?.();}
   await K.wait(3200);}
  s.debug={get mode(){return K.mode;},P,get cur(){return K.cur;},pick,placeOn,pullLever,set hurry(v){K.hurry=!!v;},solve:()=>{const p=P[K.cur];p.prizes.forEach((q,i)=>{const ti=p.tags.indexOf(q.price);sel=ti;placeOn(i);});},

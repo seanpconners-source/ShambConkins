@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Safe Crackers:** the show's real door creak and slam (instead of a buzzer), the host says exactly what's in his speech bubble, and nothing cuts him off.
+- **More show sounds:** the Big Wheel's dollar beeps and Showcase Showdown win cue, the full Range Game music, ding-ding-ding for all four in the Race Game.
+- **Sound log:** every sound on both Price Is Right soundboards is listed in docs/SOUND-SOURCES-TPIR.md, with the unused ones archived for later games.
+
 ## v0.99.67
 
 - **The Price Is Right talks:** Bob Barker now says the host's lines out loud in every pricing game, and the announcer calls contestants down and presents the prizes on Contestants' Row ("It's a Nintendo Switch 2!"). He finishes his sentence before the show moves on; tap to hurry him. Real show recordings, when added, still play first.
