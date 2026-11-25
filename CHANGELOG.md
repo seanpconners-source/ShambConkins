@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.65
+
+- **The Price Is Right, Contestants' Row:** the one-bid game is here. Names get called from the audience ("COME ON DOWN!"), four contestants bid on each prize from their podiums, closest without going over wins, and a perfect bid pays $500 extra. It's the first card in The Price Is Right.
+- **The Price Is Right, the studio audience:** a packed house exactly like the real show (big red aisle, theater seats, rainbow curtains, studio lights) full of our characters in real show-audience clothes. They jump, clap, fist-pump and point when a name is called, and every so often someone from another game sneaks in.
+- **The Price Is Right, new studios:** Range Game, Safe Crackers, Race Game and Punch-a-Bunch now have their own real studio sets, and their props are real pictures too.
+- **The Warriors, cutscene faces:** the first shot of a cutscene now waits until everyone's real face has loaded, so no drawn heads show up.
+
 ## v0.99.64
 
 - **The Price Is Right, Bob and the girls everywhere:** the host walks on to talk in every pricing game (Range Game, Safe Crackers, Race Game, Punch-a-Bunch, Cliff Hangers, The Clock Game), a model waves in for each contestant's turn, and both cheer when someone wins.
