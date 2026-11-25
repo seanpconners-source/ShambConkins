@@ -26,15 +26,22 @@ function simSpin(a0,w0){const DT=1/240,out=[[a0,0]],clicks=[];let a=a0,w=w0,t=0,
  // the flapper settles it into the middle of the section it rests in
  const end=Math.round(a);for(let k=1;k<=12;k++){t+=1/60;out.push([a+(end-a)*(1-Math.pow(1-k/12,2)),t]);}
  return {path:out,clicks,end,travel:end-a0,value:valueAt(end),dur:t};}
-// the studio contestant (third podium): our own made-up audience member
-const GUESTS=[['DOLORES','#e86a92'],['BIG RON','#3a86ff'],['GLADYS','#ff9f1c'],['TEDDY','#2ec4b6'],['MARGE','#9b5de5'],['SAL','#f15bb5']];
+// the studio contestant (third podium): a made-up audience name (owner, Nov 25: keep the random name) wearing the face of a random
+// character from the game (any character with its own picture + measured face, not the two players'); the drawn face is the fallback
+const GUESTS=[['DOLORES','#e86a92'],['BIG RON','#3a86ff'],['GLADYS','#ff9f1c'],['TEDDY','#2ec4b6'],['MARGE','#9b5de5'],['SAL','#f15bb5'],['BEV','#ff6b6b'],
+ ['EARL','#4cc9f0'],['RHONDA','#f77f00'],['VINNIE','#80ed99'],['PEGGY','#c77dff'],['DWAYNE','#ffd166'],['LORETTA','#ef476f'],['GUS','#06d6a0']];
+const {faceSprite,headFacts}=require("src/headFacts.js");
+function guestCharacter(seed,taken){try{const UP=require("src/data/userPortraits.js"),A=require("src/assets.js");
+ const pool=require("src/contentPolicy.js").ACTIVE_CATALOG.characters.filter(c=>c.unlockBy!=='dogs'&&!taken.has(c.id)&&headFacts(c.id,'normal')&&UP.isRasterArt(A.portraitURL(c.id,'normal'))).map(c=>c.id);
+ if(!pool.length)return null;const R=seededRandom(`${seed}:bigwheel:face`);return pool[Math.floor(R()*pool.length)];}catch{return null;}}
 async function bigWheel(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#1a0a3a'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
  const snd=ST.createShowSound({song:'showcase-showdown'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const R=seededRandom(`${s.seed}:bigwheel`),gs=GUESTS[Math.floor(R()*GUESTS.length)];
  // contestants: 0/1 players, 2 the studio guest (played by the game on every phone)
- const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gs[0],guest:true,color:gs[1]}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
+ const gid=guestCharacter(s.seed,new Set(s.players.map(p=>p.character)));
+ const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gs[0],guest:true,color:gs[1],face:gid}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
  const order=[0,1,2];for(let k=2;k>0;k--){const j=Math.floor(R()*(k+1));[order[k],order[j]]=[order[j],order[k]];}
  const human=ci=>ci<2&&(net?ci===me:!(cpu&&ci===1));
  let W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=-1,ang=Math.floor(R()*N),spin=null,banner=null,hostSay=null,hostPose='talk',modelPose='present',hurry=false,choice=null,chooseBtns=[],drag=null,shake=0;
@@ -73,7 +80,7 @@ async function bigWheel(s){
  function podiums(g){const fs=L.fs,n=3,wide=L.wide,pw=wide?Math.min(W*.2,fs*9):Math.min((W-24)/3,fs*8),ph=fs*4.6;
   order.forEach((ci,k)=>{const c2=C[ci],x0=wide?10:8+k*(pw+4),y0=wide?L.top+fs*3+k*(ph+8):H-ph-10,on=ci===cur;
    g.fillStyle=on?'rgba(255,226,58,.95)':'rgba(20,6,46,.85)';g.beginPath();g.roundRect(x0,y0,pw,ph,10);g.fill();g.strokeStyle='#ffd75a';g.lineWidth=2;g.stroke();
-   const fx=x0+fs*1.6,fy=y0+fs*1.9;if(c2.guest){guestFace(g,fx,fy,fs*1.25,c2.color,c2.mood);}else s.sprite(g,c2.p,fx,fy,fs*2.6,{exact:true,still:true,mood:c2.mood});
+   const fx=x0+fs*1.6,fy=y0+fs*1.9;if(c2.guest){const sp=c2.face&&faceSprite(c2.face,headFacts(c2.face,c2.mood)?c2.mood:'normal',fs*1.7,1);if(sp)g.drawImage(sp.cv,fx+sp.x,fy+sp.y);else guestFace(g,fx,fy,fs*1.25,c2.color,c2.mood);}else s.sprite(g,c2.p,fx,fy,fs*2.6,{exact:true,still:true,mood:c2.mood});
    ST.nameTag(g,fx,y0+ph-fs*.85,fs*2.6,c2.name.slice(0,9));
    g.fillStyle=on?'#14062e':'#fff';g.textAlign='right';g.textBaseline='middle';g.font=`900 ${fs*1.9}px "SC Bangers",Impact,sans-serif`;
    g.fillText(c2.over?'OVER':c2.spins.length?label(c2.total):'—',x0+pw-8,y0+fs*1.8);g.font=`800 ${fs*.62}px "SC Nunito",sans-serif`;
