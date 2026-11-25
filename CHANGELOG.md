@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.62
+
+- **The Warriors, heads placed by hand:** every one of the 563 fighter poses now has its head where it belongs on the neck, turned and sized to fit (placed one by one in the Head Placer).
+- **The Warriors, real faces on the nameless:** enemies without their own art now wear real character faces from the game, and every so often beating one unlocks that character.
+- **Cliff Hangers and The Clock Game get their show look:** the painted mountain, the yodeler with his feathered hat, the contestant stand, the big lighted clock, the price display, the platform, both logos and the studio sets on every screen size.
+- **The Price Is Right:** the host and the models are much bigger in Plinko and The Big Wheel, and The Clock Game's clock now ticks out loud.
+
 ## v0.99.61
 
 - **The Price Is Right, all in one place:** Plinko and The Big Wheel now live inside one Arcade entry, The Price Is Right. The curtain goes up while the show's theme plays and you pick a pricing game from the title screen. (The old "Come On Down!" episode is retired; its art is the new entry's look.)

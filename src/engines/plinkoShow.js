@@ -70,7 +70,7 @@ async function plinko(s){
  function draw(){layout();x.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);const g=x,fs=L.fs;ST.drawStage(g,W,H,'plinko',t);
   const showBoard=mode!=='intro'||introT>2.2;
   // host and models: beside the board when wide, small at the bottom corners when tall
-  const hostH=L.wide?H*.62:Math.min(H*.3,W*.42),hx=L.wide?L.bx*.45:W*.13,hy=L.wide?H*.96:H-4;
+  const hostH=L.wide?H*.86:Math.min(H*.44,W*.66),hx=L.wide?L.bx*.45:W*.13,hy=L.wide?H*.96:H-4;
   if(showBoard){const bc=boardLayer();g.drawImage(bc,L.bx,L.by,bc.width/(Math.min(2,window.devicePixelRatio||1)),bc.height/(Math.min(2,window.devicePixelRatio||1)));
    for(const [i,v] of lit){const [px,py]=PEGS[i];g.fillStyle=`rgba(255,247,170,${v})`;g.beginPath();g.arc(bxp(px),byp(py),(PEG_R+6*v)*L.k,0,TAU);g.fill();}
    ST.drawLogo(g,'plinko-logo','PLINKO',L.logo.x,L.logo.y,L.logo.w,t);

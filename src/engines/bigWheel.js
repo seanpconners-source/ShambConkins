@@ -84,7 +84,7 @@ async function bigWheel(s){
   if(mood==='sad')g.arc(x0,y0+r*.6,r*.3,Math.PI*1.15,Math.PI*1.85);else g.arc(x0,y0+r*.25,r*.35,.2,Math.PI-.2);g.stroke();g.restore();}
  const txtC=(g,s2,x0,y0,size,col)=>{g.save();g.font=`900 ${size}px "SC Nunito",sans-serif`;g.textAlign='center';g.textBaseline='middle';g.lineWidth=size*.3;g.strokeStyle='rgba(0,0,0,.7)';g.strokeText(s2,x0,y0);g.fillStyle=col;g.fillText(s2,x0,y0);g.restore();};
  function draw(){layout();x.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);const g=x,fs=L.fs;ST.drawStage(g,W,H,'wheel',t);
-  const hostH=L.wide?H*.6:Math.min(H*.26,W*.36),hx=L.wide?W-W*.09:W*.86,hy=L.wide?H*.97:H-fs*5.6;
+  const hostH=L.wide?H*.84:Math.min(H*.4,W*.58),hx=L.wide?W-W*.09:W*.86,hy=L.wide?H*.97:H-fs*5.6;
   if(L.wide){ST.drawModel(g,L.wx-L.ww*.32,H*.97,hostH*.92,modelPose,t,0);ST.drawModel(g,L.wx+L.ww*1.3,H*.97,hostH*.9,modelPose,t+1,1,true);}
   g.save();if(shake){g.translate(Math.sin(t*90)*shake*4,0);}drawWheel(g);g.restore();
   ST.drawLogo(g,'wheel-logo','THE BIG WHEEL',W/2,Math.max(L.top+fs*.6,L.wy-fs*.4),Math.min(W*.46,fs*15),t,{cols:['#ffe23a','#ff8a1e']});
