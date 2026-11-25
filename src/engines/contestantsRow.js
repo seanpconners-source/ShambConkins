@@ -45,12 +45,18 @@ function drawRef(g,W,H,slot){const CB=SS.CR_BODY;
 async function contestantsRow(s){
  const K=createKit(s,{kind:'row',clips:['come-on-down','perfect-bid','buzzer-overbid','buzzer-overbid-2','ding','bell'],song:null});
  const {x,net,me,cpu,board,names,snd,sfx}=K;const R=seededRandom(`${s.seed}:crow`);
+ const aud=AUD.createAudience({seed:s.seed,exclude:s.players.map(p=>p.character)});
  const pool=facePool().filter(id=>!s.players.some(p=>p.character===id));
  const pickFace=k=>pool.length?pool[Math.floor(seededRandom(`${s.seed}:crow:face:${k}`)()*pool.length)]:null;
  // the seats left to right: the two players in the middle, a guest at each end
- let guestN=0;const newGuest=()=>{const g=GUESTS[(Math.floor(R()*GUESTS.length)+guestN*5)%GUESTS.length];const o={name:g[0],col:g[1],face:pickFace(guestN),guest:true,body:2+guestN%2};guestN++;return o;};
+ // bodies: any of the 12 show bodies (cr-body-1..4 contestants, cr-fan-1..8 audience members), dealt from a shuffled deck so nobody
+ // on the row matches; now and then (CAMEO_K) a body from one of our other games instead
+ const CAMEO_K=1/50,deck=[];let cameos=null;
+ const nextBody=()=>{if(!deck.length){const d=[...Array(12).keys()];for(let i=d.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[d[i],d[j]]=[d[j],d[i]];}deck.push(...d.filter(b=>!seats_?.some(o=>o.body===b)));}
+  const body=deck.shift();let cameo=null;if(R()<CAMEO_K){cameos=cameos||aud.cameoList();if(cameos.length)cameo=cameos[Math.floor(R()*cameos.length)];}return {body,cameo};};
+ let seats_=null,guestN=0;const newGuest=()=>{const g=GUESTS[(Math.floor(R()*GUESTS.length)+guestN*5)%GUESTS.length];const o={name:g[0],col:g[1],face:pickFace(guestN),guest:true,...nextBody()};guestN++;return o;};
  const short=n=>String(n).replace(/\s*\(CPU\)\s*$/i,'');
- const seats=[newGuest(),{p:0,name:short(names[0]),body:0,col:'#e63946'},{p:1,name:short(names[1]),body:1,col:'#3a86ff'},newGuest()].map(o=>({...o,bid:null,won:[],score:0,in:0,pose:'stand',poseT:0,mood:'normal',lit:0}));
+ const seats=[newGuest(),{p:0,name:short(names[0]),col:'#e63946',...nextBody()},{p:1,name:short(names[1]),col:'#3a86ff',...nextBody()},newGuest()].map(o=>({...o,bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0}));seats_=seats;
  const N=board?2:4,items=[];{const bag=ITEMS.slice();for(let i=0;i<N;i++)items.push(bag.splice(Math.floor(R()*bag.length),1)[0]);}
  items.forEach(it=>SP.prizePhoto(it[0]));
  let scene='row',call=null,item=null,itemT=0,priceShown=false,limit=0,cur=-1,typed='',warn=null,warnT=0,hype=0,keys=[],quick=[],tries=0,actual=null;
@@ -58,14 +64,21 @@ async function contestantsRow(s){
  const remote=ci=>{const st=seats[ci];return st.p!=null&&net&&st.p!==me;};
  let resolveBid=null;
  // ---- people
- function bodyPic(k){return SS.picture('cr-body-'+(k+1));}
  const CB=SS.CR_BODY;
+ // the sheet for body k: 0-3 = cr-body-N (contestants, run frames), 4-11 = cr-fan-N (audience: no run/sad frames)
+ function sheetOf(k){if(k<4){const p=SS.picture('cr-body-'+(k+1));return p?{img:p,D:SS.CR_BODY}:null;}const p=SS.picture('cr-fan-'+(k-3));return p?{img:p,D:SS.CR_FAN}:null;}
+ // the frame for a pose on a sheet with nf frames: runs on an audience sheet are fists-up cheering steps, sad = stand
+ function frameFor(D,nf,pose,t){const fr=D.frames.slice(0,nf),b=Math.floor(t*6)%2,has=f=>fr.includes(f);
+  const want=pose==='run'?(has('run1')?'run'+(1+Math.floor(t*11)%4):(b?'cheer1':'cheer2')):pose==='cheer'?(has('cheer')?'cheer':(b?'cheer1':'cheer2')):pose==='clap'?(has('clap')?'clap':(b?'clap1':'clap2')):pose==='sad'&&!has('sad')?'stand':pose;
+  const i=fr.indexOf(want);return i>=0?i:0;}
  // a contestant standing with feet on (fx,fy), h tall; pose stand/run/jump/cheer/clap/sad; the face from the player or the guest
- function person(g,o,fx,fy,h,pose,t,dir=1){const u=h/100,run=pose==='run',ph=t*11;let jump=0;if(pose==='jump')jump=Math.abs(Math.sin(t*7))*14*u;fy-=jump;
-  const pic=bodyPic(o.body);let face={x:fx,y:fy-CB.face[1]*h};
-  if(pic){const fi=Math.max(0,CB.frames.indexOf(pose==='run'?'run'+(1+Math.floor(ph)%4):pose)),fw=pic.width/CB.frames.length,k=h/CB.unit;
-   g.save();g.translate(fx,fy);if(dir<0)g.scale(-1,1);g.drawImage(pic,fi*fw,0,fw,pic.height,-CB.feet[0]*k,-CB.feet[1]*k,fw*k,pic.height*k);g.restore();
-   face={x:fx+(CB.spot[0]-CB.feet[0])*k*dir,y:fy+(CB.spot[1]-CB.feet[1])*k};}
+ function person(g,o,fx,fy,h,pose,t,dir=1){const u=h/100;let jump=0;if(pose==='jump')jump=Math.abs(Math.sin(t*7))*14*u;
+  if(o.cameo){const id=o.p!=null?s.players[o.p]?.character:o.face;aud.person(g,{face:id,cameo:o.cameo,dir,ph:0,beat:1,row:99},fx,fy,h,pose==='stand'?0:1,t,pose);return;}
+  fy-=jump;const sh=sheetOf(o.body);let face={x:fx,y:fy-CB.face[1]*h};
+  if(sh){const D=sh.D,nf=Math.max(1,Math.round(sh.img.width/D.w)),fi=frameFor(D,nf,pose,t),fw=sh.img.width/nf,k=h/D.unit,sp=(D.spots&&D.spots[fi])||D.spot;
+   // the photo bodies face the camera and their shirts carry writing: never mirrored (only the face turns)
+   g.save();g.translate(fx,fy);g.drawImage(sh.img,fi*fw,0,fw,sh.img.height,-D.feet[0]*k,-D.feet[1]*k,fw*k,sh.img.height*k);g.restore();
+   face={x:fx+(sp[0]-D.feet[0])*k,y:fy+(sp[1]-D.feet[1])*k+h*AUD.FACE_DROP};}
   else{drawnBody(g,o.col,fx,fy,h,pose,t);face={x:fx,y:fy-CB.face[1]*h};}
   // the face (width CB.faceW x h): the player's own, else the guest's character picture, else a drawn head
   const fw=CB.faceW*h,mood=pose==='sad'?'sad':(pose==='jump'||pose==='cheer')?'win':o.mood||'normal';
@@ -76,8 +89,7 @@ async function contestantsRow(s){
   return face;}
  // ---- the audience (call-down scene): gameshow/audience.js = rows of show-audience bodies with faces from the game (+ a rare cameo
  // body from another of our games), all cheering with the house
- const aud=AUD.createAudience({seed:s.seed,exclude:s.players.map(p=>p.character)});
- // ---- layout
+  // ---- layout
  function lay(){const W=K.W,H=K.H,fs=K.fs,top=K.top;const L={W,H,fs,top};
   if(K.wide){L.row={x:W*.02,y:H*.52,w:W*.64,h:H*.46};L.panel={x:W*.68,y:top,w:W*.3,h:H-top-8};L.prize={x:W*.02,y:top,w:W*.64,h:H*.52-top};}
   else{L.prize={x:0,y:top,w:W,h:H*.4-top};L.row={x:W*.02,y:H*.4,w:W*.96,h:H*.3};L.panel={x:W*.06,y:H*.71,w:W*.88,h:H*.28};}
@@ -127,7 +139,7 @@ async function contestantsRow(s){
  function bad(v){if(!v||v<1)return'Type a bid first';if(limit&&v>=limit)return`It has to be under ${money(limit)}`;if(seats.some((o,i)=>i!==cur&&o.bid===v))return'That bid is taken!';return null;}
  // ---- drawing
  K.frame(dt=>{const g=K.begin(),L=lay(),t=K.t;hype=Math.max(0,hype-dt*.25);warnT-=dt;if(item)itemT+=dt;
-  seats.forEach(o=>{o.in=Math.min(1,o.in+dt*1.6);o.lit=Math.max(0,o.lit-dt*.5);o.poseT-=dt;if(o.poseT<=0&&o.pose!=='stand'){o.pose='stand';}});
+  seats.forEach(o=>{if(o.here)o.in=Math.min(1,o.in+dt*1.6);o.lit=Math.max(0,o.lit-dt*.5);o.poseT-=dt;if(o.poseT<=0&&o.pose!=='stand'){o.pose='stand';}});
   if(scene==='crowd'&&call){const c=call;c.t+=dt;aud.draw(g,L.W,L.H,t,{hype:Math.max(hype,c.t>.3?1:0),skipCalled:true,dpr:s.dpr||1});
    // the called contestant: gets up cheering at their seat, steps into the red aisle and runs down the stairs toward the camera
    const st=c.t,at=aud.calledAt(L.W,L.H,st),xx=at.x,yy=at.y,hh=at.h;
@@ -143,15 +155,16 @@ async function contestantsRow(s){
    K.overlay(g,null,{noCast:true});return;}
   // the row: prize up top, the four podiums with the contestants behind them, the panel
   drawPrize(g,L.prize,t);
-  seats.forEach((o,i)=>{const b=L.pod[i],slide=(1-ease(o.in))*(i<2?-1:1)*K.W*.6,fx=b.x+b.w/2+slide,fy=b.y+b.h*.55;person(g,o,fx,fy,L.bodyH,o.pose,t+i,i<2?1:-1);});
-  seats.forEach((o,i)=>{const b=L.pod[i],slide=(1-ease(o.in))*(i<2?-1:1)*K.W*.6;podium(g,{...b,x:b.x+slide},o,i,t);});
+  seats.forEach((o,i)=>{if(!o.here)return;const b=L.pod[i],slide=(1-ease(o.in))*(i<2?-1:1)*K.W*.6,fx=b.x+b.w/2+slide,fy=b.y+b.h*.55;person(g,o,fx,fy,L.bodyH,o.in<.98?'run':o.pose,t+i,i<2?1:-1);});
+  seats.forEach((o,i)=>podium(g,L.pod[i],o,i,t));
   drawPanel(g,L.panel,t);
   K.spots={host:{x:L.prize.x+L.prize.h*.22,y:L.prize.y+L.prize.h,h:L.prize.h*.95,side:-1},model:{x:L.prize.x+L.prize.w-L.prize.h*.2,y:L.prize.y+L.prize.h,h:L.prize.h*.92,side:1}};
   K.overlay(g,null);});
  // ---- the flow
- async function callDown(i){const o=seats[i];o.in=0;scene='crowd';call={o,t:0};hype=1;K.mode='play';
-  sfx.comeOn();snd.voice('say-come-on-down',{at:.2});sfx.cheer(3.2,.22);sfx.applause(3.4,.9);await K.wait(3300);
-  scene='row';call=null;o.in=0;o.pose='jump';o.poseT=1.4;sfx.applause(1.6,.6);await K.wait(900);}
+ let cueUntil=0;
+ async function callDown(i){const o=seats[i];o.in=0;o.here=false;scene='crowd';call={o,t:0};hype=1;K.mode='play';
+  if(performance.now()>cueUntil){sfx.comeOn();cueUntil=performance.now()+(snd.loaded('come-on-down')?17000:0);}snd.voice('say-come-on-down',{at:.2});sfx.cheer(3.2,.22);sfx.applause(3.4,.9);await K.wait(3300);
+  scene='row';call=null;o.in=0;o.here=true;o.pose='jump';o.poseT=1.4;sfx.applause(1.6,.6);await K.wait(900);}
  async function getBid(i,tr){const o=seats[i];cur=i;typed='';warn=null;
   if(o.p==null||(!human(i)&&!remote(i))){K.say(`${o.name}?`,1400);await K.sleep(900+R()*900);
    const sk=o.p!=null?K.skill():.35+((i*7+tr*3)%5)*.08,rr=seededRandom(`${s.seed}:crow:bid:${itemIdx}:${tr}:${i}`);return cpuBid(item[2],seats.map(q=>q.bid),limit,sk,rr,seats.filter(q=>q.bid==null).length===1);}
@@ -177,14 +190,14 @@ async function contestantsRow(s){
   bot:net?()=>{if(resolveBid){s.debug.autoBid();return 'bid';}K.hurry=true;return '';}:null,
   autoBid(){if(!resolveBid||!item)return;let v=Math.max(1,Math.round(item[2]*(.7+Math.random()*.5)));if(limit)v=Math.min(v,limit-1);while(bad(v)&&v>1)v--;if(bad(v))v=limit?1:item[2];typed=String(v);press('BID');}};
  if(!s.fromMenu&&!await s.pass(0,'Contestants\' Row: four contestants, one bid each. Closest to the actual retail price without going over wins!','Come on down!'))return;
- await SS.ready(['cr-audience','cr-audience-tall','cr-audience-fold','stage-row','stage-row-tall','stage-row-fold','stage-wheel','stage-wheel-tall','stage-wheel-fold','cr-podium','cr-body-1','cr-body-2','cr-body-3','cr-body-4','cr-comeondown','clock-platform','curtain'],5000);if(!s.alive)return;
+ await SS.ready(['cr-audience','cr-audience-tall','cr-audience-fold','stage-row','stage-row-tall','stage-row-fold','stage-wheel','stage-wheel-tall','stage-wheel-fold','cr-podium','cr-body-1','cr-body-2','cr-body-3','cr-body-4',...[1,2,3,4,5,6,7,8].map(n=>'cr-fan-'+n),'cr-comeondown','clock-platform','curtain'],5000);if(!s.alive)return;
  if(!s.fromMenu)snd.title(true);K.mode='intro';K.introT=0;K.show('CONTESTANTS\' ROW!','Four bidders, one bid each',2.4,'#ffe23a');snd.voice('say-lets-play',{at:.6});await K.wait(2600);snd.title(false);
  // the first four, called down one at a time
  await aud.ready(K.W,K.H,3000);if(!s.alive)return;
  for(const i of [0,1,2,3]){if(!s.alive)return;await callDown(i);}
  let start=0;for(let n=0;n<N;n++){if(!s.alive)return;const wi=await playItem(n,start);if(wi==null)return;start=(start+1)%4;
   // a guest winner goes up on stage; the next guest is called down to that podium and bids first
-  if(seats[wi].guest&&n<N-1){const o=seats[wi];K.say(`${o.name}, come on up here!`,1800);await K.wait(1600);seats[wi]={...newGuest(),bid:null,won:[],score:0,in:0,pose:'stand',poseT:0,mood:'normal',lit:0};await callDown(wi);start=wi;}
+  if(seats[wi].guest&&n<N-1){const o=seats[wi];K.say(`${o.name}, come on up here!`,1800);await K.wait(1600);{const old=seats[wi].body;seats[wi]={...newGuest(),bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0};deck.push(old);}await callDown(wi);start=wi;}
   item=null;}
  if(!s.alive)return;K.mode='over';cur=-1;const a=seats.find(o=>o.p===0).score,b=seats.find(o=>o.p===1).score,w=a===b?-1:a>b?0:1;
  if(w>=0){K.show(`${names[w].toUpperCase()} WINS!`,money([a,b][w])+' in prizes',3,'#ffe23a');sfx.winner();s.react?.(w,'win');}else K.show(a?'IT\'S A TIE!':'NO PRIZES TODAY','Both '+money(a),3,'#fff');

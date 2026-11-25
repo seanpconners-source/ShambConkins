@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.66
+
+- **Contestants' Row, all twelve contestants:** any of the 12 Price Is Right audience and contestant outfits can be called down now, and once in a while (about 1 in 50) someone shows up in a body from another one of our games.
+- **Contestants' Row, the walk-on:** contestants only appear once their name is called, then run in to podiums that stay put.
+- **Contestants' Row, the music:** the "Come on down" cue plays once for the whole run of call-downs instead of starting over on top of itself.
+- **The studio audience and contestants:** faces sit a little lower on the bodies, and shirt writing never shows up backwards.
+
 ## v0.99.65
 
 - **The Price Is Right, Contestants' Row:** the one-bid game is here. Names get called from the audience ("COME ON DOWN!"), four contestants bid on each prize from their podiums, closest without going over wins, and a perfect bid pays $500 extra. It's the first card in The Price Is Right.

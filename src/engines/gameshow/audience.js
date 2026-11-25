@@ -46,7 +46,8 @@ function layout(shape){const sk=shape+(studioOn(shape)?':s':'');if(geoCache[sk])
 // design px -> screen px: cover the screen (cropping the sides or, when the screen is wider, mostly the curtains at the top)
 function view(G,W,H){const c=Math.max(W/G.W,H/G.H);return {c,ox:(W-G.W*c)/2,oy:(H-G.H*c)*.7};}
 // ---- the drawn stand-ins (until the GPT pictures are in); everything in design px
-const FACE_AT=.865,FACE_SIT=.635,FACE_W=.14,FACE_W_PHOTO=.115;
+// FACE_DROP: the face sits this much (of the standing height) below the sheet's face spot on the photo bodies (owner: a bit lower)
+const FACE_AT=.865,FACE_SIT=.635,FACE_W=.14,FACE_W_PHOTO=.115,FACE_DROP=.032;
 // a drawn stand-in audience member (until the cr-fan pictures come): feet at (fx,fy), standing height h; pose from CR_FAN's list
 // (+ run/sad for contestants). look = {skin, pants, print (0 plain, 1 heart, 2 big price tag)}: real clothes shapes (shoulders,
 // sleeves, bare forearms, hands), a darker side for depth, so a packed house reads as people, not blocks
@@ -200,8 +201,8 @@ function createAudience({seed='x',exclude=[]}={}){
   let sitting=pose.startsWith('sit');const sh=fanSheet(p,sitting);let fx=x,fy=y-(sitting?FACE_SIT:FACE_AT)*h;
   if(sh&&sitting&&!sh.def.frames.slice(0,Math.round(sh.img.width/sh.def.w)).includes(pose)){pose=pose==='sitcheer'?(Math.sin((t*p.beat+p.ph)*2)>0?'cheer1':'cheer2'):pose.startsWith('sitclap')?pose.slice(3):'stand';sitting=false;fx=x;fy=y-FACE_AT*h;}
   if(sh){const D=sh.def,nf=Math.max(1,Math.round(sh.img.width/D.w)),i0=D.frames.slice(0,nf).indexOf(pose),fi=i0>=0?i0:Math.max(0,D.frames.slice(0,nf).indexOf(pose.replace(/[12]$/,''))),fw=sh.img.width/nf,k=h/D.unit,sp=(D.spots&&D.spots[fi])||D.spot;
-   g.save();g.translate(x,y);g.scale(p.dir,1);g.drawImage(sh.img,fi*fw,0,fw,sh.img.height,-D.feet[0]*k,-D.feet[1]*k,fw*k,sh.img.height*k);g.restore();
-   fx=x+(sp[0]-D.feet[0])*k*p.dir;fy=y+(sp[1]-D.feet[1])*k;}
+   g.save();g.translate(x,y);g.drawImage(sh.img,fi*fw,0,fw,sh.img.height,-D.feet[0]*k,-D.feet[1]*k,fw*k,sh.img.height*k);g.restore();
+   fx=x+(sp[0]-D.feet[0])*k;fy=y+(sp[1]-D.feet[1])*k+h*FACE_DROP;}
   else drawnBody(g,p.col,x,y,h,pose,t*p.beat+p.ph,p.look);
   drawFace(g,p.face,fx,fy,(sh?FACE_W_PHOTO:FACE_W)*h,p.dir,0,mood);
   // every Price Is Right audience member wears a yellow price-tag name tag (front rows, where you can read it)
@@ -235,7 +236,9 @@ function createAudience({seed='x',exclude=[]}={}){
   const C=crowd(W,H);for(const p of C.ppl)if(p.face)faceSprite(p.face,'normal',8,1);
   const end=Date.now()+ms,cam=C.ppl.filter(p=>p.cameo);
   while(Date.now()<end&&(((require("src/headFacts.js").facesLoading?.()||0)>0)||cam.some(p=>!cameoReady(...p.cameo))))await new Promise(r=>setTimeout(r,60));}
- return {probe:(k,n)=>{try{CAMEOS[k].load(n);const f=CAMEOS[k].frame?CAMEOS[k].frame(n,1,1,0):"drawn";return f&&f.img?{sw:f.sw,sh:f.sh,fx:f.fx,fy:f.fy,face:f.face,tall:f.tall}:f;}catch(e){return "err "+e.message;}},
+ // the cameo bodies whose sheets are in this build ([kind,sheet]); person = draw one person with a given pose (Contestants' Row uses both)
+ function cameoList(){const out=[];for(const k of Object.keys(CAMEOS)){let ns=[];try{ns=CAMEOS[k].sheets().filter(n=>HAS[k](n));}catch{}for(const n of ns){try{CAMEOS[k].load(n);}catch{}out.push([k,n]);}}return out;}
+ return {cameoList,person:(g,p,x,y,h,hype,t,pose)=>drawPerson(g,p,x,y,h,hype,t,null,pose),probe:(k,n)=>{try{CAMEOS[k].load(n);const f=CAMEOS[k].frame?CAMEOS[k].frame(n,1,1,0):"drawn";return f&&f.img?{sw:f.sw,sh:f.sh,fx:f.fx,fy:f.fy,face:f.face,tall:f.tall}:f;}catch(e){return "err "+e.message;}},
   draw,calledAt,ready,crowd,get people(){return Object.values(crowds)[0]?.ppl||null;},get cameos(){return Object.values(crowds).flatMap(c=>c.ppl.filter(p=>p.cameo).map(p=>p.cameo.join(':')));}};}
 // ---- templates (tools/gameshow-templates.mjs): the empty studio for cr-audience*, the rail for cr-audience-front*, every seat marked
 function slotShape(slot){return slot.endsWith('-tall')?'tall':slot.endsWith('-fold')?'fold':'wide';}
@@ -255,4 +258,4 @@ function drawGuides(g,slot,label){const G=layout(slotShape(slot)),k=g.canvas.wid
  label('PAINT IT EMPTY: no people. One theater seat on every pink dot (dot = where the seat meets the floor), rows exactly on the pink lines',10,10,fs*k);
  label('red carpet AISLE with a step at every row line, chrome rails along it; curtains + studio lights above the back row',10,10+fs*k*1.4,fs*k);
  label('the vertical tick = how tall a standing person in that row is',10,10+fs*k*2.8,fs*k);}
-Object.assign(exports,{createAudience,drawnBody,drawnStudio,drawnFront,drawSeat,layout,drawRef,drawGuides,CAMEOS,cameoReady,DESIGN,FACE_AT,FACE_SIT,FACE_W});
+Object.assign(exports,{createAudience,drawnBody,drawnStudio,drawnFront,drawSeat,layout,drawRef,drawGuides,CAMEOS,cameoReady,DESIGN,FACE_AT,FACE_SIT,FACE_W,FACE_DROP});
