@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.99.64
+
+- **The Price Is Right, Bob and the girls everywhere:** the host walks on to talk in every pricing game (Range Game, Safe Crackers, Race Game, Punch-a-Bunch, Cliff Hangers, The Clock Game), a model waves in for each contestant's turn, and both cheer when someone wins.
+- **The Price Is Right, the audience:** a studio-audience murmur now plays under the pricing games, and the game is ready for more voice and crowd recordings (Bob's lines, the audience yelling prices, "Higher!" / "Lower!", cheering).
+- **The Warriors, real-size props:** benches, gravestones, trash cans, crates, barrels, mailboxes, newsstands, lamp posts and cars are now the right size next to the fighters.
+- **The Warriors, cutscenes:** the heads sit on the bodies just like in the fights, everyone wears a real face from the game, and the painted backgrounds move with the camera so nobody slides around.
+- **The Warriors, full screen:** the street now fills the whole screen on the Fold and tall phones (no black band under the floor).
+- **The Warriors, new buttons:** punch, kick, jump and special are now shiny arcade buttons with icons.
+
 ## v0.99.63
 
 - **The Warriors, two players online:** play the story together on two phones in one shared world, like Sean of a Gun, Mario and Seanic. You fight the same gangs side by side, lost lives come back next to your partner, and if you're out you watch until the area is cleared.
