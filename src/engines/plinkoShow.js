@@ -36,13 +36,14 @@ const HOST_LINES={intro:['Here\'s a game a whole lot of people love to watch...'
 async function plinko(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#14062e'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({song:'plinko',clips:['first-chip']}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({song:'plinko',clips:['first-chip'],voice:'plinko'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const mine=i=>net?i===me:!(cpu&&i===1);
  let murOn=false,W=s.W,H=s.H,t=0,mode='intro',introT=0,cur=0,curtain=0,banner=null,hostSay=null,modelPose='present',hostPose='talk',hurry=false,cheerT=0;
  const P=names.map(()=>({won:0,chips:1,dropped:0,picks:[]}));
  let prizes=[],pick=null,aim=BW/2,dragging=false,chip=null,lit=new Map(),pops=[],landed=[],boardCv=null,boardKey='';
- const wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||hurry||performance.now()>=end){hurry=false;r();return;}setTimeout(f,30);};f();});
- const say=(text,ms=2400,pose='talk')=>{hostSay={text,t:ms/1000};hostPose=pose;};
+ // waits let the host finish what he's saying (not online: both phones keep the same pace); a tap hurries the show and cuts him off
+ const wait=ms=>new Promise(r=>{const end=performance.now()+Math.max(ms,net?0:snd.talking());const f=()=>{if(!s.alive||hurry||performance.now()>=end){if(hurry)snd.hush();hurry=false;r();return;}setTimeout(f,30);};f();});
+ const say=(text,ms=2400,pose='talk')=>{hostSay={text,t:ms/1000};hostPose=pose;if(snd.speak(text))hostSay.t=Math.max(hostSay.t,snd.talking()/1000+.3);};
  // ---- layout: board box on screen
  let L={};function layout(){W=s.W;H=s.H;const wide=W>H*1.15,top=(fb.top||40)+6,fs=clamp(Math.min(W,H)*.04,12,20),strip=fs*3.4+16;
   if(wide){const bh=H-top-10,k=Math.min(bh/BH,W*.5/BW),bw=BW*k,h2=BH*k,bx=(W-bw)/2,by=top+(H-top-h2)/2,side=W-bx-bw,lw=Math.min(side*.9,fs*14);

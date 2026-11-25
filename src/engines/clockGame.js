@@ -43,15 +43,16 @@ function drawPlatform(g){const pic=SS.picture('clock-platform');if(pic){g.drawIm
 async function clockGame(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#14062e'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({clips:['ding','bell','buzzer','big-winner','losing-horn']}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({clips:['ding','bell','buzzer','big-winner','losing-horn'],voice:'clock'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const mine=i=>net?i===me:!(cpu&&i===1);
  // each contestant's two prizes: a shuffle of the mid prizes from the seed, contestant 0 takes the first two, 1 the next two
  const R0=seededRandom(`${s.seed}:clock`),pool=SP.MID_PRIZES.slice();for(let k=pool.length-1;k>0;k--){const j=Math.floor(R0()*(k+1));[pool[k],pool[j]]=[pool[j],pool[k]];}
  const P=names.map((n,i)=>({prizes:[0,1].map(k=>{const [id,name,price,em]=pool[(i*2+k)%pool.length];return {id,name,price,em,won:false,guesses:[]};}),left:CLOCK,won:0,bonus:0,score:0,done:false,mood:'normal'}));
  for(const p of P)for(const q of p.prizes)SP.prizePhoto(q.id);
  let W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=0,pk=0,entry='',banner=null,hostSay=null,hurry=false,running=false,lastTick=0,call=null,shown=null,keys=[];
- const wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||hurry||performance.now()>=end){hurry=false;r();return;}setTimeout(f,30);};f();});
- const say=(text,ms=2600)=>{hostSay={text,t:ms/1000};};const cast=ST.createCast();
+ // waits let the host finish what he's saying (not online: both phones keep the same pace); a tap hurries the show and cuts him off
+ const wait=ms=>new Promise(r=>{const end=performance.now()+Math.max(ms,net?0:snd.talking());const f=()=>{if(!s.alive||hurry||performance.now()>=end){if(hurry)snd.hush();hurry=false;r();return;}setTimeout(f,30);};f();});
+ const say=(text,ms=2600)=>{hostSay={text,t:ms/1000};if(snd.speak(text))hostSay.t=Math.max(hostSay.t,snd.talking()/1000+.3);};const cast=ST.createCast();
  const txt=(g,str,x0,y0,size,col,{font='"SC Nunito",sans-serif',w=900,align='center',max=0}={})=>{g.save();g.font=`${w} ${size}px ${font}`;if(max){const m=g.measureText(str).width;if(m>max)g.font=`${w} ${size*max/m}px ${font}`;}g.textAlign=align;g.textBaseline='middle';g.lineWidth=size*.28;g.strokeStyle='rgba(0,0,0,.75)';g.lineJoin='round';g.strokeText(str,x0,y0);g.fillStyle=col;g.fillText(str,x0,y0);g.restore();};
  // ---- layout. wide: clock left, prize/display/keypad right. upright: logo, clock, prize + display side by side, keypad.
  // near-square (the open Fold): clock and the prize column side by side, the keypad under both.
@@ -109,7 +110,7 @@ async function clockGame(s){
  let prizeDone=null;
  function press(l){if(mode!=='guess'||!mine(cur)||cpuTurn())return;shown=null;if(l==='⌫')entry=entry.slice(0,-1);else if(l==='OK'){if(entry.length)submit(+entry);return;}
   else if(/\d/.test(l)&&entry.length<3&&!(entry===''&&l==='0')){entry+=l;if(entry.length===3){const v=+entry;setTimeout(()=>{if(mode==='guess'&&entry===String(v))submit(v);},110);}}sfx.peg?.(3);vibrate(6);}
- function submit(v,left){if(mode!=='guess')return;const p=P[cur],q=p.prizes[pk];v=clamp(Math.round(v),1,999);if(left!=null)p.left=left;
+ function submit(v,left){if(mode!=='guess')return;snd.hush();const p=P[cur],q=p.prizes[pk];v=clamp(Math.round(v),1,999);if(left!=null)p.left=left;
   if(net&&mine(cur))net.send({kg:[pk,v,+p.left.toFixed(2)]});entry='';shown=String(v);
   if(v===q.price){q.guesses.push([v,'WIN']);q.won=true;p.won+=q.price;running=false;mode='won';call={k:'WIN',t:1};const d=prizeDone;prizeDone=null;d?.('won');return;}
   const k=v<q.price?'HIGHER':'LOWER';q.guesses.push([v,k]);call={k,t:1};if(!snd.voice('say-'+k.toLowerCase()))(k==='HIGHER'?sfx.higher:sfx.lower)?.();snd.voice('crowd-'+k.toLowerCase(),{vol:.6,at:.12});vibrate(k==='HIGHER'?[8,30,8]:12);}

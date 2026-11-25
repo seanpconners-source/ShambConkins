@@ -22,3 +22,14 @@ the same one twice in a row. Nothing has to be there: a missing one just stays q
 | `tpir-crowd-cheer` | a big win |
 
 Until `tpir-crowd-chatter` is in, the applause recording slowed down and muffled stands in as the murmur.
+
+## Generated voices (Nov 25)
+
+Every host line in the pricing games now has a voice made with fish.audio text-to-speech (free model), in the two voices the owner
+picked: Bob Barker for the host, Rich Fields (the show's 2007-2010 announcer) for "come on down", the prize descriptions, "a new car"
+and the Showcase. They are `tpir-v-<key>-<n>.mp3`; the list of lines, who says them and which speech bubble each one belongs to is
+`src/data/tpirVoice.js`. Make missing ones (or new lines added to that list) with
+`NODE_USE_ENV_PROXY=1 node tools/gameshow/tpir-voice.mjs` (`--only=<regex>`, `--force` to remake).
+
+A real recording always wins: drop `tpir-say-come-on-down.mp3` (or any `tpir-say-*` above) in and the game plays it instead of the
+generated stand-in.

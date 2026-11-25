@@ -18,6 +18,7 @@ const {seededRandom,clamp}=require("src/utils.js");
 const {faceSprite,headFacts,drawFace}=require("src/headFacts.js");
 const AUD=require("src/engines/gameshow/audience.js"),{drawnBody}=AUD;
 const {guestDeck}=require("src/engines/gameshow/guests.js");
+const TV=require("src/data/tpirVoice.js");
 const TAU=Math.PI*2,ease=v=>1-Math.pow(1-clamp(v,0,1),3);
 const SHIRTS=['#e63946','#3a86ff','#ffbe0b','#8338ec','#06d6a0','#fb5607','#ff006e','#4cc9f0','#80b918','#f15bb5'];
 const ITEMS=[...SP.MID_PRIZES,...SP.GRAND_PRIZES];
@@ -140,7 +141,7 @@ async function contestantsRow(s){
    txt(g,o.bid==null?'—':money(o.bid),P.x+P.w-fs*.8,y,fs*1.05,o.over?'#ff6a5a':'#ffb03a',{align:'right'});});
   if(seats.some(o=>o.p!=null)){const y=P.y+fs*2.6+4.4*lh;g.fillStyle='rgba(255,255,255,.15)';g.fillRect(P.x+fs*.6,y-lh*.5,P.w-fs*1.2,1);
    seats.filter(o=>o.p!=null).forEach((o,j)=>txt(g,`${o.name.slice(0,9)}: ${money(o.score)}`,P.x+P.w/2,y+lh*.25+j*lh*.62,fs*.8,'#7dff5a',{max:P.w*.92}));}}
- function press(l){if(!resolveBid)return;if(l==='⌫'){typed=typed.slice(0,-1);return;}if(l==='BID'){const v=Number(typed);const err=bad(v);if(err){warn=err;warnT=2.2;snd.sfx.wrong?.();return;}const r=resolveBid;resolveBid=null;r(v);return;}
+ function press(l){if(!resolveBid)return;snd.hush();if(l==='⌫'){typed=typed.slice(0,-1);return;}if(l==='BID'){const v=Number(typed);const err=bad(v);if(err){warn=err;warnT=2.2;snd.sfx.wrong?.();return;}const r=resolveBid;resolveBid=null;r(v);return;}
   if(typed.length<5&&!(typed===''&&l==='0'))typed+=l;}
  function bad(v){if(!v||v<1)return'Type a bid first';if(limit&&v>=limit)return`It has to be under ${money(limit)}`;if(seats.some((o,i)=>i!==cur&&o.bid===v))return'That bid is taken!';return null;}
  // ---- drawing
@@ -170,7 +171,7 @@ async function contestantsRow(s){
  // ---- the flow
  let cueUntil=0;
  async function callDown(i){const o=seats[i];o.in=0;o.here=false;scene='crowd';call={o,t:0};hype=1;K.mode='play';
-  if(performance.now()>cueUntil){sfx.comeOn();cueUntil=performance.now()+(snd.loaded('come-on-down')?17000:0);}snd.voice('say-come-on-down',{at:.2});sfx.cheer(3.2,.22);sfx.applause(3.4,.9);await K.wait(3300);
+  if(performance.now()>cueUntil){sfx.comeOn();cueUntil=performance.now()+(snd.loaded('come-on-down')?17000:0);}snd.voice('say-come-on-down',{at:.2,alt:o.p!=null&&TV.NAMED.includes(o.name)?'v-down-'+o.name.toLowerCase():null});sfx.cheer(3.2,.22);sfx.applause(3.4,.9);await K.wait(3300);
   scene='row';call=null;o.in=0;o.here=true;o.pose='jump';o.poseT=1.4;sfx.applause(1.6,.6);await K.wait(900);}
  async function getBid(i,tr){const o=seats[i];cur=i;typed='';warn=null;
   if(o.p==null||(!human(i)&&!remote(i))){K.say(`${o.name}?`,1400);await K.sleep(900+R()*900);
@@ -184,10 +185,10 @@ async function contestantsRow(s){
   for(;;){const order=[0,1,2,3].map(k=>(startSeat+k)%4);for(const i of order){if(!s.alive)return null;const v=await getBid(i,tries);seats[i].bid=v;sfx.click?.();K.say(`${seats[i].name}: ${money(v)}`,1200);if(seats[i].p==null||!human(i))await K.wait(500);}
    cur=-1;K.say('The actual retail price is...',1800);snd.voice('say-actual-retail-price');await K.sleep(1500);priceShown=true;actual=item[2];
    const ok=seats.map((o,i)=>[o.bid,i]).filter(([b])=>b<=actual).sort((a,b)=>b[0]-a[0]);seats.forEach(o=>{o.over=o.bid>actual;});
-   if(!ok.length){(snd.clip('buzzer-overbid')||sfx.over());K.show('EVERYBODY\'S OVER!','Bid again, under '+money(Math.min(...seats.map(o=>o.bid))),2.4,'#ff6a5a');seats.forEach(o=>{o.pose='sad';o.poseT=1.6;});await K.wait(2600);
+   if(!ok.length){(snd.clip('buzzer-overbid')||sfx.over());K.show('EVERYBODY\'S OVER!','Bid again, under '+money(Math.min(...seats.map(o=>o.bid))),2.4,'#ff6a5a');snd.voice('v-row-over',{at:.9});seats.forEach(o=>{o.pose='sad';o.poseT=1.6;});await K.wait(2600);
     limit=Math.min(...seats.map(o=>o.bid));priceShown=false;tries++;seats.forEach(o=>{o.bid=null;o.over=false;});continue;}
    const [wb,wi]=ok[0],o=seats[wi],perfect=wb===actual,gain=actual+(perfect?500:0);o.lit=3;o.pose='jump';o.poseT=3;hype=1;
-   if(perfect){K.show('PERFECT BID!',`${o.name.toUpperCase()} WINS ${money(actual)} + $500!`,3,'#7dff5a');if(!snd.clip('perfect-bid'))sfx.fanfare();}
+   if(perfect){K.show('PERFECT BID!',`${o.name.toUpperCase()} WINS ${money(actual)} + $500!`,3,'#7dff5a');if(!snd.clip('perfect-bid'))sfx.fanfare();snd.voice('v-row-perfect',{at:1.4});}
    else{K.show(`${o.name.toUpperCase()} WINS!`,`${item[1]} · ${money(actual)}`,2.6,'#ffe23a');sfx.ding();}
    sfx.cheer(2.4,.2);o.score+=gain;o.won.push(item[1]);if(o.p!=null)s.react?.(o.p,'win');await K.wait(3000);return wi;}}
  // the show
@@ -198,7 +199,7 @@ async function contestantsRow(s){
   autoBid(){if(!resolveBid||!item)return;let v=Math.max(1,Math.round(item[2]*(.7+Math.random()*.5)));if(limit)v=Math.min(v,limit-1);while(bad(v)&&v>1)v--;if(bad(v))v=limit?1:item[2];typed=String(v);press('BID');}};
  if(!s.fromMenu&&!await s.pass(0,'Contestants\' Row: four contestants, one bid each. Closest to the actual retail price without going over wins!','Come on down!'))return;
  await SS.ready(['cr-audience','cr-audience-tall','cr-audience-fold','stage-row','stage-row-tall','stage-row-fold','stage-wheel','stage-wheel-tall','stage-wheel-fold','cr-podium','cr-body-1','cr-body-2','cr-body-3','cr-body-4',...[1,2,3,4,5,6,7,8].map(n=>'cr-fan-'+n),'cr-comeondown','clock-platform','curtain'],5000);if(!s.alive)return;
- if(!s.fromMenu)snd.title(true);K.mode='intro';K.introT=0;K.show('CONTESTANTS\' ROW!','Four bidders, one bid each',2.4,'#ffe23a');snd.voice('say-lets-play',{at:.6});await K.wait(2600);snd.title(false);
+ if(!s.fromMenu)snd.title(true);K.mode='intro';K.introT=0;K.show('CONTESTANTS\' ROW!','Four bidders, one bid each',2.4,'#ffe23a');snd.voice('say-lets-play',{at:.6,alt:'v-lets-row'});await K.wait(2600);snd.title(false);
  // the first four, called down one at a time
  await aud.ready(K.W,K.H,3000);if(!s.alive)return;
  for(const i of [0,1,2,3]){if(!s.alive)return;await callDown(i);}

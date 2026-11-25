@@ -145,6 +145,9 @@ function loadClip(a,n){const url=USERP['music:tpir-'+n];if(!url||clipBufs[n]||cl
 // say-actual-retail-price, say-higher, say-lower, say-new-car, say-winner, say-sorry, say-showcase, say-pet-population,
 // crowd-shout (people yelling prices/advice), crowd-higher, crowd-lower, crowd-chatter (a murmur bed), crowd-ooh, crowd-aww, crowd-cheer.
 const VOICE_KEYS=['say-come-on-down','say-lets-play','say-actual-retail-price','say-higher','say-lower','say-new-car','say-winner','say-sorry','say-showcase','say-pet-population','crowd-shout','crowd-higher','crowd-lower','crowd-chatter','crowd-ooh','crowd-aww','crowd-cheer'];
+// the generated voices (src/data/tpirVoice.js, files tpir-v-<key>-<n>): they stand in for a say-* key with no real recording and speak
+// the host's bubble lines; levelled to -16 LUFS by the tool, VGAIN brings them in line with the show clips
+const TV=require("src/data/tpirVoice.js"),VGAIN=.95;
 const takesOf=k=>[k,...[1,2,3,4,5,6,7,8].map(i=>k+'-'+i)].filter(n=>USERP['music:tpir-'+n]);
 const SHOW_CLIPS=['theme','applause','gay-winner','come-on-down','bell','ding','buzzer','buzzer-wrong','buzzer-losing-horn','losing-horn','big-winner','winner','wheel-beep'];
 // opts.song = the recording looped under play ('plinko', 'showcase-showdown'); opts.clips = more to load
@@ -171,11 +174,11 @@ function createCast(){const C={hv:0,mv:0,mt:0,joy:0,hostPose:'talk',modelPose:'p
 function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;let A=null,out=null,musicOn=false,musicT=0,timer=null,noiseB=null;
  const ac=()=>{if(!on())return null;A=audioContext();if(!A)return null;if(!out){out=A.createGain();out.gain.value=.55;out.connect(A.destination);}return A;};
  let clipOut=null,bed=null,bedTimer=null,holdTo=0;const playing=new Set();
- const want=[...SHOW_CLIPS,...VOICE_KEYS.flatMap(takesOf),...(opts.song?[opts.song]:[]),...(opts.clips||[])];
+ const want=[...SHOW_CLIPS,...VOICE_KEYS.flatMap(takesOf),...TV.linesFor(opts.voice).flatMap(k=>takesOf('v-'+k)),...(opts.song?[opts.song]:[]),...(opts.clips||[])];
  if(on()){const a=audioContext();if(a)want.forEach(n=>loadClip(a,n));}
  // play recording n now (or `at` s later); max = cut it short with a fade. Returns null if it isn't loaded (= use the synth)
  function clip(n,o={}){const a=ac(),b=clipBufs[n];if(!a||!b)return null;if(!clipOut){clipOut=a.createGain();clipOut.gain.value=1;clipOut.connect(a.destination);}
-  const rate=o.rate||1,off=o.off||0,full=(b.duration-off)/rate,t0=a.currentTime+(o.at||0),src=a.createBufferSource(),g=a.createGain(),v=(TPIR_GAIN[n]??.5)*(o.vol??1),len=o.max?Math.min(o.max,full):full,fo=o.fout??.45;
+  const rate=o.rate||1,off=o.off||0,full=(b.duration-off)/rate,t0=a.currentTime+(o.at||0),src=a.createBufferSource(),g=a.createGain(),v=(TPIR_GAIN[n]??(n.startsWith('v-')?VGAIN:.5))*(o.vol??1),len=o.max?Math.min(o.max,full):full,fo=o.fout??.45;
   src.buffer=b;src.playbackRate.value=rate;if(o.fin){g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v,t0+o.fin);}else g.gain.setValueAtTime(v,t0);
   if(len<full){g.gain.setValueAtTime(v,Math.max(t0+(o.fin||0),t0+len-fo));g.gain.linearRampToValueAtTime(.0001,t0+len);}
   let last=g;if(o.pan&&a.createStereoPanner){const pn=a.createStereoPanner();pn.pan.value=o.pan;g.connect(pn);last=pn;}
@@ -261,8 +264,17 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   if(!themeOn)return;themeOn=false;const a=A,h=themeH;themeH=null;if(h&&a){const t=a.currentTime;try{h.g.gain.cancelScheduledValues(t);h.g.gain.setValueAtTime(h.g.gain.value,t);h.g.gain.linearRampToValueAtTime(.0001,t+1.4);h.src.stop(t+1.5);}catch{}}
   holdTo=(a?a.currentTime:0)+1;if(musicOn){musicOn=false;music(true);}}
  // one of the takes of a voice/crowd recording (null = none in: the caller carries on without it); never the same take twice running
- const lastTake={};function voice(key,o={}){const ns=takesOf(key).filter(n=>clipBufs[n]);if(!ns.length)return null;let n=ns[Math.floor(Math.random()*ns.length)];
+ // order: a real recording of the key, then o.alt (a generated line that fits better, e.g. with the player's name), then the generated
+ // stand-in v-<key>. The host never talks over himself: a new line cuts the one still playing (o.host)
+ const lastTake={};let hostClip=null,talkEnd=0;function take(key,o){const ns=takesOf(key).filter(n=>clipBufs[n]);if(!ns.length)return null;let n=ns[Math.floor(Math.random()*ns.length)];
   if(ns.length>1&&n===lastTake[key])n=ns[(ns.indexOf(n)+1)%ns.length];lastTake[key]=n;return clip(n,o);}
+ function voice(key,o={}){const isSay=key.startsWith('say-')||key.startsWith('v-');if(isSay&&hostClip){try{hostClip.g.gain.setTargetAtTime(.0001,ac()?.currentTime||0,.03);hostClip.src.stop((ac()?.currentTime||0)+.15);}catch{}hostClip=null;}
+  const c=take(key,o)||(o.alt&&take(o.alt,o))||(!key.startsWith('v-')&&take('v-'+key,o));if(c&&isSay){hostClip=c;const a=ac();talkEnd=performance.now()+Math.max(0,c.end-(a?a.currentTime:0))*1000;}return c;}
+ // ms the host has still got to say (games let him finish before they move on) / cut him off (a tap that hurries the show)
+ const talking=()=>Math.max(0,talkEnd-performance.now());
+ function hush(){talkEnd=0;if(hostClip){try{const a=ac(),t0=a?a.currentTime:0;hostClip.g.gain.setTargetAtTime(.0001,t0,.03);hostClip.src.stop(t0+.15);}catch{}hostClip=null;}}
+ // the host says his bubble text out loud when there's a line for it (src/data/tpirVoice.js lineFor)
+ function speak(text,o={}){const k=TV.lineFor(text);if(!k)return null;return voice(k.startsWith('say-')?k:'v-'+k,o);}
  // the audience murmuring under a game: the chatter recording looped if it's in, else the applause recording slowed and muffled
  // into a low rumble of voices
  let mur=null;function murmur(on){const a=ac();if(!on||!a){if(mur){try{const t=a?.currentTime||0;mur.g.gain.setTargetAtTime(.0001,t,.3);mur.src.stop(t+1.2);}catch{}mur=null;}return;}
@@ -270,5 +282,5 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   src.buffer=b;src.loop=true;if(!own){src.playbackRate.value=.5;lp.type='lowpass';lp.frequency.value=620;}else{lp.type='allpass';}
   g.gain.setValueAtTime(.0001,a.currentTime);g.gain.linearRampToValueAtTime(own?(TPIR_GAIN[own]??.5)*.6:.16,a.currentTime+1.2);
   if(!clipOut){clipOut=a.createGain();clipOut.connect(a.destination);}src.connect(lp);lp.connect(g);g.connect(clipOut);src.start(a.currentTime,Math.random()*b.duration*.5);mur={src,g};}
- return {sfx,music,title,clip,crowd,voice,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
+ return {sfx,music,title,clip,crowd,voice,speak,talking,hush,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
 Object.assign(exports,{STAGE_FLOOR,stageFit,floorAt,floorShadow,STAGE_BORROW,createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});

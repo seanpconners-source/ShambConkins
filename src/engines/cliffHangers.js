@@ -70,7 +70,7 @@ function drawStand(g,lit=false){const pic=SS.picture('cliff-stand'),S=SS.STAND_G
 async function cliffHangers(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#14062e'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({clips:['cliff-hangers','cliff-hangers-crash-2','big-winner','losing-horn','ding','bell']}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({clips:['cliff-hangers','cliff-hangers-crash-2','big-winner','losing-horn','ding','bell'],voice:'cliff'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const mine=i=>net?i===me:!(cpu&&i===1),cpuTurn=()=>cpu&&cur===1;
  const R0=seededRandom(`${s.seed}:cliff:grand`),grand=SP.GRAND_PRIZES[Math.floor(R0()*SP.GRAND_PRIZES.length)];
  const smalls=SP.PRIZES.filter(p=>p[2]<=MAX_SMALL);
@@ -80,8 +80,9 @@ async function cliffHangers(s){
  let W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=0,pk=-1,entry='',banner=null,hostSay=null,hurry=false;
  // the climber: shown position (steps, may be fractional), pose, fall animation
  let cl={pos:0,pose:'stand',walkT:0,fall:null},climb=null,music=null,musicOff=0;
- const wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||hurry||performance.now()>=end){hurry=false;r();return;}setTimeout(f,30);};f();});
- const say=(text,ms=2600)=>{hostSay={text,t:ms/1000};};const cast=ST.createCast();
+ // waits let the host finish what he's saying (not online: both phones keep the same pace); a tap hurries the show and cuts him off
+ const wait=ms=>new Promise(r=>{const end=performance.now()+Math.max(ms,net?0:snd.talking());const f=()=>{if(!s.alive||hurry||performance.now()>=end){if(hurry)snd.hush();hurry=false;r();return;}setTimeout(f,30);};f();});
+ const say=(text,ms=2600)=>{hostSay={text,t:ms/1000};if(snd.speak(text))hostSay.t=Math.max(hostSay.t,snd.talking()/1000+.3);};const cast=ST.createCast();
  // ---- layout: mountain box, prize stands, keypad
  // wide: the mountain fills the left column (logo as a sign over its sky, name tags under it), prizes + keypad on the right.
  // tall: logo, mountain, the three stands, then the keypad; name tags along the bottom.
@@ -139,7 +140,7 @@ async function cliffHangers(s){
  // ---- input
  let guessDone=null;
  function press(l){if(mode!=='guess'||!mine(cur)||cpuTurn())return;if(l==='⌫')entry=entry.slice(0,-1);else if(l==='OK'){if(entry)submit(+entry);return;}else if(/\d/.test(l)&&entry.length<2&&!(entry===''&&l==='0'))entry+=l;sfx.peg?.(3);vibrate(6);}
- function submit(v){if(mode!=='guess')return;const q=P[cur].prizes[pk];q.guess=clamp(Math.round(v),1,99);if(net&&mine(cur))net.send({cg:[pk,q.guess]});mode='reveal';const d=guessDone;guessDone=null;d?.();}
+ function submit(v){if(mode!=='guess')return;snd.hush();const q=P[cur].prizes[pk];q.guess=clamp(Math.round(v),1,99);if(net&&mine(cur))net.send({cg:[pk,q.guess]});mode='reveal';const d=guessDone;guessDone=null;d?.();}
  s.on(c,'pointerdown',ev=>{if(s.paused)return;ev.preventDefault();const pt=s.pointer(ev);
   for(const k of keys)if(pt.x>=k.x&&pt.x<=k.x+k.w&&pt.y>=k.y&&pt.y<=k.y+k.h){press(k.l);return;}
   if(mode!=='guess')hurry=true;});

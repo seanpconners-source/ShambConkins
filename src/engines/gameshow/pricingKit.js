@@ -20,7 +20,7 @@ function bulbs(g,b,r,n,t,lit){const per=2*(b.w+b.h);for(let i=0;i<n;i++){let d=i
 function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({clips,...(song?{song}:{})}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({clips,voice:kind,...(song?{song}:{})}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const K={c,x,fb,net,me,cpu,board,names,snd,sfx,kind,t:0,cur:0,mode:'intro',curtain:0,introT:0,banner:null,hostSay:null,hurry:false,
   W:s.W,H:s.H,fs:14,top:40,wide:false,fold:false,hits:[],onTap:null,onDown:null,onMove:null,onUp:null,skill:()=>cpuSkill(s),money,txt,TAU};
  K.cast=ST.createCast();K.spots=null;K.floorY=null;
@@ -28,10 +28,12 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  K.mine=i=>net?i===me:!(cpu&&i===1);
  K.cpuTurn=()=>cpu&&K.cur===1;
  K.waiting=()=>!K.mine(K.cur)||K.cpuTurn();
- K.wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||K.hurry||performance.now()>=end){K.hurry=false;r();return;}setTimeout(f,30);};f();});
+ // waits let the host finish his line (not online: both phones keep the same pace); a tap hurries the show and cuts him off
+ K.wait=ms=>new Promise(r=>{const end=performance.now()+Math.max(ms,net?0:snd.talking());const f=()=>{if(!s.alive||K.hurry||performance.now()>=end){if(K.hurry)snd.hush();K.hurry=false;r();return;}setTimeout(f,30);};f();});
  // real time (the hurry tap doesn't cut it short): clocks, the CPU's thinking
  K.sleep=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||performance.now()>=end){r();return;}setTimeout(f,30);};f();});
- K.say=(text,ms=2600)=>{K.hostSay={text,t:ms/1000};if(/actual retail price/i.test(text))snd.voice('say-actual-retail-price');else if(/new car/i.test(text))snd.voice('say-new-car');};
+ // the host's bubble, said out loud when there's a voice line for it (gameshow/stage.js speak, src/data/tpirVoice.js)
+ K.say=(text,ms=2600)=>{K.hostSay={text,t:ms/1000};if(snd.speak(text)){K.hostSay.t=Math.max(K.hostSay.t,snd.talking()/1000+.3);return;}if(/actual retail price/i.test(text))snd.voice('say-actual-retail-price');else if(/new car/i.test(text))snd.voice('say-new-car');};
  K.show=(big,small,secs=1.8,col='#ffe23a')=>{K.banner={big,small,t:secs,col};if(col==='#7dff5a'||col==='#ffe23a'){K.cast.cheer(Math.min(3,secs+.4));snd.voice('crowd-cheer',{vol:.8});}else if(col==='#ff6a5a')snd.voice('crowd-aww');};
  // the other phone's next message (online), or null once they've gone
  K.recv=async()=>{const m=await net.next();return m&&s.alive?m:null;};
@@ -55,7 +57,7 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
   if(K.hostSay&&!noCast){if(K.cast.hv>.5){const b=K.cast.bubbleAt(K.W,K.H,sp,K.fs);ST.bubble(g,b.x,b.y,K.hostSay.text,b.w,K.fs*.85,b.tx,b.ty);}else if(B)ST.bubble(g,B.x,B.y,K.hostSay.text,B.w,K.fs*.85,B.x,B.y+K.fs*2.5);}if(K.mode==='intro')ST.drawCurtain(g,K.W,K.H,K.curtain,K.t);
   if(K.banner)ST.moneyBanner(g,K.W,K.H,K.banner.big,K.banner.small,Math.min(1,K.banner.t*3),K.banner.col);};
  K.inBox=(pt,b)=>pt.x>=b.x&&pt.x<=b.x+b.w&&pt.y>=b.y&&pt.y<=b.y+b.h;
- s.on(c,'pointerdown',ev=>{if(s.paused)return;ev.preventDefault();const pt=s.pointer(ev);for(let i=K.hits.length-1;i>=0;i--){const b=K.hits[i];if(K.inBox(pt,b)){b.fn();vibrate(8);return;}}
+ s.on(c,'pointerdown',ev=>{if(s.paused)return;ev.preventDefault();const pt=s.pointer(ev);for(let i=K.hits.length-1;i>=0;i--){const b=K.hits[i];if(K.inBox(pt,b)){if(K.mode==='input')snd.hush();b.fn();vibrate(8);return;}}
   if(K.onDown&&K.onDown(pt))return;if(K.onTap&&K.onTap(pt))return;if(K.mode!=='input')K.hurry=true;});
  s.on(c,'pointermove',ev=>{if(s.paused||!K.onMove)return;K.onMove(s.pointer(ev));});
  s.on(c,'pointerup',ev=>{if(s.paused||!K.onUp)return;K.onUp(s.pointer(ev));});
@@ -70,7 +72,7 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
   if(!s.fromMenu&&!await s.pass(0,pass,'Come on down!'))return;
   const bk=ST.STAGE_BORROW[kind];await SS.ready(ready.concat(['curtain',...['','-tall','-fold'].flatMap(f=>[`stage-${kind}${f}`,...(bk?[`stage-${bk}${f}`]:[])])]),5000);if(!s.alive)return;
   if(!s.fromMenu)snd.title(true);snd.crowd(3,.9,{at:.3});K.mode='intro';K.introT=0;
-  K.show(title+'!',sub,2.6,col);snd.voice('say-lets-play',{at:.6});await K.wait(2600);
+  K.show(title+'!',sub,2.6,col);snd.voice('say-lets-play',{at:.6,alt:'v-lets-'+kind});await K.wait(2600);
   for(const [line,ms] of intro){if(!s.alive)return;K.say(line,ms);K.introT=Math.max(K.introT,2.3);await K.wait(ms-200);}
   snd.title(false);K.mode='play';
   for(let i=0;i<2;i++){if(!s.alive)return;K.cur=i;if(i===1&&!net&&!cpu&&!board){if(!await s.pass(1,`${names[1]}, come on down! Your turn at ${title}.`,'Play'))return;}

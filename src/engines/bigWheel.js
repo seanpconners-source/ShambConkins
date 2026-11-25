@@ -33,7 +33,7 @@ const {guestDeck}=require("src/engines/gameshow/guests.js");
 async function bigWheel(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#1a0a3a'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({song:'showcase-showdown'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({song:'showcase-showdown',voice:'wheel'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const R=seededRandom(`${s.seed}:bigwheel`);
  // contestants: 0/1 players, 2 the studio guest (played by the game on every phone)
  const gst=guestDeck(s.seed,s.players.map(p=>p.character),'bigwheel:guest')()||{name:'Guest',short:'Guest',col:'#e86a92',id:null};
@@ -41,8 +41,9 @@ async function bigWheel(s){
  const order=[0,1,2];for(let k=2;k>0;k--){const j=Math.floor(R()*(k+1));[order[k],order[j]]=[order[j],order[k]];}
  const human=ci=>ci<2&&(net?ci===me:!(cpu&&ci===1));
  let murOn=false,W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=-1,ang=Math.floor(R()*N),spin=null,banner=null,hostSay=null,hostPose='talk',modelPose='present',hurry=false,choice=null,chooseBtns=[],drag=null,shake=0;
- const wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||hurry||performance.now()>=end){hurry=false;r();return;}setTimeout(f,30);};f();});
- const say=(text,ms=2400,pose='talk')=>{hostSay={text,t:ms/1000};hostPose=pose;};
+ // waits let the host finish what he's saying (not online: both phones keep the same pace); a tap hurries the show and cuts him off
+ const wait=ms=>new Promise(r=>{const end=performance.now()+Math.max(ms,net?0:snd.talking());const f=()=>{if(!s.alive||hurry||performance.now()>=end){if(hurry)snd.hush();hurry=false;r();return;}setTimeout(f,30);};f();});
+ const say=(text,ms=2400,pose='talk')=>{hostSay={text,t:ms/1000};hostPose=pose;if(snd.speak(text))hostSay.t=Math.max(hostSay.t,snd.talking()/1000+.3);};
  let L={};function layout(){W=s.W;H=s.H;const wide=W>H*1.15,top=(fb.top||40)+6,fs=clamp(Math.min(W,H)*.04,12,20);
   const wh=wide?H-top-16:Math.min(H*.66,H-top-fs*7),ww=Math.min(wh*.6,wide?W*.3:W*.62),wx=W/2-ww/2,wy=wide?top+8:top+fs*2.2;
   L={wide,top,fs,wx,wy,ww,wh,cx:W/2,cy:wy+wh/2};}

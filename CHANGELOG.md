@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **The Price Is Right talks:** Bob Barker now says the host's lines out loud in every pricing game, and the announcer calls contestants down and presents the prizes on Contestants' Row ("It's a Nintendo Switch 2!"). He finishes his sentence before the show moves on; tap to hurry him. Real show recordings, when added, still play first.
+- **Real names on the show:** studio guests on Contestants' Row and the Big Wheel are characters from the game under their own names, and nobody gets called down twice in one game.
+- **Contestants' Row, podiums:** names only appear once that contestant is called down, and the podiums now come up to their waists like the show.
+- **The host and the models:** bigger in every pricing game and standing on the studio floor; on Contestants' Row they're as tall as the contestants.
+- **Nothing floating:** the safe, the prize turntable, the Range Game board and the Race Game podiums stand on the studio floor, with shadows.
+
 ## v0.99.66
 
 - **Contestants' Row, all twelve contestants:** any of the 12 Price Is Right audience and contestant outfits can be called down now, and once in a while (about 1 in 50) someone shows up in a body from another one of our games.
