@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.99.68
 
 - **Safe Crackers:** the show's real door creak and slam (instead of a buzzer), the host says exactly what's in his speech bubble, and nothing cuts him off.
 - **More show sounds:** the Big Wheel's dollar beeps and Showcase Showdown win cue, the full Range Game music, ding-ding-ding for all four in the Race Game.
