@@ -18,7 +18,9 @@ if [ "$KEEP" -gt 0 ]; then
   TMP=$(mktemp -d)
   for tag in $(gh release list --limit "$KEEP" --exclude-drafts --json tagName --jq '.[].tagName'); do
     zip="ShambConkins_${tag}_pwa.zip"
-    if ! gh release download "$tag" --pattern "$zip" --dir "$TMP"; then echo "release $tag: no $zip"; continue; fi
+    if ! gh release download "$tag" --pattern "$zip*" --dir "$TMP"; then echo "release $tag: no $zip"; continue; fi
+    # a zip over 2 GiB is published in parts (.zip.part0, .part1, ...)
+    if [ ! -f "$TMP/$zip" ] && ls "$TMP/$zip".part* >/dev/null 2>&1; then cat "$TMP/$zip".part* > "$TMP/$zip"; rm "$TMP/$zip".part*; fi
     unzip -q "$TMP/$zip" "*/a/*" -d "$TMP/$tag" 2>/dev/null || true
     n=0; for f in "$TMP/$tag"/*/a/*; do [ -f "$f" ] || continue; cp "$f" "$OUT"/; n=$((n+1)); done
     echo "from release $tag: $n files"; rm -rf "$TMP/$tag" "$TMP/$zip"

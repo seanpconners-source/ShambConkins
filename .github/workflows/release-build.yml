@@ -3,7 +3,7 @@ name: Publish release
 # A version bump pushed to main builds the installable app (releases/ShambConkins_v<version>_pwa, tools/build.mjs --pwa)
 # and publishes a new GitHub Release v<version>. Notes come from docs/releases/v<version>.md, else from that version's
 # CHANGELOG section. Does nothing if the release already exists. Run it by hand to retry.
-# The app folder goes up as ShambConkins_v<version>_pwa.zip, and its small files (index.html = the app page,
+# The app folder goes up as ShambConkins_v<version>_pwa.zip (in .zip.partN pieces once it passes 2 GiB), and its small files (index.html = the app page,
 # manifest.webmanifest, sw.js, icon PNGs) as their own assets: cloudflare/worker.js serves them by name. Since v0.88.0
 # there is no one-file ShambConkins_v<version>.html any more (owner, Nov 6: install only; a browser can't open a file
 # much over ~500 MB). The app's pictures and sounds (the folder's a/ files) are put on the website first, as the Worker's static
@@ -63,6 +63,12 @@ jobs:
           test "$(ls "releases/ShambConkins_v${V}_pwa/a" | wc -l)" -gt 100
           (cd releases && zip -qr "ShambConkins_v${V}_pwa.zip" "ShambConkins_v${V}_pwa")
           sha256sum "releases/ShambConkins_v${V}_pwa.zip"
+          # GitHub takes release files under 2 GiB: a bigger zip goes up in parts (.zip.part0, .part1, ...; cat them back together)
+          if [ "$(stat -c %s "releases/ShambConkins_v${V}_pwa.zip")" -gt 1900000000 ]; then
+            split -b 1800M -d -a 1 "releases/ShambConkins_v${V}_pwa.zip" "releases/ShambConkins_v${V}_pwa.zip.part"
+            rm "releases/ShambConkins_v${V}_pwa.zip"
+            ls -l releases/ShambConkins_v${V}_pwa.zip.part*
+          fi
       - name: Gather the app's pictures and sounds for the website
         if: steps.v.outputs.exists == 'false'
         shell: bash
@@ -96,7 +102,7 @@ jobs:
           TITLE=$(sed -n '1s/^# //p' "docs/releases/v$V.md" 2>/dev/null || true)
           if [ -f "docs/releases/v$V.md" ]; then sed -i '1{/^# /d}' "docs/releases/v$V.md"; fi
           APP="releases/ShambConkins_v${V}_pwa"
-          gh release create "v$V" "releases/ShambConkins_v${V}_pwa.zip" \
+          gh release create "v$V" releases/ShambConkins_v${V}_pwa.zip* \
             "$APP/index.html" "$APP/manifest.webmanifest" "$APP/sw.js" "$APP"/icons/*.png \
             --target "$GITHUB_SHA" \
             --title "${TITLE:-ShambConkins v$V}" \
