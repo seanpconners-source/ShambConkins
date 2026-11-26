@@ -29,7 +29,7 @@ Every host line in the pricing games now has a voice made with fish.audio text-t
 picked: Bob Barker for the host, Rich Fields (the show's 2007-2010 announcer) for "come on down", the prize descriptions, "a new car"
 and the Showcase. They are `tpir-v-<key>-<n>.mp3`; the list of lines, who says them and which speech bubble each one belongs to is
 `src/data/tpirVoice.js`. Make missing ones (or new lines added to that list) with
-`NODE_USE_ENV_PROXY=1 node tools/gameshow/tpir-voice.mjs` (`--only=<regex>`, `--force` to remake).
+`NODE_USE_ENV_PROXY=1 node tools/gameshow/tpir-voice.mjs` (`--only=<regex>`, `--force` to remake). Full setup (API key, free model, cloud network + secret): `docs/FISH-AUDIO-VOICES.md`.
 
 A real recording always wins: drop `tpir-say-come-on-down.mp3` (or any `tpir-say-*` above) in and the game plays it instead of the
 generated stand-in.

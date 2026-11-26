@@ -29,6 +29,7 @@ Mario Party structure, Chardee MacDennis levels (Mind / Body / Spirit / secret H
 - Writing a minigame: read `docs/ENGINE_GUIDE.md` first.
 - Art made with ChatGPT: `docs/art-for-gpt/START-HERE.md` (areas, rules, to-do lists via `node tools/gpt-art-todo.mjs`);
   the owner uploads finished pictures to `art-inbox/<area>/`, Claude imports them (steps at the end of that file).
+- Generated voice lines (free, fish.audio text-to-speech): `docs/FISH-AUDIO-VOICES.md` (key, free model header, cloud-session setup).
 - Arcade backgrounds (key art): the owner places each one per screen in the Background Picker artifact (see the rule below).
 
 ## Commands
