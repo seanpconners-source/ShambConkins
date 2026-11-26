@@ -1,0 +1,457 @@
+batch,file name,what it is,price,kind
+1,oxo-spinner.png,"OXO salad spinner",35,small
+1,lodge-skillet.png,"Lodge 12-inch cast iron skillet",30,small
+1,mr-coffee.png,"Mr. Coffee 12-cup coffee maker",35,small
+1,keurig-mini.png,"Keurig K-Mini coffee maker",90,small
+1,hb-toaster.png,"Hamilton Beach 2-slice toaster",30,small
+1,nutribullet.png,"NutriBullet blender",80,small
+1,cuisinart-knives.png,"Cuisinart 15-piece knife set",60,small
+1,pyrex-storage.png,"Pyrex 18-piece storage set",40,small
+1,stanley-quencher.png,"Stanley Quencher 40 oz tumbler",45,small
+1,hydro-flask.png,"Hydro Flask 32 oz bottle",45,small
+1,yeti-rambler.png,"YETI Rambler 20 oz tumbler",35,small
+1,brita.png,"Brita water filter pitcher",30,small
+1,presto-popper.png,"Presto hot air popcorn popper",30,small
+1,dash-waffle.png,"Dash mini waffle maker",13,small
+1,ninja-airfryer.png,"Ninja 4-quart air fryer",99,small
+1,cuisinart-ice.png,"Cuisinart ice cream maker",70,small
+1,nespresso-pods.png,"Nespresso capsules, 50 count",45,small
+1,oxo-mandoline.png,"OXO mandoline slicer",50,small
+1,rival-fondue.png,"fondue pot set",40,small
+1,margaritaville-mug.png,"Margaritaville frozen drink mug set",25,small
+1,corelle.png,"Corelle 18-piece dinnerware",60,small
+1,lego-classic.png,"LEGO Classic large brick box",35,small
+1,play-doh.png,"Play-Doh 10-pack",10,small
+1,hot-wheels.png,"Hot Wheels 20-car gift pack",25,small
+1,jenga.png,"Jenga",15,small
+2,operation.png,"Operation",20,small
+2,twister.png,"Twister",20,small
+2,clue.png,"Clue",22,small
+2,catan.png,"Catan",55,small
+2,risk.png,"Risk",30,small
+2,pictionary.png,"Pictionary",22,small
+2,mouse-trap.png,"Mouse Trap",25,small
+2,candy-land.png,"Candy Land",13,small
+2,chutes-ladders.png,"Chutes and Ladders",12,small
+2,guess-who.png,"Guess Who?",15,small
+2,perfection.png,"Perfection",20,small
+2,easy-bake.png,"Easy-Bake Ultimate Oven",40,small
+2,furby.png,"Furby",70,small
+2,nerf-football.png,"Nerf football",13,small
+2,spalding-ball.png,"Spalding NBA basketball",30,small
+2,wilson-football.png,"Wilson NFL football",25,small
+2,rawlings-glove.png,"Rawlings baseball glove",40,small
+2,boogie-board.png,"Morey boogie board",40,small
+2,radio-flyer-mini.png,"Radio Flyer scooter",50,small
+2,uno-flip.png,"UNO deluxe set",20,small
+2,magic-tracks.png,"Magic Tracks glow race set",30,small
+2,crayola-art.png,"Crayola 140-piece art set",25,small
+2,roku-express.png,"Roku Express 4K",40,small
+2,fire-stick.png,"Amazon Fire TV Stick 4K",50,small
+2,echo-dot.png,"Amazon Echo Dot",50,small
+3,jbl-go.png,"JBL Go 4 speaker",50,small
+3,skullcandy.png,"Skullcandy wireless earbuds",30,small
+3,tile-mate.png,"Tile Mate tracker, 2-pack",45,small
+3,polaroid-film.png,"Polaroid i-Type film, 2-pack",35,small
+3,anker-charger.png,"Anker power bank",40,small
+3,logitech-mouse.png,"Logitech wireless mouse",25,small
+3,ring-chime.png,"Ring Chime",35,small
+3,swiffer.png,"Swiffer Sweeper starter kit",20,small
+3,bissell-featherweight.png,"Bissell Featherweight vacuum",40,small
+3,duracell.png,"Duracell AA batteries, 24 pack",25,small
+3,shark-steam.png,"Shark steam mop",90,small
+3,febreze.png,"Febreze plug-in set",20,small
+3,yankee-candle.png,"Yankee Candle large jar",32,small
+3,snuggie.png,"Snuggie",20,small
+3,pillow-pet.png,"Pillow Pet",30,small
+3,my-pillow.png,"MyPillow",60,small
+3,weighted-blanket.png,"weighted blanket",60,small
+3,shower-head.png,"rainfall shower head",45,small
+3,revlon-dryer.png,"Revlon One-Step hair dryer brush",60,small
+3,conair-curling.png,"Conair curling iron",25,small
+3,oral-b.png,"Oral-B electric toothbrush",50,small
+3,philips-trimmer.png,"Philips Norelco beard trimmer",60,small
+3,crest-strips.png,"Crest 3D Whitestrips",50,small
+3,old-spice-set.png,"Old Spice gift set",20,small
+3,burts-bees.png,"Burt's Bees gift set",15,small
+4,chi-flat-iron.png,"CHI flat iron",90,small
+4,coleman-lantern.png,"Coleman LED lantern",35,small
+4,coleman-cooler.png,"Coleman 48-quart cooler",40,small
+4,sleeping-bag.png,"Coleman sleeping bag",40,small
+4,hammock.png,"ENO hammock",70,small
+4,badminton.png,"badminton set",40,small
+4,cornhole-mini.png,"tailgate cornhole set",70,small
+4,bocce.png,"bocce ball set",45,small
+4,garden-hose.png,"Flexzilla garden hose",55,small
+4,bird-feeder.png,"squirrel-proof bird feeder",40,small
+4,tiki-torches.png,"tiki torches, 4 pack",35,small
+4,kong-toys.png,"KONG dog toy bundle",30,small
+4,cat-tree.png,"cat tree",60,small
+4,pet-bed.png,"orthopedic dog bed",70,small
+4,furminator.png,"FURminator brush",35,small
+4,tide-case.png,"Tide detergent, 3 jugs",45,small
+4,charmin-case.png,"Charmin toilet paper, 24 mega rolls",35,small
+4,bounty-case.png,"Bounty paper towels, 12 rolls",30,small
+4,pampers.png,"Pampers diapers, giant box",50,small
+4,campbells.png,"Campbell's soup, case of 12",20,small
+4,kraft-mac.png,"Kraft Mac & Cheese, 12 boxes",15,small
+4,starbucks-coffee.png,"Starbucks coffee, 3 bags",35,small
+4,coca-cola.png,"Coca-Cola, 24 cans",13,small
+4,ritz.png,"Ritz crackers, 6 boxes",25,small
+4,hersheys.png,"Hershey's bars, 36 count",40,small
+5,jif-case.png,"Jif peanut butter, 6 jars",25,small
+5,folgers-case.png,"Folgers coffee, 3 canisters",40,small
+5,cheerios-case.png,"Cheerios, 4 family boxes",25,small
+5,oreo-case.png,"Oreo cookies, 6 packs",30,small
+5,bush-beans.png,"Bush's baked beans, 12 cans",20,small
+5,quaker-oats.png,"Quaker oats, 4 canisters",20,small
+5,tabasco.png,"Tabasco sauce, 6 bottles",25,small
+5,velveeta-case.png,"Velveeta, 4 blocks",35,small
+5,gatorade-case.png,"Gatorade, 24 bottles",30,small
+5,pringles-case.png,"Pringles, 12 cans",30,small
+5,nutella-case.png,"Nutella, 4 jars",25,small
+5,pop-tarts-case.png,"Pop-Tarts, 6 boxes",25,small
+5,ramen-case.png,"Maruchan ramen, 48 pack",20,small
+5,dawn-case.png,"Dawn dish soap, 6 bottles",25,small
+5,switch-2.png,"Nintendo Switch 2",500,mid
+5,kitchenaid-artisan.png,"KitchenAid Artisan stand mixer",500,mid
+5,airpods-pro-3.png,"Apple AirPods Pro 3",249,mid
+5,yeti-tundra-45.png,"YETI Tundra 45 cooler",325,mid
+5,vitamix-5200.png,"Vitamix 5200 blender",550,mid
+5,gopro-hero13.png,"GoPro HERO13 Black",430,mid
+5,weber-spirit-e325.png,"Weber Spirit E-325 gas grill",549,mid
+5,ipad-a16.png,"Apple iPad 11-inch (A16)",449,mid
+5,ninja-creami.png,"Ninja CREAMi ice cream maker",230,mid
+5,ps5-slim.png,"PlayStation 5 Slim digital",500,mid
+5,xbox-series-s.png,"Xbox Series S",380,mid
+6,meta-quest-3s.png,"Meta Quest 3S",300,mid
+6,kindle-paperwhite.png,"Kindle Paperwhite",160,mid
+6,apple-watch-se.png,"Apple Watch SE",250,mid
+6,fitbit-charge.png,"Fitbit Charge 6",160,mid
+6,bose-qc.png,"Bose QuietComfort headphones",350,mid
+6,sonos-era.png,"Sonos Era 100 speaker",220,mid
+6,beats-pill.png,"Beats Pill speaker",150,mid
+6,ring-doorbell.png,"Ring video doorbell",100,mid
+6,nest-thermostat.png,"Google Nest thermostat",130,mid
+6,dji-mini.png,"DJI Mini 4K drone",300,mid
+6,instax-wide.png,"Instax Wide instant camera",150,mid
+6,ti-84.png,"TI-84 Plus CE calculator",150,mid
+6,tv-43.png,"TCL 43-inch 4K TV",250,mid
+6,tv-55.png,"Hisense 55-inch 4K TV",400,mid
+6,soundbar.png,"Vizio soundbar",200,mid
+6,galaxy-tab.png,"Samsung Galaxy Tab A9+",220,mid
+6,nintendo-lite.png,"Nintendo Switch Lite",200,mid
+6,karaoke-machine.png,"Singing Machine karaoke system",150,mid
+6,record-player.png,"Victrola record player",100,mid
+6,airpods-4.png,"Apple AirPods 4",130,mid
+6,garmin-gps.png,"Garmin Forerunner watch",300,mid
+6,canon-printer.png,"Canon photo printer",150,mid
+6,kitchenaid-mixer-mini.png,"KitchenAid Artisan Mini mixer",380,mid
+6,breville-toaster.png,"Breville smart oven",300,mid
+6,nespresso.png,"Nespresso Vertuo coffee maker",200,mid
+7,ninja-foodi.png,"Ninja Foodi pressure cooker",230,mid
+7,le-creuset.png,"Le Creuset Dutch oven",420,mid
+7,all-clad.png,"All-Clad 10-piece cookware",700,mid
+7,calphalon.png,"Calphalon nonstick cookware set",300,mid
+7,cuisinart-food.png,"Cuisinart food processor",230,mid
+7,smeg-kettle.png,"SMEG electric kettle",190,mid
+7,traeger-ranger.png,"Traeger Ranger tabletop grill",400,mid
+7,blackstone.png,"Blackstone 36-inch griddle",400,mid
+7,ooni-pizza.png,"Ooni pizza oven",400,mid
+7,sodastream-art.png,"SodaStream Art",160,mid
+7,keurig-k-elite.png,"Keurig K-Elite",190,mid
+7,wusthof.png,"Wüsthof knife block set",500,mid
+7,zojirushi.png,"Zojirushi rice cooker",230,mid
+7,dyson-v8.png,"Dyson V8 cordless vacuum",470,mid
+7,shark-robot.png,"Shark robot vacuum",300,mid
+7,roomba-combo.png,"iRobot Roomba Combo",400,mid
+7,bissell-crosswave.png,"Bissell CrossWave",260,mid
+7,dyson-fan.png,"Dyson Pure Cool fan",430,mid
+7,levoit-purifier.png,"Levoit air purifier",150,mid
+7,casper-pillows.png,"Casper pillows, set of 2",130,mid
+7,purple-pillow.png,"Purple pillow",200,mid
+7,egyptian-sheets.png,"Egyptian cotton sheet set",200,mid
+7,nugget-couch.png,"kids' play couch",230,mid
+7,recliner-power.png,"power lift recliner",800,mid
+7,gaming-chair.png,"Secretlab gaming chair",550,mid
+8,ikea-desk.png,"standing desk",500,mid
+8,bookcase.png,"solid wood bookcase",350,mid
+8,bar-stools.png,"set of 3 bar stools",300,mid
+8,area-rug.png,"8 by 10 area rug",450,mid
+8,coffee-table.png,"coffee table",380,mid
+8,papasan.png,"papasan chair",250,mid
+8,futon.png,"futon",450,mid
+8,bean-bag.png,"Lovesac bean bag",600,mid
+8,schwinn-cruiser.png,"Schwinn beach cruiser",400,mid
+8,radio-flyer-wagon.png,"Radio Flyer wagon",150,mid
+8,coleman-tent.png,"Coleman 6-person tent",200,mid
+8,yeti-hopper.png,"YETI Hopper soft cooler",300,mid
+8,fire-pit.png,"Solo Stove fire pit",300,mid
+8,cornhole.png,"regulation cornhole boards",200,mid
+8,kayak-single.png,"Pelican kayak",400,mid
+8,paddle-board.png,"inflatable paddle board",450,mid
+8,trampoline.png,"12-foot trampoline",400,mid
+8,basketball-hoop.png,"Lifetime portable basketball hoop",450,mid
+8,pickleball.png,"pickleball set + net",200,mid
+8,golf-bag.png,"TaylorMade golf bag",300,mid
+8,callaway-driver.png,"Callaway driver",550,mid
+8,fishing-combo.png,"fishing rod and reel combo",150,mid
+8,metal-detector.png,"Garrett metal detector",250,mid
+8,telescope-small.png,"Celestron telescope",300,mid
+8,patio-heater.png,"patio heater",250,mid
+9,adirondack.png,"pair of Adirondack chairs",400,mid
+9,porch-swing.png,"porch swing",350,mid
+9,weber-kettle.png,"Weber Original kettle grill",230,mid
+9,toro-blower.png,"Toro leaf blower",150,mid
+9,greenworks-mower.png,"Greenworks electric mower",350,mid
+9,snow-blower.png,"electric snow blower",400,mid
+9,pressure-washer.png,"Sun Joe pressure washer",200,mid
+9,bowflex-dumbbells.png,"Bowflex adjustable dumbbells",430,mid
+9,rowing-machine.png,"rowing machine",600,mid
+9,exercise-bike.png,"Schwinn exercise bike",650,mid
+9,theragun.png,"Theragun massager",300,mid
+9,yoga-set.png,"Lululemon yoga set",200,mid
+9,nike-shoes.png,"Nike running shoes, 2 pair",300,mid
+9,massage-cushion.png,"shiatsu massage cushion",150,mid
+9,fender-squier.png,"Squier Stratocaster pack",300,mid
+9,yamaha-keyboard.png,"Yamaha keyboard",200,mid
+9,ukulele.png,"Kala ukulele",100,mid
+9,roland-drums.png,"Roland electronic drum kit",800,mid
+9,acoustic-guitar.png,"Taylor acoustic guitar",500,mid
+9,harmonica-set.png,"Hohner harmonica set",100,mid
+9,coach-bag.png,"Coach handbag",400,mid
+9,ray-bans.png,"Ray-Ban sunglasses, his and hers",350,mid
+9,fossil-watches.png,"his and hers Fossil watches",300,mid
+9,samsonite.png,"Samsonite luggage set",400,mid
+9,north-face.png,"The North Face jackets, his and hers",500,mid
+10,ugg-boots.png,"UGG boots",180,mid
+10,pandora.png,"Pandora bracelet",150,mid
+10,diamond-studs.png,"diamond stud earrings",900,mid
+10,lego-falcon.png,"LEGO Star Wars Millennium Falcon",170,mid
+10,barbie-dreamhouse.png,"Barbie Dreamhouse",200,mid
+10,power-wheels.png,"Power Wheels Jeep",400,mid
+10,air-hockey-mini.png,"tabletop air hockey",150,mid
+10,foosball.png,"foosball table",300,mid
+10,dartboard-cab.png,"dartboard cabinet set",150,mid
+10,poker-set.png,"poker set",100,mid
+10,arcade-tabletop.png,"tabletop arcade",130,mid
+10,sewing-singer.png,"Singer sewing machine",250,mid
+10,cricut.png,"Cricut cutting machine",300,mid
+10,dyson-airwrap.png,"Dyson Airwrap",600,mid
+10,massage-gun.png,"massage gun",150,mid
+10,tv-65-oled.png,"LG 65-inch OLED TV",2000,one-bid
+10,tv-75.png,"Samsung 75-inch 4K TV",1000,one-bid
+10,tv-85.png,"Sony 85-inch 4K TV",2500,one-bid
+10,tv-frame.png,"Samsung The Frame 65-inch TV",1600,one-bid
+10,macbook-air.png,"MacBook Air",1000,one-bid
+10,macbook-pro.png,"MacBook Pro",2000,one-bid
+10,iphone-pro.png,"iPhone 17 Pro",1100,one-bid
+10,galaxy-s.png,"Samsung Galaxy S26 Ultra",1300,one-bid
+10,ipad-pro.png,"iPad Pro",1000,one-bid
+10,gaming-pc.png,"gaming PC",1800,one-bid
+11,home-theater-sys.png,"Sonos home theater system",1500,one-bid
+11,projector.png,"Epson home projector + screen",1300,one-bid
+11,canon-camera.png,"Canon mirrorless camera kit",1300,one-bid
+11,ps5-pro.png,"PlayStation 5 Pro + four games",1000,one-bid
+11,arcade-cabinet.png,"Arcade1Up arcade cabinet",600,one-bid
+11,vr-pro.png,"Apple Vision Pro",3500,one-bid
+11,sofa.png,"sofa",1800,one-bid
+11,sectional.png,"sectional sofa",2800,one-bid
+11,lazboy-recliners.png,"pair of La-Z-Boy recliners",1600,one-bid
+11,dining-table.png,"dining table and six chairs",2200,one-bid
+11,bedroom-set.png,"bedroom set",3500,one-bid
+11,mattress.png,"Tempur-Pedic mattress",3000,one-bid
+11,bunk-beds.png,"bunk beds",900,one-bid
+11,china-cabinet.png,"china cabinet",1500,one-bid
+11,entertainment-center.png,"entertainment center",1200,one-bid
+11,desk-set.png,"executive desk and chair",1800,one-bid
+11,patio-dining.png,"patio dining set",1800,one-bid
+11,outdoor-sectional.png,"outdoor sectional",2500,one-bid
+11,grandfather-clock.png,"grandfather clock",2400,one-bid
+11,leather-sofa.png,"leather sofa",2400,one-bid
+11,massage-chair.png,"Osaki massage chair",3500,one-bid
+11,bar-set.png,"home bar and stools",1600,one-bid
+11,fridge.png,"Samsung French door refrigerator",2500,one-bid
+11,washer-dryer.png,"LG washer and dryer",2000,one-bid
+11,range.png,"GE gas range",1200,one-bid
+12,dishwasher.png,"Bosch dishwasher",1100,one-bid
+12,microwave-hood.png,"over-the-range microwave",500,one-bid
+12,wine-fridge.png,"wine refrigerator + a case of wine",900,one-bid
+12,espresso-machine.png,"Breville Barista Express",700,one-bid
+12,freezer.png,"chest freezer",600,one-bid
+12,ice-maker.png,"GE Profile nugget ice maker",580,one-bid
+12,range-hood.png,"KitchenAid kitchen package",4500,one-bid
+12,peloton.png,"Peloton Bike",1450,one-bid
+12,treadmill.png,"NordicTrack treadmill",2000,one-bid
+12,elliptical.png,"elliptical trainer",1300,one-bid
+12,home-gym-small.png,"Bowflex home gym",1500,one-bid
+12,tonal.png,"Tonal home gym",4000,one-bid
+12,mirror-gym.png,"smart fitness mirror",1500,one-bid
+12,ping-pong.png,"table tennis table",800,one-bid
+12,pool-table.png,"Brunswick pool table",3300,one-bid
+12,air-hockey.png,"arcade air hockey table",1200,one-bid
+12,pinball.png,"Stern pinball machine",4500,one-bid
+12,jukebox.png,"Crosley Rocket jukebox",1100,one-bid
+12,poker-table.png,"poker table",900,one-bid
+12,skee-ball.png,"Skee-Ball home arcade",1300,one-bid
+12,foosball-pro.png,"Tornado foosball table",1600,one-bid
+12,shuffleboard.png,"shuffleboard table",2000,one-bid
+12,weber-genesis.png,"Weber Genesis gas grill",1100,one-bid
+12,traeger-pro.png,"Traeger Pro pellet grill",900,one-bid
+12,big-green-egg.png,"Big Green Egg",1400,one-bid
+13,hot-tub-inflatable.png,"inflatable hot tub",600,one-bid
+13,pizza-oven-pro.png,"outdoor pizza oven",800,one-bid
+13,gazebo.png,"backyard gazebo",1800,one-bid
+13,swing-set.png,"wooden swing set",2000,one-bid
+13,above-ground-pool.png,"above-ground pool",1500,one-bid
+13,firepit-table.png,"fire pit table",900,one-bid
+13,riding-mower.png,"Toro riding mower",2800,one-bid
+13,generator.png,"Honda generator",1200,one-bid
+13,kayaks-pair.png,"two kayaks",900,one-bid
+13,canoe.png,"Old Town canoe",1300,one-bid
+13,paddle-boards.png,"two paddle boards",1000,one-bid
+13,camping-set.png,"camping package",1200,one-bid
+13,trek-bikes.png,"his and hers Trek bikes",1200,one-bid
+13,e-bike.png,"Rad Power e-bike",1700,one-bid
+13,mountain-bike.png,"Specialized mountain bike",1500,one-bid
+13,golf-clubs.png,"Callaway golf clubs",1500,one-bid
+13,putting-green.png,"backyard putting green",2500,one-bid
+13,electric-scooter.png,"Segway electric scooter",800,one-bid
+13,telescope.png,"Celestron computerized telescope",900,one-bid
+13,storage-shed.png,"storage shed",2200,one-bid
+13,piano-digital.png,"Yamaha digital piano",1200,one-bid
+13,strat-amp.png,"Fender Stratocaster and amp",1350,one-bid
+13,drum-kit.png,"Pearl drum kit",900,one-bid
+13,gibson.png,"Gibson Les Paul",2700,one-bid
+13,dj-set.png,"DJ turntable set",1100,one-bid
+14,saxophone.png,"Yamaha saxophone",1800,one-bid
+14,violin.png,"violin outfit",800,one-bid
+14,rolex-like.png,"Tag Heuer watch",3000,one-bid
+14,diamond-ring.png,"diamond ring",2500,one-bid
+14,fur-coats.png,"his and hers faux fur coats",2800,one-bid
+14,luggage.png,"Tumi luggage set",2000,one-bid
+14,wardrobe.png,"his and hers wardrobes",3500,one-bid
+14,louis-bag.png,"designer handbag",2200,one-bid
+14,trip-vegas-bid.png,"trip to Las Vegas",3000,one-bid
+14,trip-orlando.png,"trip to Orlando",3500,one-bid
+14,trip-nyc-bid.png,"trip to New York City",4000,one-bid
+14,trip-nashville-bid.png,"trip to Nashville",3200,one-bid
+14,trip-new-orleans-bid.png,"trip to New Orleans",3400,one-bid
+14,trip-san-diego.png,"trip to San Diego",3100,one-bid
+14,sea-doo-spark.png,"a Sea-Doo Spark personal watercraft",6999,grand
+14,vespa-primavera.png,"a Vespa Primavera 50 scooter",4449,grand
+14,peloton-bike-plus.png,"a Peloton Bike+",2695,grand
+14,harley.png,"a Harley-Davidson Sportster",11000,grand
+14,honda-rebel.png,"a Honda Rebel motorcycle",6500,grand
+14,kawasaki-ninja.png,"a Kawasaki Ninja motorcycle",7900,grand
+14,vespa-gts.png,"a Vespa GTS scooter",7500,grand
+14,honda-grom.png,"a Honda Grom",3600,grand
+14,can-am-ryker.png,"a Can-Am Ryker three-wheeler",10500,grand
+14,sea-doo-gti.png,"a Sea-Doo GTI personal watercraft",11900,grand
+14,yamaha-waverunner.png,"a Yamaha WaveRunner",9600,grand
+15,atv.png,"a Polaris Sportsman ATV",8800,grand
+15,golf-cart.png,"a Club Car golf cart",13500,grand
+15,side-by-side.png,"a Polaris RZR",14500,grand
+15,snowmobile.png,"a Ski-Doo snowmobile",12000,grand
+15,go-kart.png,"a gas go-kart",2500,grand
+15,hot-tub.png,"a six-person hot tub",9000,grand
+15,steinway.png,"a Steinway baby grand piano",9500,grand
+15,yamaha-grand.png,"a Yamaha baby grand piano",14500,grand
+15,home-gym.png,"a complete home gym",5600,grand
+15,sauna.png,"a backyard sauna",6000,grand
+15,outdoor-kitchen.png,"an outdoor kitchen",9000,grand
+15,kitchen-package.png,"a new kitchen appliance package",8500,grand
+15,living-room.png,"a new living room",6800,grand
+15,home-theater.png,"a home theater with a 100-inch screen",6900,grand
+15,bedroom-suite.png,"a five-piece bedroom suite",5800,grand
+15,game-room.png,"a game room: pool table, pinball and jukebox",8900,grand
+15,pergola.png,"a pergola and patio set",7400,grand
+15,playset.png,"a deluxe backyard playset",4500,grand
+15,fishing-boat-small.png,"an aluminum fishing boat",6500,grand
+15,jet-boat-small.png,"a two-person jet boat",14900,grand
+15,ebikes-pair.png,"two electric bikes",3800,grand
+15,shed-workshop.png,"a backyard workshop shed",6200,grand
+15,wine-cellar.png,"a wine cellar and 200 bottles of wine",7600,grand
+15,solar.png,"a home solar generator package",4800,grand
+15,trip-hawaii-g.png,"a trip to Hawaii",8400,grand
+16,trip-cancun-g.png,"a trip to Cancun",6200,grand
+16,trip-paris-g.png,"a trip to Paris",9100,grand
+16,trip-alaska-g.png,"an Alaskan cruise",7300,grand
+16,trip-caribbean-g.png,"a Caribbean cruise",6900,grand
+16,trip-london-g.png,"a trip to London",8200,grand
+16,trip-vegas-g.png,"a trip to Las Vegas",3900,grand
+16,trip-disney-g.png,"a trip to Walt Disney World",5600,grand
+16,nissan-versa.png,"Nissan Versa",18300,car
+16,kia-soul.png,"Kia Soul",21500,car
+16,hyundai-venue.png,"Hyundai Venue",22100,car
+16,chevy-trax.png,"Chevrolet Trax",22100,car
+16,nissan-kicks.png,"Nissan Kicks",23200,car
+16,vw-jetta.png,"Volkswagen Jetta",23000,car
+16,toyota-corolla.png,"Toyota Corolla",23500,car
+16,hyundai-elantra.png,"Hyundai Elantra",23700,car
+16,subaru-impreza.png,"Subaru Impreza",24300,car
+16,mazda3.png,"Mazda3",25000,car
+16,kia-seltos.png,"Kia Seltos",25200,car
+16,honda-civic.png,"Honda Civic",26900,car
+16,ford-maverick.png,"Ford Maverick pickup",28100,car
+16,toyota-camry.png,"Toyota Camry",29500,car
+16,honda-accord.png,"Honda Accord",29600,car
+16,mini-cooper.png,"MINI Cooper",29900,car
+16,subaru-crosstrek.png,"Subaru Crosstrek",27300,car
+16,toyota-rav4.png,"Toyota RAV4",30100,car
+17,mazda-miata.png,"Mazda MX-5 Miata convertible",30500,car
+17,honda-crv.png,"Honda CR-V",31300,car
+17,ford-bronco-sport.png,"Ford Bronco Sport",32000,car
+17,toyota-tacoma.png,"Toyota Tacoma pickup",33000,car
+17,jeep-wrangler.png,"Jeep Wrangler",33200,car
+17,ford-mustang.png,"Ford Mustang",33500,car
+17,kia-telluride.png,"Kia Telluride",37300,car
+17,vw-atlas.png,"Volkswagen Atlas",39000,car
+17,chevy-silverado.png,"Chevrolet Silverado pickup",39500,car
+17,ford-f150.png,"Ford F-150 pickup",39900,car
+17,ford-bronco.png,"Ford Bronco",40900,car
+17,jeep-grand-cherokee.png,"Jeep Grand Cherokee",40800,car
+17,tesla-model-3.png,"Tesla Model 3",42500,car
+17,mustang-convertible.png,"Ford Mustang convertible",40100,car
+17,chevy-corvette.png,"Chevrolet Corvette",70000,car
+17,trip-hawaii.png,"a trip to Maui, Hawaii",8400,trip
+17,trip-paris.png,"a trip to Paris, France",9100,trip
+17,trip-rome.png,"a trip to Rome, Italy",9300,trip
+17,trip-london.png,"a trip to London, England",8200,trip
+17,trip-ireland.png,"a trip to Ireland",7700,trip
+17,trip-greece.png,"a trip to the Greek islands",9800,trip
+17,trip-tokyo.png,"a trip to Tokyo, Japan",10500,trip
+17,trip-australia.png,"a trip to Sydney, Australia",11800,trip
+17,trip-cancun.png,"a trip to Cancun, Mexico",6200,trip
+17,trip-cabo.png,"a trip to Cabo San Lucas",6600,trip
+18,trip-jamaica.png,"a trip to Jamaica",6400,trip
+18,trip-bahamas.png,"a trip to the Bahamas",6100,trip
+18,trip-costa-rica.png,"a trip to Costa Rica",6800,trip
+18,trip-tahiti.png,"a trip to Tahiti",12400,trip
+18,trip-fiji.png,"a trip to Fiji",11600,trip
+18,trip-bali.png,"a trip to Bali",10200,trip
+18,trip-alaska.png,"a seven-night Alaskan cruise",7300,trip
+18,trip-caribbean.png,"a Caribbean cruise",6900,trip
+18,trip-mediterranean.png,"a Mediterranean cruise",10800,trip
+18,trip-nyc.png,"a trip to New York City with Broadway tickets",6000,trip
+18,trip-vegas.png,"a trip to Las Vegas",3900,trip
+18,trip-disney.png,"a trip to Walt Disney World",5600,trip
+18,trip-aspen.png,"a ski trip to Aspen, Colorado",7900,trip
+18,trip-yellowstone.png,"a trip to Yellowstone",5200,trip
+18,trip-napa.png,"a trip to Napa Valley wine country",5800,trip
+18,trip-nashville.png,"a trip to Nashville",4300,trip
+18,trip-new-orleans.png,"a trip to New Orleans",4600,trip
+18,trip-key-west.png,"a trip to Key West",5400,trip
+18,trip-philly.png,"a trip to Philadelphia with a night at Paddy's Pub",2500,trip
+18,trip-iceland.png,"a trip to Iceland",8600,trip
+18,trip-switzerland.png,"a trip to the Swiss Alps",10900,trip
+18,pontoon.png,"a 20-foot pontoon boat",29000,big
+18,bass-boat.png,"a bass fishing boat",32000,big
+18,ski-boat.png,"a ski boat",48000,big
+18,airstream.png,"an Airstream travel trailer",58000,big
+19,teardrop.png,"a teardrop camper",19500,big
+19,travel-trailer.png,"a travel trailer",32000,big
+19,tiny-house.png,"a tiny house",62000,big
+19,motorhome.png,"a Winnebago motorhome",89000,big
+19,harley-trike.png,"a Harley-Davidson trike",33000,big
+19,jet-skis-2.png,"two Sea-Doo watercraft",24000,big

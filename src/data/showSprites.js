@@ -59,6 +59,15 @@ const LEVER_GEOM={w:200,h:520,pivot:[100,470]};
 const PBOARD_GEOM={w:2000,h:1160,grid:[120,220,1880,1100],cols:10,rows:5};
 const PAPER_GEOM={w:200,h:200};
 const SLIP_GEOM={w:640,h:320,text:[70,50,570,270]};
+// THE EPISODE (owner, Nov 26: a whole show like the real one, src/engines/tpir/): the channel guide's TV set, the Showcase, the
+// prize doors, the family running down, Bob's goodbye, the commercials, the credits. Templates: python3 tools/gameshow/episode-templates.py,
+// brief docs/art-for-gpt/TPIR-EPISODE-ART.md. TV screens are [x,y,w,h] see-through 4:3 holes the game shows the channel guide through.
+const TV_GEOM={'tv-frame':{w:1920,h:1080,screen:[340,70,1120,840]},'tv-frame-tall':{w:1080,h:1920,screen:[60,420,960,720]},'tv-frame-fold':{w:1504,h:1670,screen:[92,170,1320,990]}};
+const FAMILY={w:384,h:768,frames:['run1','run2','run3','run4','jump','hug','cheer','wave'],feet:[192,750],spot:[192,128],faceW:.15};
+const HOST_BYE={w:512,h:1024,frames:['wave','sincere','bow'],feet:[256,1004]};
+const SC_PODIUM={w:600,h:700,bid:[90,70,420,130],name:[120,560,360,90]};
+const DOOR={w:960,h:1080};
+const TURNTABLE={w:1600,h:520,top:[800,190,720,130]};
 const SLOTS={
  'stage-plinko':{w:1920,h:1080,what:'the Plinko studio, wide: big colourful 70s/80s game-show set, the board stands in the middle (leave the middle 40% calm)'},
  'stage-plinko-tall':{w:1080,h:1920,what:'the same studio for upright phones'},
@@ -66,6 +75,32 @@ const SLOTS={
  'stage-wheel-tall':{w:1080,h:1920,what:'the same studio for upright phones'},
  'stage-plinko-fold':{w:1504,h:1670,what:'the same studio for near-square screens (the open Fold)'},
  'stage-wheel-fold':{w:1504,h:1670,what:'the same studio for near-square screens (the open Fold)'},
+ // ---- THE EPISODE
+ 'tv-frame':{w:1920,h:1080,what:'a 1990s living-room CRT television set seen straight on, filling the picture (wood-grain or black plastic cabinet, knobs and speaker grille to the right of the screen, rabbit-ear antenna on top cut by the edge is fine): the SCREEN is a see-through hole exactly in the pink box, its corners rounded like a real tube; around the TV a dim 90s living room wall'},
+ 'tv-frame-tall':{w:1080,h:1920,what:'the same TV set for upright phones: antenna above, the 4:3 screen hole in the pink box, below it the control panel (channel dial, volume knob, speaker grille), the TV standing on a wooden stand with a VCR under it'},
+ 'tv-frame-fold':{w:1504,h:1670,what:'the same TV set for near-square screens: the 4:3 screen hole in the pink box, controls under the screen'},
+ 'guide-promo-1':{w:640,h:480,what:'a 4:3 TV promo still for the channel guide window: the host (gray suit, skinny microphone) welcoming the audience on our Price Is Right stage, slightly soft like a 90s broadcast'},
+ 'guide-promo-2':{w:640,h:480,what:'promo still 2: four contestants jumping at their podiums on Contestants\' Row, audience behind'},
+ 'guide-promo-3':{w:640,h:480,what:'promo still 3: the Big Wheel being spun, lights flashing'},
+ 'guide-promo-4':{w:640,h:480,what:'promo still 4: a shiny new car on the turntable with a model presenting it'},
+ 'stage-showcase':{w:1920,h:1080,what:'the Showcase studio, wide, EMPTY (no people): the main stage with the big turntable in the middle and the two Showcase podiums at the lower right; leave the middle 50% calm for the prizes'},
+ 'stage-showcase-tall':{w:1080,h:1920,what:'the same Showcase studio for upright phones, EMPTY'},
+ 'stage-showcase-fold':{w:1504,h:1670,what:'the same Showcase studio for near-square screens, EMPTY'},
+ 'showcase-podium':{w:600,h:700,what:'one Showcase contestant podium seen from the front, transparent around: a big black bid window at the top (pink box, the game prints the bid), a name panel low on the front (pink box, the game writes the name)'},
+ 'door-panel':{w:960,h:1080,what:'the LEFT half of the big sliding stage door that opens on a prize (the game slides two of them apart and mirrors this one for the right half): glittery 70s/80s show door, the inner edge on the right side of the picture'},
+ 'turntable':{w:1600,h:520,what:'the round prize turntable platform seen from the audience (an ellipse with chrome trim and light bulbs round the edge), transparent around; prizes stand on the pink ellipse'},
+ 'family-1':{w:3072,h:768,what:'a contestant\'s family member 1 WITHOUT a head (the game adds a face on the circle): a matching homemade family T-shirt that says TEAM and a heart, jeans; 8 poses, feet on the dots: RUN 1-4 (sprinting toward the stage), JUMP (both arms up), HUG (arms wide, about to hug), CHEER (fists up), WAVE'},
+ 'family-2':{w:3072,h:768,what:'family member 2, headless, same 8 poses: a sundress and sandals'},
+ 'family-3':{w:3072,h:768,what:'family member 3, headless, same 8 poses: a sports jersey and cargo shorts'},
+ 'family-4':{w:3072,h:768,what:'family member 4, headless, same 8 poses: a kid-sized body in a bright T-shirt and sneakers (shorter: head circle lower)'},
+ 'host-bye':{w:1536,h:1024,what:'the SAME host as host.png (gray suit, skinny microphone, same face and hair), 3 poses for the sign-off: WAVE (waving goodbye to the camera), SINCERE (talking to camera, mic close: the spay and neuter reminder), BOW (a small bow with the mic)'},
+ 'ad-fightmilk':{w:1920,h:1080,what:'a 1990s TV commercial frame for FIGHT MILK (from It\'s Always Sunny in Philadelphia): a gallon jug of milk with a crow on the label, dramatic lighting, gritty gym, "FIGHT MILK" in bold 90s ad lettering; leave the bottom third calm for the game\'s text'},
+ 'ad-brawndo':{w:1920,h:1080,what:'a 1990s TV commercial frame for BRAWNDO THE THIRST MUTILATOR (from Idiocracy): a big green can of Brawndo with lightning, extreme 90s energy-drink style; leave the bottom third calm'},
+ 'ad-rumham':{w:1920,h:1080,what:'a 1990s TV commercial frame for RUM HAM (from It\'s Always Sunny): a glazed ham floating on an inner tube on a sunny beach with a bottle of rum; leave the bottom third calm'},
+ 'credits-bg':{w:1920,h:1080,what:'the end of the show: a wide shot of the whole Price Is Right stage with confetti in the air and lights blazing, EMPTY of people, a bit dark so white credits read over the middle'},
+ 'credits-bg-tall':{w:1080,h:1920,what:'the same end-of-show stage for upright phones'},
+ 'tally-bg':{w:1920,h:1080,what:'a lit-up 70s game-show scoreboard wall (bulbs, gold and orange panels) with a big empty middle for the game\'s winnings table'},
+ 'tally-bg-tall':{w:1080,h:1920,what:'the same scoreboard wall for upright phones'},
  curtain:{w:1920,h:1080,what:'the sparkly studio curtain that rises at the start (fills the screen)'},
  'plinko-board':{w:1800,h:2544,what:'the Plinko board without pegs, chips or prize numbers: frame, backing, top lights, the 9 slot boxes at the bottom (game prints the prizes)'},
  'stage-cliff':{w:1920,h:1080,what:'the Cliff Hangers studio, wide: the mountain stands on the left 60% (keep it calm there), the prize table on the right'},
@@ -148,4 +183,4 @@ function picture(name){const url=USER[keyOf(name)];if(!url||typeof Image==='unde
  let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;ver++;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}
 const has=name=>!!USER[keyOf(name)];
 function ready(names=Object.keys(SLOTS),ms=6000){for(const n of names)if(has(n))picture(n);const t0=Date.now();return new Promise(r=>{const go=()=>{if(names.every(n=>!has(n)||imgs.get(n)?.ok)||Date.now()-t0>ms)return r();setTimeout(go,60);};go();});}
-Object.assign(exports,{CR_SEAT,CR_FAN,CR_BODY,CR_PODIUM,RANGE_GEOM,FINDER_GEOM,BUTTON_GEOM,SAFE_GEOM,TILE_GEOM,PODIUM_GEOM,RTAG_GEOM,RBOARD_GEOM,LEVER_GEOM,PBOARD_GEOM,PAPER_GEOM,SLIP_GEOM,HOST,MODEL,PLINKO_GEOM,WHEEL_GEOM,CLOCK_GEOM,HAND_GEOM,DISPLAY_GEOM,PLATFORM_GEOM,CLIFF_GEOM,CLIMBER,STAND_GEOM,SLOTS,picture,has,ready,version:()=>ver});
+Object.assign(exports,{TV_GEOM,FAMILY,HOST_BYE,SC_PODIUM,DOOR,TURNTABLE,CR_SEAT,CR_FAN,CR_BODY,CR_PODIUM,RANGE_GEOM,FINDER_GEOM,BUTTON_GEOM,SAFE_GEOM,TILE_GEOM,PODIUM_GEOM,RTAG_GEOM,RBOARD_GEOM,LEVER_GEOM,PBOARD_GEOM,PAPER_GEOM,SLIP_GEOM,HOST,MODEL,PLINKO_GEOM,WHEEL_GEOM,CLOCK_GEOM,HAND_GEOM,DISPLAY_GEOM,PLATFORM_GEOM,CLIFF_GEOM,CLIMBER,STAND_GEOM,SLOTS,picture,has,ready,version:()=>ver});
