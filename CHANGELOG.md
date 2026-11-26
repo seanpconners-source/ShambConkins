@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.99.69
+
+- **The Price Is Right, the whole episode:** a 90s TV guide comes up first (static, channel number, lounge music); tune in to THE PRICE IS RIGHT for a full show: the announcer's opening and Bob's entrance, Contestants' Row and four random pricing games, two Showcase Showdowns on the Big Wheel, a commercial break, the Showcase with the doors opening on trips, cars and boats, the winner's family running down, Bob's "spay or neuter your pets" sign-off, the credits and a winnings tally. Play alone or vs CPU, or two players.
+- **A NEW CAR!** Most episodes play Safe Crackers for a car.
+- **Hundreds of real prizes:** over 500 real products, trips, cars and boats at real prices, every one with its own photo, and no prize repeats within an episode.
+- **Bob and Rich talk the whole show:** almost 2,000 voiced lines, including every character's name when they're called down.
+
 ## v0.99.68
 
 - **Safe Crackers:** the show's real door creak and slam (instead of a buzzer), the host says exactly what's in his speech bubble, and nothing cuts him off.
