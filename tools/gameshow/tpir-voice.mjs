@@ -31,7 +31,9 @@ function polish(raw,out){const tmp=out+'.raw.mp3';fs.writeFileSync(tmp,raw);
  execFileSync('ffmpeg',['-v','error','-y','-i',tmp,'-af','silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.06,areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.06,areverse,loudnorm=I=-16:TP=-1.5:LRA=11','-ac','1','-ar','44100','-b:a','128k',out]);
  fs.unlinkSync(tmp);}
 let made=0,skipped=0;
-for(const [key,who,text,,,takes] of V.LINES){if(only&&!only.test(key))continue;
+// the lines + one call-down per character (--names=0 skips those)
+const ALL_LINES=[...V.LINES,...(arg('names')==='0'?[]:V.nameLines())];
+for(const [key,who,text,,,takes] of ALL_LINES){if(only&&!only.test(key))continue;
  for(let n=1;n<=takes;n++){const out=path.join(OUT,`tpir-v-${key}-${n}.mp3`);if(!force&&fs.existsSync(out)){skipped++;continue;}
   console.log(`${key}-${n} (${who}): ${text}`);if(dry)continue;
   const raw=await tts(say(text),V.VOICE_MODELS[who]);polish(raw,out);made++;await sleep(1200);}}

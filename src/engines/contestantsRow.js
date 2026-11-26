@@ -56,7 +56,7 @@ async function contestantsRow(s){
  const short=n=>String(n).replace(/\s*\(CPU\)\s*$/i,'');
  const seats=[newGuest(),{p:0,name:short(names[0]),col:'#e63946',...nextBody()},{p:1,name:short(names[1]),col:'#3a86ff',...nextBody()},newGuest()].map(o=>({...o,bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0}));seats_=seats;
  const N=board?2:4,items=[];{const bag=ITEMS.slice();for(let i=0;i<N;i++)items.push(bag.splice(Math.floor(R()*bag.length),1)[0]);}
- snd.prepare(items.map(it=>`It's ${/^(a|an|the) /i.test(it[1])?it[1]:'a '+it[1]}!`));
+ snd.prepare(items.map(it=>`It's ${TV.art(it[1])}!`));
  items.forEach(it=>SP.prizePhoto(it[0]));
  let scene='row',call=null,item=null,itemT=0,priceShown=false,limit=0,cur=-1,typed='',warn=null,warnT=0,hype=0,keys=[],quick=[],tries=0,actual=null;
  const human=ci=>{const st=seats[ci];return st.p!=null&&(net?st.p===me:!(cpu&&st.p===1));};
@@ -183,7 +183,7 @@ async function contestantsRow(s){
  let itemIdx=0;
  async function playItem(n,startSeat){item=items[n];itemIdx=n;itemT=0;priceShown=false;limit=0;tries=0;seats.forEach(o=>{o.bid=null;o.over=false;});
   K.say(n===0?'Here\'s the first item up for bids!':'Here\'s the next item up for bids!',2200);K.cast.present(4,'present');sfx.applause(1.4,.5);await K.wait(1800);
-  K.say(`It's ${/^(a|an|the) /i.test(item[1])?item[1]:'a '+item[1]}!`,2200);await K.wait(2000);
+  K.say(`It's ${TV.art(item[1])}!`,2200);await K.wait(2000);
   for(;;){const order=[0,1,2,3].map(k=>(startSeat+k)%4);for(const i of order){if(!s.alive)return null;const v=await getBid(i,tries);seats[i].bid=v;sfx.click?.();K.say(`${seats[i].name}: ${money(v)}`,1200);if(seats[i].p==null||!human(i))await K.wait(500);}
    cur=-1;K.say('The actual retail price is...',1800);snd.voice('say-actual-retail-price');await K.sleep(1500);priceShown=true;actual=item[2];
    const ok=seats.map((o,i)=>[o.bid,i]).filter(([b])=>b<=actual).sort((a,b)=>b[0]-a[0]);seats.forEach(o=>{o.over=o.bid>actual;});
