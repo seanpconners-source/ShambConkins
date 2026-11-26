@@ -67,6 +67,8 @@ const FAMILY={w:384,h:768,frames:['run1','run2','run3','run4','jump','hug','chee
 const HOST_BYE={w:512,h:1024,frames:['wave','sincere','bow'],feet:[256,1004]};
 const SC_PODIUM={w:600,h:700,bid:[90,70,420,130],name:[120,560,360,90]};
 const DOOR={w:960,h:1080};
+// the big sliding doors painted in stage-showcase(-tall/-fold): their opening as fractions of the picture [x0,y0,x1,y1] (measured on GPT's art)
+const SC_DOOR={wide:[.158,.105,.839,.656],tall:[0,.165,1,.575],fold:[.007,.2,.991,.655]};
 const TURNTABLE={w:1600,h:520,top:[800,190,720,130]};
 const SLOTS={
  'stage-plinko':{w:1920,h:1080,what:'the Plinko studio, wide: big colourful 70s/80s game-show set, the board stands in the middle (leave the middle 40% calm)'},
@@ -183,4 +185,4 @@ function picture(name){const url=USER[keyOf(name)];if(!url||typeof Image==='unde
  let e=imgs.get(name);if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;ver++;};e.img.src=url;imgs.set(name,e);}return e.ok?e.img:null;}
 const has=name=>!!USER[keyOf(name)];
 function ready(names=Object.keys(SLOTS),ms=6000){for(const n of names)if(has(n))picture(n);const t0=Date.now();return new Promise(r=>{const go=()=>{if(names.every(n=>!has(n)||imgs.get(n)?.ok)||Date.now()-t0>ms)return r();setTimeout(go,60);};go();});}
-Object.assign(exports,{TV_GEOM,FAMILY,HOST_BYE,SC_PODIUM,DOOR,TURNTABLE,CR_SEAT,CR_FAN,CR_BODY,CR_PODIUM,RANGE_GEOM,FINDER_GEOM,BUTTON_GEOM,SAFE_GEOM,TILE_GEOM,PODIUM_GEOM,RTAG_GEOM,RBOARD_GEOM,LEVER_GEOM,PBOARD_GEOM,PAPER_GEOM,SLIP_GEOM,HOST,MODEL,PLINKO_GEOM,WHEEL_GEOM,CLOCK_GEOM,HAND_GEOM,DISPLAY_GEOM,PLATFORM_GEOM,CLIFF_GEOM,CLIMBER,STAND_GEOM,SLOTS,picture,has,ready,version:()=>ver});
+Object.assign(exports,{SC_DOOR,TV_GEOM,FAMILY,HOST_BYE,SC_PODIUM,DOOR,TURNTABLE,CR_SEAT,CR_FAN,CR_BODY,CR_PODIUM,RANGE_GEOM,FINDER_GEOM,BUTTON_GEOM,SAFE_GEOM,TILE_GEOM,PODIUM_GEOM,RTAG_GEOM,RBOARD_GEOM,LEVER_GEOM,PBOARD_GEOM,PAPER_GEOM,SLIP_GEOM,HOST,MODEL,PLINKO_GEOM,WHEEL_GEOM,CLOCK_GEOM,HAND_GEOM,DISPLAY_GEOM,PLATFORM_GEOM,CLIFF_GEOM,CLIMBER,STAND_GEOM,SLOTS,picture,has,ready,version:()=>ver});

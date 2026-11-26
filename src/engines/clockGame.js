@@ -165,10 +165,11 @@ async function clockGame(s){
  if(!s.fromMenu)snd.title(true);snd.crowd(3,.9,{at:.3});mode='intro';introT=0;
  banner={big:'THE CLOCK GAME!',small:'Two prizes · thirty seconds',t:2.6,col:'#ffd23f'};await wait(2600);
  say('Thirty seconds to price both prizes. Call out a price, I\'ll tell you higher or lower. Win them both and there\'s a thousand dollars more!',3600);introT=Math.max(introT,2.3);await wait(3400);snd.title(false);
- for(let i=0;i<2;i++){if(!s.alive)return;if(i===1&&!net&&!cpu&&!board){if(!await s.pass(1,`${names[1]}, come on down! Your turn at THE CLOCK GAME.`,'Play'))return;}
+ for(const i of (s.episode&&s.episode.only!=null?[s.episode.only]:[0,1])){if(!s.alive)return;if(i===1&&!net&&!cpu&&!board&&!s.episode){if(!await s.pass(1,`${names[1]}, come on down! Your turn at THE CLOCK GAME.`,'Play'))return;}
   banner={big:names[i].toUpperCase(),small:'IT\'S YOUR TURN AT THE CLOCK GAME!',t:1.6,col:'#fff'};sfx.applause(1.6,.5);await wait(1600);await play(i);}
  if(!s.alive)return;mode='over';
  const a=P[0].score,b=P[1].score,w=a===b?-1:a>b?0:1;
+ if(s.episode){const q=P[s.episode.only];s.episode.out={won:q.score,line:money(q.score)};s.finish([a,b],'');return;}
  if(w>=0){banner={big:`${names[w].toUpperCase()} WINS!`,small:money(P[w].score),t:3,col:'#ffe23a'};sfx.winner();s.react?.(w,'win');}else banner={big:'A TIE!',small:money(a),t:3,col:'#fff'};
  await wait(3000);
  s.finish([a,b],`CLOCK GAME · ${names[0]} ${money(a)} – ${money(b)} ${names[1]}`);}

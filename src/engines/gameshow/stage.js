@@ -17,7 +17,7 @@ const STAGE_BORROW={range:'wheel',race:'wheel',row:'wheel',punch:'plinko',safe:'
 // pictures (the colourful sets by eye, the pink ones where the saturated wall stops). Things that stand on the stage (the host, the
 // models, the safe, the prize turntable...) stand at or below this line, never on the wall (owner, Nov 25: "not floating")
 const STAGE_FLOOR={safe:[.625,.644,.635],range:[.606,.659,.661],race:[.65,.654,.649],punch:[.658,.659,.658],row:[.626,.647,.626],
- plinko:[.66,.65,.66],wheel:[.66,.66,.67],clock:[.65,.66,.66],cliff:[.66,.66,.66]};
+ plinko:[.66,.65,.66],wheel:[.66,.66,.67],clock:[.65,.66,.66],cliff:[.66,.66,.66],showcase:[.656,.575,.655]};
 // the stage picture for this screen + how it's laid on it. floorY = put the picture's floor line at that screen y (zooms in as far as
 // it has to so the picture still covers the screen, at most ZMAX x); without it = plain cover. Drawn stage (no picture): floor at .63 H
 const ZMAX=1.7;
@@ -285,7 +285,7 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   if(last){hostClip=null;talkEnd=performance.now()+Math.max(0,last.end-a.currentTime)*1000;}return last;}
  // load the clips a bubble will need before it's said (a game calls this with its texts once it knows its prizes)
  function prepare(texts){const a=ac();if(!a)return;for(const t of texts){const k=TV.lineFor(t),keys=k?[k]:TV.partsFor(t)||[];for(const key of keys)for(const n of takesOf(key.startsWith('say-')?key:'v-'+key))loadClip(a,n);}}
- function want(keys){const a=ac();if(!a)return;for(const key of keys)for(const n of takesOf(key))loadClip(a,n);}
+ function wantKeys(keys){const a=ac();if(!a)return;for(const key of keys)for(const n of takesOf(key))loadClip(a,n);}
  // the audience murmuring under a game: the chatter recording looped if it's in, else the applause recording slowed and muffled
  // into a low rumble of voices
  let mur=null;function murmur(on){const a=ac();if(!on||!a){if(mur){try{const t=a?.currentTime||0;mur.g.gain.setTargetAtTime(.0001,t,.3);mur.src.stop(t+1.2);}catch{}mur=null;}return;}
@@ -293,5 +293,5 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   src.buffer=b;src.loop=true;if(!own){src.playbackRate.value=.5;lp.type='lowpass';lp.frequency.value=620;}else{lp.type='allpass';}
   g.gain.setValueAtTime(.0001,a.currentTime);g.gain.linearRampToValueAtTime(own?(TPIR_GAIN[own]??.5)*.6:.16,a.currentTime+1.2);
   if(!clipOut){clipOut=a.createGain();clipOut.connect(a.destination);}src.connect(lp);lp.connect(g);g.connect(clipOut);src.start(a.currentTime,Math.random()*b.duration*.5);mur={src,g};}
- return {sfx,music,title,clip,crowd,voice,speak,seq,prepare,want,talking,hush,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
+ return {sfx,music,title,clip,crowd,voice,speak,seq,prepare,want:wantKeys,talking,hush,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
 Object.assign(exports,{STAGE_FLOOR,stageFit,floorAt,floorShadow,STAGE_BORROW,createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});

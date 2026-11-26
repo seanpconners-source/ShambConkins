@@ -28,6 +28,9 @@ const BG='keyart:price-bid-off',LOGO='keyart:price-bid-off-logo';
 async function tpirShow(s){
  const board=s.origin==='board';
  if(board){const R=seededRandom(`${s.seed}:tpir`),g=PRICING_GAMES[Math.floor(R()*PRICING_GAMES.length)];s.scoreAs=g.id;return g.run(s);}
+ // the TV guide first (tpir/guide.js): the whole episode at 9:00 AM, or channel 3 = this menu of single games. Not online.
+ if(!isOnline(s)&&!s.fromGuide){const pick=await require("src/engines/tpir/guide.js").runGuide(s,{onePlayer:s.solo?.kind==='cpu'});if(!s.alive||!pick)return;
+  if(pick.pick==='episode'){s.scoreAs='price-bid-off';return require("src/engines/tpir/episode.js").episode(s,{alone:pick.alone});}}
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#14062e'});
  const net=isOnline(s)?s.online:null,picker=!net||net.me===0,names=s.players.map(p=>p.name||'Player');
  const snd=ST.createShowSound({}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});

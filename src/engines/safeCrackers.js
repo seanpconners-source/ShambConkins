@@ -35,7 +35,7 @@ function drawTile(g,digit='',lit=false){const pic=SS.picture('safe-tile');if(pic
 async function safeCrackers(s){
  const K=createKit(s,{kind:'safe',clips:['safe-crackers','big-winner','losing-horn','buzzer','bell','ding','safe-creak','safe-slam'],song:'safe-crackers'}),{net,names,snd,sfx}=K;
  const smalls=SP.MID_PRIZES.filter(p=>uniq(p[2]));
- const P=names.map((n,i)=>{const R=seededRandom(`${s.seed}:safe:${i}`),sm=smalls[Math.floor(R()*smalls.length)],bigPool=R()<.4?SP.CARS.filter(c=>c[2]<35000).map(c=>[c[0],'a new '+c[1],c[2],c[3]]):SP.GRAND_PRIZES,bg=bigPool[Math.floor(R()*bigPool.length)],code=String(sm[2]);
+ const P=names.map((n,i)=>{const R=seededRandom(`${s.seed}:safe:${i}`),sm=smalls[Math.floor(R()*smalls.length)],bigPool=(s.episode?.car!=null?s.episode.car&&i===s.episode.only:R()<.4)?SP.CARS.filter(c=>c[2]<35000).map(c=>[c[0],'a new '+c[1],c[2],c[3]]):SP.GRAND_PRIZES,bg=bigPool[Math.floor(R()*bigPool.length)],code=String(sm[2]);
   let dg=shuffle(code.split(''),R);if(dg.join('')===code)dg=[dg[1],dg[2],dg[0]];
   return {small:{id:sm[0],name:sm[1],price:sm[2],em:sm[3]},big:{id:bg[0],name:bg[1],price:bg[2],em:bg[3]},code,digits:dg,slots:[null,null,null],tried:null,open:false,done:false,score:0,mood:'normal'};});
  snd.prepare(P.map(p=>`In the safe: ${p.small.name} and ${p.big.name}! The combination is the price of the ${p.small.name}.`));

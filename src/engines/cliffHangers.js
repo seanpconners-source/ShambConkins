@@ -195,10 +195,11 @@ async function cliffHangers(s){
  if(!s.fromMenu)snd.title(true);snd.crowd(3,.9,{at:.3});mode='intro';introT=0;
  banner={big:'CLIFF HANGERS!',small:`Playing for ${grand[1]} · ${money(grand[2])}`,t:2.8,col:'#7fd8ff'};await wait(2800);
  say('For every dollar you\'re off, our mountain climber takes one step. Twenty-five steps are safe... one more and he goes right over the cliff!',3600);introT=Math.max(introT,2.3);await wait(3400);snd.title(false);
- for(let i=0;i<2;i++){if(!s.alive)return;if(i===1&&!net&&!cpu&&!board){if(!await s.pass(1,`${names[1]}, come on down! Your turn at CLIFF HANGERS.`,'Play'))return;}
+ for(const i of (s.episode&&s.episode.only!=null?[s.episode.only]:[0,1])){if(!s.alive)return;if(i===1&&!net&&!cpu&&!board&&!s.episode){if(!await s.pass(1,`${names[1]}, come on down! Your turn at CLIFF HANGERS.`,'Play'))return;}
   banner={big:names[i].toUpperCase(),small:'IT\'S YOUR TURN AT CLIFF HANGERS!',t:1.6,col:'#fff'};sfx.applause(1.6,.5);await wait(1600);await play(i);}
  if(!s.alive)return;mode='over';
  const a=P[0].score,b=P[1].score,w=a===b?-1:a>b?0:1;
+ if(s.episode){const q=P[s.episode.only];s.episode.out={won:q.score,line:q.fell?'Fell off the cliff':grand[1]};s.finish([a,b],'');return;}
  if(w>=0){banner={big:`${names[w].toUpperCase()} WINS!`,small:P[w].fell?'':`${grand[1]} + ${money(100*(SAFE-P[w].steps))}`,t:3,col:'#ffe23a'};sfx.winner();s.react?.(w,'win');}else banner={big:a?'BOTH MADE IT!':'BOTH FELL OFF!',small:'A tie',t:3,col:'#fff'};
  await wait(3000);
  s.finish([a,b],`CLIFF HANGERS · ${names[0]} ${P[0].fell?'fell':P[0].steps+' steps'} – ${names[1]} ${P[1].fell?'fell':P[1].steps+' steps'}`);}

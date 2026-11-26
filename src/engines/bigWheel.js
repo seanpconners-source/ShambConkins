@@ -36,9 +36,11 @@ async function bigWheel(s){
  const snd=ST.createShowSound({song:'showcase-showdown',voice:'wheel',clips:['wheel-dollar','showcase-win']}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const R=seededRandom(`${s.seed}:bigwheel`);
  // contestants: 0/1 players, 2 the studio guest (played by the game on every phone)
- const gst=guestDeck(s.seed,s.players.map(p=>p.character),'bigwheel:guest')()||{name:'Guest',short:'Guest',col:'#e86a92',id:null};
+ const gst=s.episode?.guest||guestDeck(s.seed,s.players.map(p=>p.character),'bigwheel:guest')()||{name:'Guest',short:'Guest',col:'#e86a92',id:null};
  const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gst.short,full:gst.name,guest:true,color:gst.col,face:gst.id}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
  const order=[0,1,2];for(let k=2;k>0;k--){const j=Math.floor(R()*(k+1));[order[k],order[j]]=[order[j],order[k]];}
+ // in THE EPISODE the order comes from the show (lowest winnings spin first, like the real one)
+ if(s.episode?.order)order.splice(0,3,...s.episode.order);
  const human=ci=>ci<2&&(net?ci===me:!(cpu&&ci===1));
  let murOn=false,W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=-1,ang=Math.floor(R()*N),spin=null,banner=null,hostSay=null,hostPose='talk',modelPose='present',hurry=false,choice=null,chooseBtns=[],drag=null,shake=0;
  // waits let the host finish what he's saying (not online: both phones keep the same pace); a tap hurries the show and cuts him off
@@ -178,5 +180,6 @@ async function bigWheel(s){
  banner={big:`${C[w].name.toUpperCase()} WINS!`,small:'On to the Showcase!',t:3,col:'#ffe23a'};if(!snd.clip('showcase-win',{max:9,fout:1.4})){if(w<2)sfx.winner();else sfx.jackpot();}else sfx.applause(3,.7);modelPose='clap';say(`${C[w].name}, you're going to the Showcase!`,3000,'cheer');if(w<2)s.react?.(w,'win');
  await wait(3200);
  const score=i=>(C[i].over?0:C[i].total)+(i===w?200:0)+Math.round(C[i].bonus/100);
+ if(s.episode)s.episode.out={winner:w,bonus:C.map(o=>o.bonus||0),totals:C.map(o=>o.over?-1:o.total)};
  s.finish([score(0),score(1)],`THE BIG WHEEL · ${C.map(o=>`${o.name} ${o.over?'over':label(o.total)}`).join(' · ')} · ${C[w].name} wins`);}
 Object.assign(exports,{bigWheel,simSpin,WHEEL,valueAt});

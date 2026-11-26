@@ -48,7 +48,7 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
   g.strokeStyle='#ffd75a';g.lineWidth=Math.max(2,K.fs*.16);g.stroke();txt(g,label,b.x+b.w/2,b.y+b.h/2+1,fs,'#fff',{font:'"SC Bangers",Impact,sans-serif',w:400,max:b.w*.88});g.restore();
   if(!dim&&fn)K.hits.push({...b,fn});};
  // contestant tags along a box: face, name and a status line per player
- K.tags=(g,T,line,moods=[])=>{const fs=K.fs,th=T.h;names.forEach((n,i)=>{const w=Math.min(T.w/2-6,fs*11),x0=i?T.x+T.w-w:T.x,y0=T.y;
+ K.tags=(g,T,line,moods=[])=>{const fs=K.fs,th=T.h;names.forEach((n,i)=>{if(s.episode&&s.episode.only!=null&&i!==s.episode.only)return;const w=Math.min(T.w/2-6,fs*11),x0=i?T.x+T.w-w:T.x,y0=T.y;
   g.fillStyle=i===K.cur?'rgba(255,226,58,.92)':'rgba(20,6,46,.78)';g.beginPath();g.roundRect(x0,y0,w,th,10);g.fill();
   s.sprite(g,i,x0+fs*1.5,y0+th/2,th*.75,{exact:true,still:true,mood:moods[i]||'normal'});g.fillStyle=i===K.cur?'#14062e':'#fff';g.font=`900 ${fs*.9}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';
   g.fillText(n.slice(0,12).toUpperCase(),x0+fs*3,y0+th*.31);g.font=`900 ${fs*1.05}px "SC Bangers",Impact,sans-serif`;g.fillText(String(line(i)||'—').slice(0,18),x0+fs*3,y0+th*.69);});};
@@ -75,9 +75,12 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
   K.show(title+'!',sub,2.6,col);snd.voice('say-lets-play',{at:.6,alt:'v-lets-'+kind});await K.wait(2600);
   for(const [line,ms] of intro){if(!s.alive)return;K.say(line,ms);K.introT=Math.max(K.introT,2.3);await K.wait(ms-200);}
   snd.title(false);K.mode='play';
-  for(let i=0;i<2;i++){if(!s.alive)return;K.cur=i;if(i===1&&!net&&!cpu&&!board){if(!await s.pass(1,`${names[1]}, come on down! Your turn at ${title}.`,'Play'))return;}
+  const ep=s.episode,seatsNow=ep&&ep.only!=null?[ep.only]:[0,1];
+  for(const i of seatsNow){if(!s.alive)return;K.cur=i;if(i===1&&!net&&!cpu&&!board&&!ep){if(!await s.pass(1,`${names[1]}, come on down! Your turn at ${title}.`,'Play'))return;}
    K.show(names[i].toUpperCase(),`IT'S YOUR TURN AT ${title}!`,1.6,'#fff');K.cast.present(3.4,'wave');sfx.applause(1.6,.5);await K.wait(1600);if(!s.alive)return;await play(i);}
   if(!s.alive)return;K.mode='over';const {scores,summary,lines=[]}=result(),[a,b]=scores,w=a===b?-1:a>b?0:1;
+  // in THE EPISODE (tpir/episode.js) one contestant played: their result was shown, the episode carries on
+  if(ep){ep.out={won:scores[ep.only]||0,line:lines[ep.only]||''};await K.wait(900);s.finish([a,b],summary);return;}
   if(w>=0){K.show(`${names[w].toUpperCase()} WINS!`,lines[w]||money(scores[w]),3,'#ffe23a');sfx.winner();s.react?.(w,'win');}else K.show(a?'IT\'S A TIE!':'NOBODY WON','Both '+money(a),3,'#fff');
   await K.wait(3000);s.finish([a,b],summary);};
  return K;}

@@ -10,6 +10,9 @@ let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;
 await page.goto((await appURL()),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
 async function play(which){
  await page.evaluate(()=>{const S=window.ShambConkins;S.store.profile.settings.solo={on:true,who:0,level:'normal'};S.requestGame({id:'price-bid-off',origin:'arcade',solo:true,quick:true});});
+ // the TV guide comes first: channel 3 = the menu of single games (tests/tpir-episode.mjs covers the episode)
+ await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.guide||window.ShambConkins.store.session?.debug?.menu,null,{timeout:20000});
+ await page.evaluate(()=>{const D=window.ShambConkins.store.session.debug;if(D.guide)D.tune('menu');});
  await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.menu,null,{timeout:20000});
  await page.waitForTimeout(2600);await page.screenshot({path:screenshotPath(`tpir-menu-${tag}.png`)});
  // tap the card of the wanted game (cards are drawn on the canvas: find its box from the engine's layout by tapping candidates)

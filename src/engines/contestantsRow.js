@@ -45,7 +45,9 @@ async function contestantsRow(s){
  const {x,net,me,cpu,board,names,snd,sfx}=K;const R=seededRandom(`${s.seed}:crow`);
  const aud=AUD.createAudience({seed:s.seed,exclude:s.players.map(p=>p.character)});
  // the guests: characters from the game under their own names, one deck per game (nobody comes down twice)
- const dealGuest=guestDeck(s.seed,s.players.map(p=>p.character),'crow:guests');
+ // THE EPISODE (tpir/episode.js): one row per pricing game; the seats, bodies and guest deck stay from row to row (ep.row)
+ const ep=s.episode||null,row=ep?(ep.row=ep.row||{}):null;
+ const dealGuest=row?.deal||guestDeck(s.seed,[...s.players.map(p=>p.character),...(ep?.exclude||[])],'crow:guests');if(row)row.deal=dealGuest;
  // the seats left to right: the two players in the middle, a guest at each end
  // bodies: any of the 12 show bodies (cr-body-1..4 contestants, cr-fan-1..8 audience members), dealt from a shuffled deck so nobody
  // on the row matches; now and then (CAMEO_K) a body from one of our other games instead
@@ -54,9 +56,10 @@ async function contestantsRow(s){
   const body=deck.shift();let cameo=null;if(R()<CAMEO_K){cameos=cameos||aud.cameoList();if(cameos.length)cameo=cameos[Math.floor(R()*cameos.length)];}return {body,cameo};};
  let seats_=null;const newGuest=()=>{const g=dealGuest()||{name:'Guest',short:'Guest',col:'#e86a92',id:null};return {name:g.short,full:g.name,col:g.col,face:g.id,guest:true,...nextBody()};};
  const short=n=>String(n).replace(/\s*\(CPU\)\s*$/i,'');
- const seats=[newGuest(),{p:0,name:short(names[0]),col:'#e63946',...nextBody()},{p:1,name:short(names[1]),col:'#3a86ff',...nextBody()},newGuest()].map(o=>({...o,bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0}));seats_=seats;
- const N=board?2:4,items=[];{const bag=ITEMS.slice();for(let i=0;i<N;i++)items.push(bag.splice(Math.floor(R()*bag.length),1)[0]);}
- snd.prepare(items.map(it=>`It's ${TV.art(it[1])}!`));
+ const seats=row?.seats||[newGuest(),{p:0,name:short(names[0]),col:'#e63946',...nextBody()},ep?.alone?newGuest():{p:1,name:short(names[1]),col:'#3a86ff',...nextBody()},newGuest()].map(o=>({...o,bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0}));seats_=seats;
+ if(row){row.seats=seats;seats.forEach(o=>{o.bid=null;o.over=false;o.lit=0;o.pose='stand';o.score=0;o.in=o.here?1:0;});}
+ const N=ep?1:board?2:4,items=[];{const bag=ITEMS.slice();for(let i=0;i<N;i++)items.push(bag.splice(Math.floor(R()*bag.length),1)[0]);}
+ snd.prepare(items.map(it=>`It's ${TV.art(it[1])}!`));if(ep?.want)snd.want(ep.want);
  items.forEach(it=>SP.prizePhoto(it[0]));
  let scene='row',call=null,item=null,itemT=0,priceShown=false,limit=0,cur=-1,typed='',warn=null,warnT=0,hype=0,keys=[],quick=[],tries=0,actual=null;
  const human=ci=>{const st=seats[ci];return st.p!=null&&(net?st.p===me:!(cpu&&st.p===1));};
@@ -173,7 +176,7 @@ async function contestantsRow(s){
  // ---- the flow
  let cueUntil=0;
  async function callDown(i){const o=seats[i];o.in=0;o.here=false;scene='crowd';call={o,t:0};hype=1;K.mode='play';
-  if(performance.now()>cueUntil){sfx.comeOn();cueUntil=performance.now()+(snd.loaded('come-on-down')?17000:0);}snd.voice('say-come-on-down',{at:.2,alt:o.p!=null&&TV.NAMED.includes(o.name)?'v-down-'+o.name.toLowerCase():null});sfx.cheer(3.2,.22);sfx.applause(3.4,.9);await K.wait(3300);
+  if(performance.now()>cueUntil){sfx.comeOn();cueUntil=performance.now()+(snd.loaded('come-on-down')?17000:0);}{const id=o.p!=null?s.players[o.p]?.character:o.face;if(!(id&&snd.voice('v-dn-'+id,{at:.2})))snd.voice('say-come-on-down',{at:.2,alt:o.p!=null&&TV.NAMED.includes(o.name)?'v-down-'+o.name.toLowerCase():null});}sfx.cheer(3.2,.22);sfx.applause(3.4,.9);await K.wait(3300);
   scene='row';call=null;o.in=0;o.here=true;o.pose='jump';o.poseT=1.4;sfx.applause(1.6,.6);await K.wait(900);}
  async function getBid(i,tr){const o=seats[i];cur=i;typed='';warn=null;
   if(o.p==null||(!human(i)&&!remote(i))){K.say(`${o.name}?`,1400);await K.sleep(900+R()*900);
@@ -204,7 +207,15 @@ async function contestantsRow(s){
  if(!s.fromMenu)snd.title(true);K.mode='intro';K.introT=0;K.show('CONTESTANTS\' ROW!','Four bidders, one bid each',2.4,'#ffe23a');snd.voice('say-lets-play',{at:.6,alt:'v-lets-row'});await K.wait(2600);snd.title(false);
  // the first four, called down one at a time
  await aud.ready(K.W,K.H,3000);if(!s.alive)return;
- for(const i of [0,1,2,3]){if(!s.alive)return;await callDown(i);}
+ snd.want(seats.map(o=>'v-dn-'+(o.p!=null?s.players[o.p]?.character:o.face)));
+ for(const i of [0,1,2,3]){if(!s.alive)return;if(!seats[i].here)await callDown(i);}
+ if(ep){if(ep.first){await ep.first(K,seats);if(!s.alive)return;}
+  const wi=await playItem(0,ep.start||0);if(wi==null||!s.alive)return;const o=seats[wi],lines=['Come on up here!','Come on up and join me!','Come on up!'];
+  K.say(lines[Math.floor(R()*3)],1800);await K.wait(1700);if(!s.alive)return;
+  ep.out={seat:wi,p:o.p,guest:o.guest?{name:o.full||o.name,short:o.name,id:o.face,col:o.col}:null,won:o.score,prize:item};
+  // the winner leaves the row like the show: a guest's podium gets the next guest (called down at the next row); the players stay
+  if(o.guest){const old=o.body;seats[wi]={...newGuest(),bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0};deck.push(old);}
+  ep.start=(wi+1)%4;item=null;s.finish(seats.filter(q=>q.p!=null).map(q=>q.score),'');return;}
  let start=0;for(let n=0;n<N;n++){if(!s.alive)return;const wi=await playItem(n,start);if(wi==null)return;start=(start+1)%4;
   // a guest winner goes up on stage; the next guest is called down to that podium and bids first
   if(seats[wi].guest&&n<N-1){const o=seats[wi];K.say(`${o.name}, come on up here!`,1800);await K.wait(1600);{const old=seats[wi].body;seats[wi]={...newGuest(),bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0};deck.push(old);}await callDown(wi);start=wi;}

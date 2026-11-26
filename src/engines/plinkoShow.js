@@ -170,13 +170,14 @@ async function plinko(s){
  if(!s.fromMenu)snd.title(true);snd.music(true);snd.crowd(3.2,.9,{at:.3});
  mode='intro';introT=0;banner={big:'COME ON DOWN!',small:names.map(n=>n.toUpperCase()).join(' · '),t:2.6,col:'#ffe23a'};snd.voice?.('say-come-on-down');await wait(2600);
  say(HOST_LINES.intro[0],2200);await wait(2200);say(HOST_LINES.intro[1],1800,'cheer');modelPose='present';sfx.fanfare();introT=Math.max(introT,2.3);await wait(1800);snd.title(false);
- for(let i=0;i<2;i++){if(!s.alive)return;cur=i;if(i===1&&!net&&!cpu&&!board){snd.music(false);if(!await s.pass(1,`${names[1]}, come on down! Your turn at PLINKO.`,'Play'))return;snd.music(true);}
+ for(const i of (s.episode&&s.episode.only!=null?[s.episode.only]:[0,1])){if(!s.alive)return;cur=i;if(i===1&&!net&&!cpu&&!board&&!s.episode){snd.music(false);if(!await s.pass(1,`${names[1]}, come on down! Your turn at PLINKO.`,'Play'))return;snd.music(true);}
   banner={big:names[i].toUpperCase(),small:'IT\'S YOUR TURN AT PLINKO!',t:1.8,col:'#fff'};sfx.applause(1.8,.55);await wait(1800);
   if(board){P[i].chips=3;}else await pricing(i);
   if(!s.alive)return;banner={big:`${P[i].chips} CHIP${P[i].chips===1?'':'S'}`,small:'Let\'s drop them!',t:1.6,col:'#ffe23a'};await wait(1500);
   landed=[];await drops(i);if(!s.alive)return;
   mode='done';say(HOST_LINES.done(P[i].won),2600,P[i].won?'cheer':'talk');if(P[i].won)sfx.applause(2);await wait(2600);}
  if(!s.alive)return;mode='over';snd.music(false);
+ if(s.episode){s.episode.out={won:P[s.episode.only].won,line:money(P[s.episode.only].won)};s.finish(P.map(p=>p.won),'');return;}
  const w=P[0].won===P[1].won?-1:P[0].won>P[1].won?0:1;if(w>=0){banner={big:`${names[w].toUpperCase()} WINS!`,small:`${money(P[w].won)} on the Plinko board`,t:3,col:'#ffe23a'};sfx.winner();s.react?.(w,'win');}else banner={big:'A TIE!',small:money(P[0].won),t:3,col:'#fff'};
  await wait(3000);
  s.finish(P.map(p=>p.won),`PLINKO · ${names[0]} ${money(P[0].won)} – ${money(P[1].won)} ${names[1]}`);}
