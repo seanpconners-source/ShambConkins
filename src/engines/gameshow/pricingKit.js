@@ -20,7 +20,7 @@ function bulbs(g,b,r,n,t,lit){const per=2*(b.w+b.h);for(let i=0;i<n;i++){let d=i
 function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({clips,voice:kind,...(song?{song}:{})}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({clips,voice:kind,...(song?{song}:{})}),sfx=snd.sfx;names.forEach(n=>snd.wantName(n));holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const K={c,x,fb,net,me,cpu,board,names,snd,sfx,kind,t:0,cur:0,mode:'intro',curtain:0,introT:0,banner:null,hostSay:null,hurry:false,
   W:s.W,H:s.H,fs:14,top:40,wide:false,fold:false,hits:[],onTap:null,onDown:null,onMove:null,onUp:null,skill:()=>cpuSkill(s),money,txt,TAU};
  K.cast=ST.createCast();K.spots=null;K.floorY=null;
@@ -65,7 +65,7 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  K.frame=fn=>s.frame(dt=>{dt=Math.min(dt,.05);K.t+=dt;if(K.mode==='intro'){K.introT+=dt;K.curtain=clamp((K.introT-.4)/1.4,0,1);}
   if(K.hostSay){K.hostSay.t-=dt;if(K.hostSay.t<=0)K.hostSay=null;}const playing=K.mode!=='intro'&&K.mode!=='over';if(playing!==K.murOn){K.murOn=playing;snd.murmur(playing);}
   // the audience yells advice while a contestant decides (drop-in crowd-shout takes)
-  if(K.mode==='input'){K.yellT=(K.yellT??2)-dt;if(K.yellT<=0){K.yellT=2.4+Math.random()*3.2;snd.voice('crowd-shout',{vol:.55+Math.random()*.3,pan:Math.random()*1.4-.7});}}
+  if(K.mode==='input'){K.yellT=(K.yellT??2)-dt;if(K.yellT<=0){K.yellT=2.4+Math.random()*3.2;const ks=K.yell||['crowd-shout'];snd.voice(ks[Math.floor(Math.random()*ks.length)],{vol:.6+Math.random()*.3,pan:Math.random()*1.4-.7});}}
   K.cast.step(dt,{host:!!K.hostSay||(K.mode==='intro'&&K.introT>2)||K.mode==='over',model:K.mode==='intro'&&K.introT>2.4});if(K.banner){K.banner.t-=dt;if(K.banner.t<=0)K.banner=null;}fn(dt);});
  // the show: start card, curtain + title + the host's rules, then each contestant, then the winner
  K.run=async({title,sub,col='#ffe23a',pass,intro=[],ready=[],play,result})=>{
@@ -77,10 +77,10 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
   snd.title(false);K.mode='play';
   const ep=s.episode,seatsNow=ep&&ep.only!=null?[ep.only]:[0,1];
   for(const i of seatsNow){if(!s.alive)return;K.cur=i;if(i===1&&!net&&!cpu&&!board&&!ep){if(!await s.pass(1,`${names[1]}, come on down! Your turn at ${title}.`,'Play'))return;}
-   K.show(names[i].toUpperCase(),`IT'S YOUR TURN AT ${title}!`,1.6,'#fff');K.cast.present(3.4,'wave');sfx.applause(1.6,.5);await K.wait(1600);if(!s.alive)return;await play(i);}
+   K.show(names[i].toUpperCase(),`IT'S YOUR TURN AT ${title}!`,1.6,'#fff');K.say(`${names[i]}, it's your turn!`,1600);K.cast.present(3.4,'wave');sfx.applause(1.6,.5);await K.wait(1600);if(!s.alive)return;await play(i);}
   if(!s.alive)return;K.mode='over';const {scores,summary,lines=[]}=result(),[a,b]=scores,w=a===b?-1:a>b?0:1;
   // in THE EPISODE (tpir/episode.js) one contestant played: their result was shown, the episode carries on
-  if(ep){ep.out={won:scores[ep.only]||0,line:lines[ep.only]||''};await K.wait(900);s.finish([a,b],summary);return;}
+  if(ep){ep.out={won:scores[ep.only]||0,line:lines[ep.only]||'',car:(result().cars||[])[ep.only]||null};await K.wait(900);s.finish([a,b],summary);return;}
   if(w>=0){K.show(`${names[w].toUpperCase()} WINS!`,lines[w]||money(scores[w]),3,'#ffe23a');sfx.winner();s.react?.(w,'win');}else K.show(a?'IT\'S A TIE!':'NOBODY WON','Both '+money(a),3,'#fff');
   await K.wait(3000);s.finish([a,b],summary);};
  return K;}

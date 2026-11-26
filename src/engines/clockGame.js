@@ -79,8 +79,7 @@ async function clockGame(s){
    g.fillText(`0:${String(Math.ceil(p.left)).padStart(2,'0')}`,C.x,ty+th*.04);g.restore();}
   // the prize on its platform
   const q=p.prizes[pk],B=L.prize,pk2=Math.min(B.w/PG.w,B.h/PG.h*1.25);g.save();g.translate(B.x+B.w/2-PG.w*pk2/2,B.y+B.h-PG.h*pk2*.78);g.scale(pk2,pk2);drawPlatform(g);
-  const ph=SP.prizePhoto(q.id),[tx,ty]=PG.top;if(ph){const bw=420,bh=300,kk=Math.min(bw/ph.width,bh/ph.height),w=ph.width*kk,h=ph.height*kk;g.fillStyle='#fff';g.beginPath();g.roundRect(tx-w/2-10,ty-h-30,w+20,h+20,18);g.fill();g.drawImage(ph,tx-w/2,ty-h-20,w,h);}
-  else{g.font='230px serif';g.textAlign='center';g.textBaseline='alphabetic';g.fillText(q.em,tx,ty-20);}g.restore();
+  const ph=SP.prizePhoto(q.id),[tx,ty]=PG.top;ST.drawPrizeOn(g,ph,tx,ty-12,700,620,{emoji:q.em});g.restore();
   txt(g,q.name.toUpperCase(),B.x+B.w/2,B.y+B.h+fs*.45,fs*.62,'#fff',{w:800,max:B.w*1.05});
   // the display: guess while typing, then the last guess / the price
   const D=L.disp,dk=D.w/DG.w;g.save();g.translate(D.x,D.y+(D.h-DG.h*dk)/2);g.scale(dk,dk);drawDisplay(g,running);const [a,b,cc,dd]=DG.window,val=shown!=null?shown:(entry||'');
@@ -98,7 +97,9 @@ async function clockGame(s){
   P.forEach((q2,i)=>{const T=L.tags,th=L.tagH,w=Math.min(T.w/2-6,fs*11),x0=i?T.x+T.w-w:T.x,y0=T.y;g.fillStyle=i===cur?'rgba(255,226,58,.92)':'rgba(20,6,46,.78)';g.beginPath();g.roundRect(x0,y0,w,th,10);g.fill();
    s.sprite(g,i,x0+fs*1.5,y0+th/2,th*.75,{exact:true,still:true,mood:q2.mood});g.fillStyle=i===cur?'#14062e':'#fff';g.font=`900 ${fs*.9}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';
    g.fillText(names[i].slice(0,12).toUpperCase(),x0+fs*3,y0+th*.31);g.font=`900 ${fs*1.1}px "SC Bangers",Impact,sans-serif`;g.fillText(q2.done||q2.won?money(q2.done?q2.score:q2.won):'—',x0+fs*3,y0+th*.69);});
-  {const sp=cast.spots(W,H,{foot:L.tags.y-6});cast.draw(g,W,H,t,sp,!!hostSay);if(hostSay){if(cast.hv>.5){const b=cast.bubbleAt(W,H,sp,fs);ST.bubble(g,b.x,b.y,hostSay.text,b.w,fs*.85,b.tx,b.ty);}else ST.bubble(g,W/2,L.wide?H*.18:L.clock.y-L.clock.d*.2,hostSay.text,Math.min(W*.86,fs*17),fs*.85,W/2,L.wide?H*.18+fs*2.5:L.clock.y);}}
+  {const sp=cast.spots(W,H,{foot:L.tags.y-6});
+   // the model stands beside the prize and shows it off while it's being priced (owner, Nov 26)
+   if(mode==='guess'){const B2=L.prize,mh=Math.min(B2.h*1.7,H*.5);sp.model={x:L.wide?B2.x+mh*.12:Math.min(W-mh*.2,B2.x+B2.w+mh*.08),y:B2.y+B2.h+mh*.02,h:mh,side:L.wide?-1:1};cast.present(.4,'present');}cast.draw(g,W,H,t,sp,!!hostSay);if(hostSay){if(cast.hv>.5){const b=cast.bubbleAt(W,H,sp,fs);ST.bubble(g,b.x,b.y,hostSay.text,b.w,fs*.85,b.tx,b.ty);}else ST.bubble(g,W/2,L.wide?H*.18:L.clock.y-L.clock.d*.2,hostSay.text,Math.min(W*.86,fs*17),fs*.85,W/2,L.wide?H*.18+fs*2.5:L.clock.y);}}
   if(mode==='intro')ST.drawCurtain(g,W,H,curtain,t);
   if(banner)ST.moneyBanner(g,W,H,banner.big,banner.small,Math.min(1,banner.t*3),banner.col);}
  function drawPad(g){const fs=L.fs,b=L.pad,gap=fs*.35,kw=Math.min((b.w-gap*2)/3,fs*5.4),kh=Math.min((b.h-gap*3)/4,fs*3.2),x0=b.x+(b.w-(kw*3+gap*2))/2,y0=b.y;keys=[];
@@ -148,7 +149,7 @@ async function clockGame(s){
   // the host and the models (stage.js createCast): he walks on to talk, she presents at each turn, both cheer at a win
   cast.step(dt,{host:!!hostSay||(mode==='intro'&&introT>2)||mode==='over',model:mode==='intro'&&introT>2.4});
   {const pl=mode!=='intro'&&mode!=='over';if(pl!==cast.mur){cast.mur=pl;snd.murmur?.(pl);}}
-  if(mode==='guess'){cast.yellT=(cast.yellT??2)-dt;if(cast.yellT<=0){cast.yellT=2.4+Math.random()*3.2;snd.voice?.('crowd-shout',{vol:.55+Math.random()*.3,pan:Math.random()*1.4-.7});}}
+  if(mode==='guess'){cast.yellT=(cast.yellT??2)-dt;if(cast.yellT<=0){cast.yellT=2.4+Math.random()*3.2;snd.voice?.(['crowd-higher','crowd-lower','crowd-shout'][Math.floor(Math.random()*3)],{vol:.6+Math.random()*.3,pan:Math.random()*1.4-.7});}}
   if(banner&&!banner.cast){banner.cast=1;if(banner.col==='#ff6a5a')snd.voice?.('crowd-aww');if(banner.col==='#7dff5a'||banner.col==='#ffe23a'){cast.cheer(Math.min(3,banner.t+.4));snd.voice?.('crowd-cheer',{vol:.8});}else if(/YOUR TURN/.test(banner.small||''))cast.present(3.4,'wave');}
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}
   if(call){call.t-=dt*1.1;if(call.t<=0)call=null;}

@@ -126,8 +126,7 @@ async function cliffHangers(s){
  function drawStands(g){const fs=L.fs,S=SS.STAND_GEOM,b=L.stands,sw=b.w/3,k=Math.min(sw/S.w,b.h/S.h);
   P[cur].prizes.forEach((q,i)=>{const cx=b.x+sw*(i+.5),w=S.w*k,h=S.h*k,x0=cx-w/2,y0=b.y+b.h-h,on=i===pk;g.save();g.globalAlpha=pk>=0&&i>pk?.55:1;g.translate(x0,y0);g.scale(k,k);drawStand(g,on);
    // the prize on top
-   const ph=SP.prizePhoto(q.id),[tx,ty]=S.top;if(ph){const bw=320,bh=220,kk=Math.min(bw/ph.width,bh/ph.height),pw=ph.width*kk,phh=ph.height*kk;g.fillStyle='#fff';g.beginPath();g.roundRect(tx-pw/2-8,ty-phh-8,pw+16,phh+16,14);g.fill();g.drawImage(ph,tx-pw/2,ty-phh,pw,phh);}
-   else{g.font='190px serif';g.textAlign='center';g.textBaseline='alphabetic';g.fillText(q.em,tx,ty-10);}
+   const ph=SP.prizePhoto(q.id),[tx,ty]=S.top;ST.drawPrizeOn(g,ph,tx,ty,360,280,{emoji:q.em});
    // the price window: the guess in white while guessing, then the real price in red LEDs
    const [a,bb,c2,d]=S.price,val=q.guess==null?(on&&mode==='guess'?entry:''):(q.shown?String(q.price):String(q.guess));g.font='900 92px "SC Bangers",Impact,sans-serif';g.textAlign='center';g.textBaseline='middle';
    g.fillStyle=q.shown?'#ff3a2a':'#fff';g.shadowColor=q.shown?'#ff3a2a':'#fff';g.shadowBlur=18;if(val||on)g.fillText('$'+val+(on&&q.guess==null&&Math.floor(t*2)%2?'_':''),(a+c2)/2,(bb+d)/2+4);g.restore();

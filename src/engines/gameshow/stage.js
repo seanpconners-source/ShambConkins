@@ -125,6 +125,31 @@ function bubble(g,x,y,text,maxW,fs,px,py){g.save();g.font=`800 ${fs}px "SC Nunit
  if(px!=null){const ax=clampN(px,bx+fs,bx+bw-fs),dx=px-ax,dy=py-y,d=Math.hypot(dx,dy)||1,L=Math.min(d,fs*1.8),tx=ax+dx/d*L,ty=y+Math.max(fs*.6,dy/d*L);
   g.beginPath();g.moveTo(ax-fs*.45,y-1);g.lineTo(tx,ty);g.lineTo(ax+fs*.45,y-1);g.closePath();g.fill();g.stroke();g.fillRect(ax-fs*.5,y-2.5,fs,3);}
  g.fillStyle='#14062e';g.textAlign='center';g.textBaseline='top';lines.forEach((l,k)=>g.fillText(l,x,by+fs*.4+k*fs*1.25));g.restore();return bh;}
+
+// A PRIZE ON SHOW (owner, Nov 26: "no white box around the prize, just the transparent item on the podium"): the prize picture standing
+// on (cx, footY) as big as fits bw x bh, a soft shadow under it; a picture without see-through edges (a few old product photos) goes in
+// a gold-framed dark window instead of a white card. opts.ped = draw a round gold-and-white display stand under it (the stand's top is
+// footY). Returns the box it drew in.
+const alphaOf=new WeakMap();
+function seeThrough(img){if(alphaOf.has(img))return alphaOf.get(img);let a=true;try{const c=document.createElement('canvas');c.width=c.height=12;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,12,12);
+ const d=x.getImageData(0,0,12,12).data,px=[0,11,132,143];a=px.some(i=>d[i*4+3]<200);}catch{}alphaOf.set(img,a);return a;}
+// the part of a see-through picture that has something in it (the prize pictures have wide empty margins), found once per picture
+const boxOf=new WeakMap();
+function visibleBox(img){if(boxOf.has(img))return boxOf.get(img);let b={x:0,y:0,w:img.width,h:img.height};try{const S=96,k=S/Math.max(img.width,img.height),w=Math.max(1,Math.round(img.width*k)),h=Math.max(1,Math.round(img.height*k)),c=document.createElement('canvas');c.width=w;c.height=h;
+ const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(img,0,0,w,h);const d=x.getImageData(0,0,w,h).data;let x0=w,y0=h,x1=-1,y1=-1;
+ for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++)if(d[(yy*w+xx)*4+3]>24){if(xx<x0)x0=xx;if(xx>x1)x1=xx;if(yy<y0)y0=yy;if(yy>y1)y1=yy;}
+ if(x1>=x0){const m=1;b={x:Math.max(0,(x0-m)/k),y:Math.max(0,(y0-m)/k),w:Math.min(img.width,(x1-x0+1+2*m)/k),h:Math.min(img.height,(y1-y0+1+2*m)/k)};}}catch{}boxOf.set(img,b);return b;}
+function pedestal(g,cx,topY,w){const h=w*.34,ry=w*.11;g.save();const sd=g.createLinearGradient(cx-w/2,0,cx+w/2,0);sd.addColorStop(0,'#8a6a18');sd.addColorStop(.45,'#ffe9a0');sd.addColorStop(1,'#7a5a10');
+ g.fillStyle=sd;g.beginPath();g.ellipse(cx,topY+h,w/2,ry,0,0,Math.PI);g.lineTo(cx-w/2,topY);g.ellipse(cx,topY,w/2,ry,0,Math.PI,0,true);g.closePath();g.fill();
+ const tp=g.createRadialGradient(cx-w*.1,topY-ry*.3,w*.05,cx,topY,w/2);tp.addColorStop(0,'#ffffff');tp.addColorStop(1,'#d8d8e6');g.fillStyle=tp;g.beginPath();g.ellipse(cx,topY,w/2,ry,0,0,TAU);g.fill();
+ g.strokeStyle='#ffd23f';g.lineWidth=Math.max(1.5,w*.02);g.stroke();g.restore();return h+ry;}
+function drawPrizeOn(g,img,cx,footY,bw,bh,o={}){let pw=o.ped?(o.pedW||Math.min(bw*.6,bh*.7)):0;if(o.ped){floorShadow(g,cx,footY+pw*.45,pw*1.15,.35);pedestal(g,cx,footY,pw);footY-=pw*.02;}
+ if(!img){if(o.emoji){g.save();g.font=`${bh*.75}px sans-serif`;g.textAlign='center';g.textBaseline='bottom';g.fillText(o.emoji,cx,footY+bh*.04);g.restore();}return {x:cx-bh*.4,y:footY-bh,w:bh*.8,h:bh};}
+ const see=seeThrough(img),B=see?visibleBox(img):{x:0,y:0,w:img.width,h:img.height},k=Math.min(bw/B.w,bh/B.h),w=B.w*k,h=B.h*k,x=cx-w/2,y=footY-h;
+ if(see){if(!o.ped)floorShadow(g,cx,footY,w*.9,.32);g.drawImage(img,B.x,B.y,B.w,B.h,x,y,w,h);}
+ else{g.save();g.shadowColor='rgba(0,0,0,.45)';g.shadowBlur=w*.06;g.fillStyle='#14062e';g.beginPath();g.roundRect(x-4,y-4,w+8,h+8,w*.06);g.fill();g.restore();
+  g.save();g.beginPath();g.roundRect(x,y,w,h,w*.05);g.clip();g.drawImage(img,x,y,w,h);g.restore();g.strokeStyle='#ffd23f';g.lineWidth=Math.max(2,w*.012);g.beginPath();g.roundRect(x-2,y-2,w+4,h+4,w*.055);g.stroke();}
+ return {x,y,w,h};}
 const clampN=(v,a,b)=>Math.max(a,Math.min(b,v));
 // a big flashing money / message banner
 function moneyBanner(g,W,H,big,small,a=1,col='#ffe23a'){g.save();g.globalAlpha=a;const fs=Math.min(W,H)*.09,y=H*.4;g.fillStyle='rgba(20,6,46,.82)';g.fillRect(0,y-fs*1.2,W,fs*(small?2.9:2.2));
@@ -144,7 +169,7 @@ function loadClip(a,n){const url=USERP['music:tpir-'+n];if(!url||clipBufs[n]||cl
 // Every key is optional: a game asks for one and nothing plays when it isn't in. Keys: say-come-on-down, say-lets-play,
 // say-actual-retail-price, say-higher, say-lower, say-new-car, say-winner, say-sorry, say-showcase, say-pet-population,
 // crowd-shout (people yelling prices/advice), crowd-higher, crowd-lower, crowd-chatter (a murmur bed), crowd-ooh, crowd-aww, crowd-cheer.
-const VOICE_KEYS=['say-come-on-down','say-lets-play','say-actual-retail-price','say-higher','say-lower','say-new-car','say-winner','say-sorry','say-showcase','say-pet-population','crowd-shout','crowd-higher','crowd-lower','crowd-chatter','crowd-ooh','crowd-aww','crowd-cheer'];
+const VOICE_KEYS=['crowd-yesno','crowd-spinstay','crowd-leftright','say-come-on-down','say-lets-play','say-actual-retail-price','say-higher','say-lower','say-new-car','say-winner','say-sorry','say-showcase','say-pet-population','crowd-shout','crowd-higher','crowd-lower','crowd-chatter','crowd-ooh','crowd-aww','crowd-cheer'];
 // the generated voices (src/data/tpirVoice.js, files tpir-v-<key>-<n>): they stand in for a say-* key with no real recording and speak
 // the host's bubble lines; levelled to -16 LUFS by the tool, VGAIN brings them in line with the show clips
 const TV=require("src/data/tpirVoice.js"),VGAIN=.95;
@@ -219,6 +244,7 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   buzz:()=>tone(110,.45,{type:'square',vol:.07}),
   // a heavy steel door swinging shut: low thud + the latch catching (the safe; was the overbid buzzer)
   clunk:()=>{tone(72,.42,{type:'sine',vol:.16,to:38});hiss(.14,{vol:.13,f:260,q:.7});tone(880,.05,{type:'square',vol:.03,at:.16});tone(1320,.04,{type:'square',vol:.02,at:.2});},
+  punch:()=>{tone(95,.16,{type:'sine',vol:.14,to:55});hiss(.05,{vol:.16,f:900,q:.8});hiss(.16,{vol:.11,f:3400,q:1.4,at:.03});hiss(.09,{vol:.07,f:5200,q:2,at:.1});},
   cheer:(dur=1.6,vol=.13)=>{hiss(dur,{vol,f:1600,q:.6,swell:true});for(let i=0;i<Math.round(dur*14);i++)hiss(.04,{vol:vol*.6,f:2500+Math.random()*1500,q:3,at:Math.random()*dur*.85});},
   aww:(at=0)=>{const a=ac();if(!a)return;const t0=a.currentTime+at,src=a.createBufferSource(),bf=a.createBiquadFilter(),gn=a.createGain();src.buffer=noise();src.loop=true;bf.type='bandpass';bf.Q.value=4;bf.frequency.setValueAtTime(900,t0);bf.frequency.exponentialRampToValueAtTime(380,t0+1.2);
    gn.gain.setValueAtTime(0,t0);gn.gain.linearRampToValueAtTime(.16,t0+.2);gn.gain.exponentialRampToValueAtTime(.001,t0+1.3);src.connect(bf);bf.connect(gn);gn.connect(out);src.start(t0);src.stop(t0+1.4);},
@@ -276,7 +302,11 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
  const talking=()=>Math.max(0,talkEnd-performance.now());
  function hush(){talkEnd=0;for(const c of [hostClip,...seqClips]){if(!c)continue;try{const a=ac(),t0=a?a.currentTime:0;c.g.gain.setTargetAtTime(.0001,t0,.03);c.src.stop(t0+.15);}catch{}}hostClip=null;seqClips=[];}
  // the host says his bubble text out loud when there's a line for it (src/data/tpirVoice.js lineFor)
- function speak(text,o={}){const k=TV.lineFor(text);if(k)return voice(k.startsWith('say-')?k:'v-'+k,o);const parts=TV.partsFor(text);return parts?seq(parts,o):null;}
+ // a name in front ("Larry David, what's your bid?", "Larry David?"): the name clip (nm-*) + the rest's own line
+ function named(text){const m=String(text).match(/^([^,?!:]{1,32})(?:, (.+)|\?)$/);if(!m)return null;const nk=TV.nameKey(m[1]);if(!takesOf('v-'+nk).length)return null;
+  if(!m[2])return [nk];const rest=m[2][0].toUpperCase()+m[2].slice(1),rk=TV.lineFor(rest);return rk&&!rk.startsWith('say-')?[nk,rk]:null;}
+ function keysFor(text){const e=TV.lineFor(text),ex=e&&TV.norm(text)===TV.norm(TV.LINES.find(l=>l[0]===e)?.[3]||'');if(ex)return {one:e};const n=named(text);if(n)return {seq:n};if(e)return {one:e};const parts=TV.partsFor(text);return parts?{seq:parts}:null;}
+ function speak(text,o={}){const k=keysFor(text);if(!k)return null;if(k.one)return voice(k.one.startsWith('say-')?k.one:'v-'+k.one,o);return seq(k.seq,o);}
  // a sentence said in pieces (the host's words + a prize name, tpirVoice partsFor): the takes back to back, a hair apart; all of them
  // count as the host talking (hush cuts the lot). Pieces that haven't loaded are skipped.
  let seqClips=[];
@@ -284,14 +314,15 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   for(const key of keys){const c=take('v-'+key,{...o,at});if(!c)continue;seqClips.push(c);last=c;at=c.end-a.currentTime+.06;}
   if(last){hostClip=null;talkEnd=performance.now()+Math.max(0,last.end-a.currentTime)*1000;}return last;}
  // load the clips a bubble will need before it's said (a game calls this with its texts once it knows its prizes)
- function prepare(texts){const a=ac();if(!a)return;for(const t of texts){const k=TV.lineFor(t),keys=k?[k]:TV.partsFor(t)||[];for(const key of keys)for(const n of takesOf(key.startsWith('say-')?key:'v-'+key))loadClip(a,n);}}
+ function prepare(texts){const a=ac();if(!a)return;for(const t of texts){const kk=keysFor(t),keys=kk?(kk.one?[kk.one]:kk.seq):[];for(const key of keys)for(const n of takesOf(key.startsWith('say-')?key:'v-'+key))loadClip(a,n);}}
+ function wantName(n){wantKeys(['v-'+TV.nameKey(n)]);}
  function wantKeys(keys){const a=ac();if(!a)return;for(const key of keys)for(const n of takesOf(key))loadClip(a,n);}
  // the audience murmuring under a game: the chatter recording looped if it's in, else the applause recording slowed and muffled
  // into a low rumble of voices
  let mur=null;function murmur(on){const a=ac();if(!on||!a){if(mur){try{const t=a?.currentTime||0;mur.g.gain.setTargetAtTime(.0001,t,.3);mur.src.stop(t+1.2);}catch{}mur=null;}return;}
-  if(mur)return;const own=takesOf('crowd-chatter').find(n=>clipBufs[n]),b=clipBufs[own||'applause'];if(!b)return;const src=a.createBufferSource(),g=a.createGain(),lp=a.createBiquadFilter();
+  if(mur)return;const own=takesOf('crowd-chatter').find(n=>clipBufs[n]),b=own&&clipBufs[own];if(!b)return;const src=a.createBufferSource(),g=a.createGain(),lp=a.createBiquadFilter();
   src.buffer=b;src.loop=true;if(!own){src.playbackRate.value=.5;lp.type='lowpass';lp.frequency.value=620;}else{lp.type='allpass';}
   g.gain.setValueAtTime(.0001,a.currentTime);g.gain.linearRampToValueAtTime(own?(TPIR_GAIN[own]??.5)*.6:.16,a.currentTime+1.2);
   if(!clipOut){clipOut=a.createGain();clipOut.connect(a.destination);}src.connect(lp);lp.connect(g);g.connect(clipOut);src.start(a.currentTime,Math.random()*b.duration*.5);mur={src,g};}
- return {sfx,music,title,clip,crowd,voice,speak,seq,prepare,want:wantKeys,talking,hush,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
-Object.assign(exports,{STAGE_FLOOR,stageFit,floorAt,floorShadow,STAGE_BORROW,createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});
+ return {sfx,music,title,clip,crowd,voice,speak,seq,prepare,want:wantKeys,wantName,talking,hush,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
+Object.assign(exports,{drawPrizeOn,pedestal,STAGE_FLOOR,stageFit,floorAt,floorShadow,STAGE_BORROW,createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});

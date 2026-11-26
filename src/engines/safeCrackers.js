@@ -107,7 +107,7 @@ async function safeCrackers(s){
  await K.run({title:'SAFE CRACKERS',sub:'Crack the combination, win what\'s inside',col:'#c8d4e0',pass:K.net?'SAFE CRACKERS online: arrange three digits into the price of the smaller prize. One try opens the safe.':'SAFE CRACKERS: two prizes go in the safe. Put the three digits in the order of the smaller prize\'s price; one try, and the safe opens.',
   intro:[['Two prizes are going into our safe…',2400],['The combination is the price of the smaller one. Three different digits, one try!',3200]],
   ready:['stage-safe','stage-safe-tall','stage-safe-fold','safe','safe-open','safe-tile','safe-logo'],play,
-  result:()=>({scores:P.map(p=>p.score),lines:P.map(p=>p.open?`Opened it · ${K.money(p.score)}`:'Locked out'),summary:`SAFE CRACKERS · ${names[0]} ${P[0].open?'opened it':'locked out'} – ${names[1]} ${P[1].open?'opened it':'locked out'}`})});}
+  result:()=>({cars:P.map(p=>p.open&&/^a new /.test(p.big.name)?[p.big.id,p.big.name,p.big.price,p.big.em]:null),scores:P.map(p=>p.score),lines:P.map(p=>p.open?`Opened it · ${K.money(p.score)}`:'Locked out'),summary:`SAFE CRACKERS · ${names[0]} ${P[0].open?'opened it':'locked out'} – ${names[1]} ${P[1].open?'opened it':'locked out'}`})});}
 function ST(){return require("src/engines/gameshow/stage.js");}
 function drawRef(g,W,H,slot){if(slot==='safe')drawSafe(g,false,.3);else if(slot==='safe-open')drawSafe(g,true);else if(slot==='safe-tile')drawTile(g,'');}
 Object.assign(exports,{safeCrackers,drawSafe,drawTile,drawRef});

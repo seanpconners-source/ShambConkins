@@ -38,10 +38,11 @@ async function bigWheel(s){
  // contestants: 0/1 players, 2 the studio guest (played by the game on every phone)
  const gst=s.episode?.guest||guestDeck(s.seed,s.players.map(p=>p.character),'bigwheel:guest')()||{name:'Guest',short:'Guest',col:'#e86a92',id:null};
  const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gst.short,full:gst.name,guest:true,color:gst.col,face:gst.id}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
+ C.forEach(o=>snd.wantName(o.name));
  const order=[0,1,2];for(let k=2;k>0;k--){const j=Math.floor(R()*(k+1));[order[k],order[j]]=[order[j],order[k]];}
  // in THE EPISODE the order comes from the show (lowest winnings spin first, like the real one)
  if(s.episode?.order)order.splice(0,3,...s.episode.order);
- const human=ci=>ci<2&&(net?ci===me:!(cpu&&ci===1));
+ const human=ci=>ci<2&&!(s.episode?.auto||[]).includes(ci)&&(net?ci===me:!(cpu&&ci===1));
  let murOn=false,W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=-1,ang=Math.floor(R()*N),spin=null,banner=null,hostSay=null,hostPose='talk',modelPose='present',hurry=false,choice=null,chooseBtns=[],drag=null,shake=0;
  // waits let the host finish what he's saying (not online: both phones keep the same pace); a tap hurries the show and cuts him off
  const wait=ms=>new Promise(r=>{const end=performance.now()+Math.max(ms,net?0:snd.talking());const f=()=>{if(!s.alive||hurry||performance.now()>=end){if(hurry)snd.hush();hurry=false;r();return;}setTimeout(f,30);};f();});
@@ -151,7 +152,9 @@ async function bigWheel(s){
   const v=await oneSpin(ci,true);if(v==null)return;const win=v===100?25000:v===5||v===15?10000:0;c2.bonus=1000+win;
   if(win){sfx.jackpot(true);banner={big:money(win)+'!',small:'BONUS SPIN WINNER!',t:2.6,col:'#ffe23a'};modelPose='clap';say('Unbelievable!',2200,'cheer');}else{sfx.ding();banner={big:label(v),small:'Still $1,000!',t:1.8,col:'#fff'};}await wait(2400);}
  // ---- frame
- s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;{const pl=mode!=='intro'&&mode!=='over';if(pl!==murOn){murOn=pl;snd.murmur?.(pl);}}
+ let yellT=1.5;s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;{const pl=mode!=='intro'&&mode!=='over';if(pl!==murOn){murOn=pl;snd.murmur?.(pl);}}
+  // the audience yells advice while a contestant decides (owner, Nov 26: real crowd yelling, tpir-crowd-*)
+  if(mode==='choose'||mode==='pull'){yellT-=dt;if(yellT<=0){yellT=2.2+Math.random()*3;const ks=['crowd-spinstay','crowd-shout'];snd.voice?.(ks[Math.floor(Math.random()*ks.length)],{vol:.6+Math.random()*.3,pan:Math.random()*1.4-.7});}}
   if(mode==='intro'){introT+=dt;curtain=clamp((introT-.4)/1.4,0,1);}
   if(hostSay){hostSay.t-=dt;if(hostSay.t<=0){hostSay=null;hostPose='talk';}}
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}

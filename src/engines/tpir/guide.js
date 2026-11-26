@@ -98,7 +98,16 @@ function makeGuide(){const cv=document.createElement('canvas');cv.width=GW;cv.he
     if(kind==='movie')box(x,y+1,w,ROW_H-2,'#8a1e3a','#4a0c1e','#d87a98');else if(lit)box(x,y+1,w,ROW_H-2,`rgb(${120+40*pulse},${200+30*pulse},255)`,'#3a8ad8','#ffffff');else box(x,y+1,w,ROW_H-2,'#2a44c8','#132290','#7a96ff');
     label(title,x+8,y+ROW_H/2,19,lit?'#06124a':'#fff',{max:w-14});if(lit)hits.push({x,y,w,h:ROW_H,pick:kind==='tpir'?'episode':'menu'});}}
   g.restore();}
- return {cv,hits,draw(t,clock){hits.length=0;g.setTransform(1,0,0,1,0,0);g.fillStyle='#08104a';g.fillRect(0,0,GW,GH);promo(t);sidePanel(t,clock);grid(t);}};}
+ // 1 PLAYER (owner, Nov 26: "the TV guide should just scroll down a bit after you've selected and have these options on that screen"):
+ // the guide slides up and a listing box comes in under it: PLAY ALONE / VS CPU, in the guide's own look
+ function chooser(t,y0){const h=GH-y0,x=4,w=GW-8;box(x,y0+2,w,h-4,'#1c2f9e','#0a1250','#cfe0ff');
+  label('THE PRICE IS RIGHT  ·  9:00 AM  ·  CH 2',x+w/2,y0+26,22,'#fff23a',{align:'center',max:w-20});label('HOW DO YOU WANT TO PLAY?',x+w/2,y0+54,17,'#fff',{align:'center',w:800});
+  const pulse=.5+.5*Math.sin(t*4),bw=(w-36)/2,bh=Math.min(70,h-92),by=y0+76;
+  [['PLAY ALONE','You and the studio audience','alone'],['VS CPU','A computer contestant on the row','cpu']].forEach(([l,sub,pick],i)=>{const bx=x+12+i*(bw+12);
+   box(bx,by,bw,bh,`rgb(${120+40*pulse},${200+30*pulse},255)`,'#3a8ad8','#ffffff');label(l,bx+bw/2,by+bh*.4,26,'#06124a',{align:'center',max:bw-16});label(sub,bx+bw/2,by+bh*.78,13,'#06124a',{align:'center',max:bw-16,w:800});
+   hits.push({x:bx,y:by,w:bw,h:bh,pick});});}
+ return {cv,hits,draw(t,clock,pk=0){hits.length=0;g.setTransform(1,0,0,1,0,0);g.fillStyle='#08104a';g.fillRect(0,0,GW,GH);const off=GH*.4*pk;
+  g.save();g.translate(0,-off);promo(t);sidePanel(t,clock);grid(t);g.restore();if(off>0){for(const h of hits)h.y-=off;if(pk>=1){hits.length=0;}chooser(t,GH-off);}}};}
 // ---- TV static frames (made once)
 let STATIC=null;function staticFrames(){if(STATIC)return STATIC;STATIC=[0,1,2,3].map(()=>{const c=document.createElement('canvas');c.width=180;c.height=135;const g=c.getContext('2d'),im=g.createImageData(180,135);
  for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255;}g.putImageData(im,0,0);return c;});return STATIC;}
@@ -106,7 +115,7 @@ async function runGuide(s,{onePlayer=false}={}){
  const [c,x]=s.canvas(900,560,{fill:true});fullBleed(s,{bg:'#120c08'});
  await SS.ready(['tv-frame','tv-frame-tall','tv-frame-fold','guide-promo-1','guide-promo-2','guide-promo-3','guide-promo-4',...ADS.map(a=>a[0]),'keyart:price-bid-off-logo'],3500);if(!s.alive)return null;
  const G=makeGuide(),mus=guideMusic();s.cleanup(()=>mus.stop());
- let t=0,phase='guide',phT=0,pick=null,alone=false,screen={x:0,y:0,w:0,h:0},osd=null,choice=[];
+ let t=0,phase='guide',phT=0,pick=null,alone=false,pk=0,screen={x:0,y:0,w:0,h:0},osd=null,choice=[];
  const clockAt=()=>{const sec=Math.floor(t)%60;return `8:59:${String(sec).padStart(2,'0')}`;};
  // the set for this screen shape, laid to cover the screen; the guide goes on its screen hole
  function layout(){const W=s.W,H=s.H,sh=require("src/bgShape.js").shape(W,H),slot=sh==='tall'?'tv-frame-tall':sh==='fold'?'tv-frame-fold':'tv-frame',pic=SS.picture(slot)||SS.picture('tv-frame'),geo=SS.TV_GEOM[pic===SS.picture(slot)?slot:'tv-frame'];
@@ -120,7 +129,7 @@ async function runGuide(s,{onePlayer=false}={}){
   if(L.pic){const k0=Math.max(W/L.pic.width,H/L.pic.height)*1.15;g.globalAlpha=.45;g.drawImage(L.pic,(W-L.pic.width*k0)/2,(H-L.pic.height*k0)/2,L.pic.width*k0,L.pic.height*k0);g.globalAlpha=1;g.fillStyle='rgba(10,6,4,.45)';g.fillRect(0,0,W,H);}
   // what the TV shows
   g.save();g.beginPath();g.roundRect(S.x,S.y,S.w,S.h,S.w*.05);g.clip();
-  if(phase==='guide'||phase==='tune'&&phT<.25){G.draw(t,clockAt());g.imageSmoothingEnabled=true;g.drawImage(G.cv,S.x,S.y,S.w,S.h);}
+  if(phase==='guide'||phase==='pick'||phase==='tune'&&phT<.25){G.draw(t,clockAt(),pk);g.imageSmoothingEnabled=true;g.drawImage(G.cv,S.x,S.y,S.w,S.h);}
   else{// static, then the blue screen with the channel number while the show comes on
    if(phase==='tune'&&phT<1.15){const fr=staticFrames()[Math.floor(t*30)%4];g.imageSmoothingEnabled=false;g.drawImage(fr,S.x,S.y,S.w,S.h);g.fillStyle=`rgba(0,0,0,${.15+.15*Math.sin(t*50)})`;g.fillRect(S.x,S.y+((t*400)%S.h),S.w,S.h*.08);}
    else{g.fillStyle='#000';g.fillRect(S.x,S.y,S.w,S.h);}}
@@ -131,23 +140,22 @@ async function runGuide(s,{onePlayer=false}={}){
   g.globalAlpha=.04+.02*Math.sin(t*60);g.fillStyle='#fff';g.fillRect(S.x,S.y,S.w,S.h);g.globalAlpha=1;
   // the channel OSD, green, in the corner
   if(osd){const fs=S.h*.11;g.font=`900 ${fs}px "Courier New",monospace`;g.textAlign='right';g.textBaseline='top';g.fillStyle='rgba(0,0,0,.6)';g.fillText(osd,S.x+S.w*.94+3,S.y+S.h*.07+3);g.fillStyle='#3cff4a';g.shadowColor='#3cff4a';g.shadowBlur=fs*.3;g.fillText(osd,S.x+S.w*.94,S.y+S.h*.07);g.shadowBlur=0;}
-  // 1 player: alone or vs the CPU, as an on-screen menu in the same green
-  choice=[];if(phase==='players'){const fs=S.h*.085;g.font=`900 ${fs}px "Courier New",monospace`;g.textAlign='center';g.textBaseline='middle';g.fillStyle='#3cff4a';g.shadowColor='#3cff4a';g.shadowBlur=fs*.3;
-   g.fillText('1 PLAYER',S.x+S.w/2,S.y+S.h*.3);[['PLAY ALONE',true],['VS CPU',false]].forEach(([l,v],i)=>{const by=S.y+S.h*(.5+i*.2),bw=S.w*.62,bh=fs*1.6;g.strokeStyle='#3cff4a';g.lineWidth=3;g.strokeRect(S.x+S.w/2-bw/2,by-bh/2,bw,bh);g.fillText(l,S.x+S.w/2,by);choice.push({x:S.x+S.w/2-bw/2,y:by-bh/2,w:bw,h:bh,v});});g.shadowBlur=0;}
+  choice=[];
   g.restore();
   // the set over it
   if(L.pic)g.drawImage(L.pic,L.fx,L.fy,L.pic.width*L.k,L.pic.height*L.k);else{g.strokeStyle='#5a3a1a';g.lineWidth=S.w*.05;g.strokeRect(S.x-S.w*.03,S.y-S.w*.03,S.w*1.06,S.h+S.w*.06);}
-  if(phase==='guide'){const fs=clamp(Math.min(W,H)*.035,12,20);g.font=`800 ${fs}px "SC Nunito",sans-serif`;g.textAlign='center';g.textBaseline='bottom';g.fillStyle=`rgba(255,240,170,${.6+.4*Math.sin(t*3)})`;
-   g.fillText('Tap THE PRICE IS RIGHT to watch',W/2,Math.min(H-8,S.y+S.h+fs*2.6));}}
+  if(phase==='guide'||phase==='pick'){const fs=clamp(Math.min(W,H)*.035,12,20);g.font=`800 ${fs}px "SC Nunito",sans-serif`;g.textAlign='center';g.textBaseline='bottom';g.fillStyle=`rgba(255,240,170,${.6+.4*Math.sin(t*3)})`;
+   g.fillText(phase==='pick'?'Play alone, or against the computer?':'Tap THE PRICE IS RIGHT to watch',W/2,Math.min(H-8,S.y+S.h+fs*2.6));}}
  let done=null;const finished=new Promise(r=>{done=r;});
- function tune(p){if(phase!=='guide')return;pick=p;phase='tune';phT=0;mus.stop();mus.hiss();vibrate(15);}
+ function tune(p){if(phase!=='guide'&&phase!=='pick')return;pick=p;phase='tune';phT=0;mus.stop();mus.hiss();vibrate(15);}
  s.on(c,'pointerdown',ev=>{if(s.paused)return;ev.preventDefault();const pt=s.pointer(ev);
-  if(phase==='players'){for(const b of choice)if(pt.x>=b.x&&pt.x<=b.x+b.w&&pt.y>=b.y&&pt.y<=b.y+b.h){alone=b.v;vibrate(10);done({pick,alone});phase='done';}return;}
-  if(phase!=='guide')return;const S=screen;if(pt.x<S.x||pt.x>S.x+S.w||pt.y<S.y||pt.y>S.y+S.h)return;const gx=(pt.x-S.x)/S.w*GW,gy=(pt.y-S.y)/S.h*GH;
-  for(const h of G.hits)if(gx>=h.x&&gx<=h.x+h.w&&gy>=h.y&&gy<=h.y+h.h){tune(h.pick);return;}});
- s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;phT+=dt;
-  if(phase==='tune'){if(phT>.25)osd=pick==='menu'?'CH 03':'CH 02';if(phT>1.9){osd=null;if(pick==='episode'&&onePlayer){phase='players';}else{phase='done';done({pick,alone:false});}}}
+  if(phase!=='guide'&&phase!=='pick')return;const S=screen;if(pt.x<S.x||pt.x>S.x+S.w||pt.y<S.y||pt.y>S.y+S.h)return;const gx=(pt.x-S.x)/S.w*GW,gy=(pt.y-S.y)/S.h*GH;
+  for(const h of G.hits)if(gx>=h.x&&gx<=h.x+h.w&&gy>=h.y&&gy<=h.y+h.h){choose(h.pick);return;}});
+ // a tap on the show in 1 player opens the chooser; a pick there tunes in
+ function choose(p){if(p==='alone'||p==='cpu'){if(phase!=='pick'||pk<.95)return;alone=p==='alone';vibrate(10);tune('episode');return;}if(phase==='guide'&&p==='episode'&&onePlayer){pick='episode';phase='pick';vibrate(10);return;}if(phase==='guide')tune(p);}
+ s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;phT+=dt;if(phase==='pick')pk=Math.min(1,pk+dt*2.2);
+  if(phase==='tune'){if(phT>.25)osd=pick==='menu'?'CH 03':'CH 02';if(phT>1.9){osd=null;phase='done';done({pick,alone:pick==='episode'&&onePlayer?alone:false});}}
   if(phase!=='done')draw();});
- s.debug={guide:true,get screen(){return screen;},get phase(){return phase;},get hits(){return G.hits;},tune:p=>tune(p||'episode'),players:v=>{if(phase==='players'){alone=!!v;phase='done';done({pick,alone});}}};
+ s.debug={guide:true,get screen(){return screen;},get phase(){return phase;},get hits(){return G.hits;},tune:p=>{if(onePlayer&&(p||'episode')==='episode'){choose('episode');pk=1;return;}tune(p||'episode');},players:v=>{if(phase!=='pick'){pick='episode';phase='pick';}pk=1;choose(v?'alone':'cpu');}};
  return finished;}
 Object.assign(exports,{runGuide,ROWS});

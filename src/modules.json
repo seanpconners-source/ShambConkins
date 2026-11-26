@@ -611,7 +611,8 @@
   "src/engines/tpir/guide.js",
   "src/engines/tpir/episode.js",
   "src/engines/tpir/showcase.js",
-  "src/engines/tpir/people.js"
+  "src/engines/tpir/people.js",
+  "src/data/tpirScript.js"
  ],
  "tail": "\n}};const cache={};function require(id){if(cache[id])return cache[id];const exports=cache[id]={};modules[id](exports,require);return exports;}require.src=id=>modules[id]?String(modules[id]):'';require('src/app.js');})();"
 }

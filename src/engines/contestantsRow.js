@@ -121,9 +121,9 @@ async function contestantsRow(s){
  function drawPrize(g,P,t){if(!item)return;const a=ease(itemT*1.6),pk=SS.PLATFORM_GEOM,plat=SS.picture('clock-platform'),pw=Math.min(P.w*.46,P.h*1.25),ph=pw*pk.h/pk.w,cx=P.x+P.w/2,by=P.y+P.h-4;
   ST.floorShadow(g,cx,by-ph*.06,pw*.95,.4*a);g.save();g.globalAlpha=a;g.translate(cx,by-ph+(1-a)*P.h*.3);const k=pw/pk.w;
   if(plat)g.drawImage(plat,-pw/2,0,pw,ph);else{g.fillStyle='#c8c8d8';g.beginPath();g.ellipse(0,ph*.68,pw*.48,ph*.16,0,0,TAU);g.fill();g.fillStyle='#8a8aa0';g.fillRect(-pw*.48,ph*.68,pw*.96,ph*.18);}
-  const ty=pk.top[1]*k,ph2=SP.prizePhoto(item[0]),bh=Math.min(P.h*.62,pw*.75);
-  if(ph2){const kk=Math.min(pw*.8/ph2.width,bh/ph2.height),w=ph2.width*kk,h=ph2.height*kk;g.fillStyle='#fff';g.beginPath();g.roundRect(-w/2-8,ty-h-16,w+16,h+16,12);g.fill();g.drawImage(ph2,-w/2,ty-h-8,w,h);}
-  else{g.font=`${bh*.7}px sans-serif`;g.textAlign='center';g.textBaseline='bottom';g.fillText(item[3],0,ty+bh*.08);}
+  const ty=pk.top[1]*k,ph2=SP.prizePhoto(item[0]),bh=Math.min(P.h*.82,pw*1.05);
+  // the prize itself stands on the turntable (owner, Nov 26: no white box, just the item)
+  ST.drawPrizeOn(g,ph2,0,ty+bh*.02,pw*.98,bh,{emoji:item[3]});
   g.restore();
   txt(g,item[1],cx,P.y+P.h*.12+K.fs*.6,K.fs*1.15,'#fff',{max:P.w*.9});
   if(priceShown){const w=Math.min(P.w*.6,K.fs*16),h=K.fs*3.2,y0=P.y+P.h*.12+K.fs*1.6;g.fillStyle='rgba(20,6,46,.9)';g.beginPath();g.roundRect(cx-w/2,y0,w,h,10);g.fill();g.strokeStyle='#ffd75a';g.lineWidth=3;g.stroke();
@@ -142,10 +142,10 @@ async function contestantsRow(s){
    if(warn&&warnT>0)txt(g,warn,P.x+P.w/2,P.y+P.h-fs*.8,fs*.85,'#ff6a5a',{max:P.w*.92});return;}
   // the bids board
   txt(g,limit?`REBID: UNDER ${money(limit)}`:'THE BIDS',P.x+P.w/2,P.y+fs*1.2,fs*1.1,'#ffd75a',{font:'"SC Bangers",Impact,sans-serif',w:400});
-  const lh=Math.min(fs*2.2,(P.h-fs*3)/6);seats.forEach((o,i)=>{const y=P.y+fs*2.6+i*lh+lh/2;txt(g,o.name.slice(0,10),P.x+fs*.8,y,fs*.9,cur===i?'#ffe23a':'#fff',{align:'left',max:P.w*.5});
+  const lh=Math.min(fs*2.2,(P.h-fs*3)/6);seats.forEach((o,i)=>{if(!o.here)return;const y=P.y+fs*2.6+i*lh+lh/2;txt(g,o.name.slice(0,10),P.x+fs*.8,y,fs*.9,cur===i?'#ffe23a':'#fff',{align:'left',max:P.w*.5});
    txt(g,o.bid==null?'—':money(o.bid),P.x+P.w-fs*.8,y,fs*1.05,o.over?'#ff6a5a':'#ffb03a',{align:'right'});});
   if(seats.some(o=>o.p!=null)){const y=P.y+fs*2.6+4.4*lh;g.fillStyle='rgba(255,255,255,.15)';g.fillRect(P.x+fs*.6,y-lh*.5,P.w-fs*1.2,1);
-   seats.filter(o=>o.p!=null).forEach((o,j)=>txt(g,`${o.name.slice(0,9)}: ${money(o.score)}`,P.x+P.w/2,y+lh*.25+j*lh*.62,fs*.8,'#7dff5a',{max:P.w*.92}));}}
+   seats.filter(o=>o.p!=null&&o.here).forEach((o,j)=>txt(g,`${o.name.slice(0,9)}: ${money(o.score)}`,P.x+P.w/2,y+lh*.25+j*lh*.62,fs*.8,'#7dff5a',{max:P.w*.92}));}}
  function press(l){if(!resolveBid)return;snd.hush();if(l==='⌫'){typed=typed.slice(0,-1);return;}if(l==='BID'){const v=Number(typed);const err=bad(v);if(err){warn=err;warnT=2.2;snd.sfx.wrong?.();return;}const r=resolveBid;resolveBid=null;r(v);return;}
   if(typed.length<5&&!(typed===''&&l==='0'))typed+=l;}
  function bad(v){if(!v||v<1)return'Type a bid first';if(limit&&v>=limit)return`It has to be under ${money(limit)}`;if(seats.some((o,i)=>i!==cur&&o.bid===v))return'That bid is taken!';return null;}
@@ -159,11 +159,12 @@ async function contestantsRow(s){
    g.save();const sr=hh*.75,sx=xx,sy=yy-hh*.55,vg=g.createRadialGradient(sx,sy,sr*.55,sx,sy,sr*1.6);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.5)');g.fillStyle=vg;g.fillRect(0,0,L.W,L.H);
    g.globalCompositeOperation='lighter';g.globalAlpha=.22+.08*Math.sin(t*5);const sg=g.createRadialGradient(sx,sy,sr*.1,sx,sy,sr);sg.addColorStop(0,'#fff8c0');sg.addColorStop(1,'rgba(255,248,192,0)');g.fillStyle=sg;g.fillRect(0,0,L.W,L.H);g.restore();
    person(g,c.o,xx,yy,hh,at.pose,st,1);
-   // the name in lights + COME ON DOWN!
-   const ny=L.top+L.H*.08,big=Math.min(L.W*.16,L.H*.13),pop=ease(st*2.5);g.save();g.translate(L.W/2,ny+big*.5);g.scale(pop,pop);
-   txt(g,(c.o.full||c.o.name).toUpperCase()+'!',0,0,big*Math.min(1,7/Math.max(4,(c.o.full||c.o.name).length)),'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:L.W*.92});g.restore();
-   const cod=SS.picture('cr-comeondown'),cw=Math.min(L.W*.8,L.H*1.2);if(st>.5){const a=ease((st-.5)*3);g.save();g.globalAlpha=a;if(cod){const ch=cw*cod.height/cod.width;g.drawImage(cod,L.W/2-cw/2,ny+big*1.15,cw,ch);}
-    else txt(g,'COME ON DOWN!',L.W/2,ny+big*1.55,big*.62,'#fff',{font:'"SC Bangers",Impact,sans-serif',w:400,max:L.W*.9});g.restore();}
+   // COME ON DOWN! and then the name under it, at the top (owner, Nov 26: "COME ON DOWN, CATWOMAN", not over the face): small enough
+   // to stay in the top band; where it still crosses the runner's face it fades back
+   const nm=(c.o.full||c.o.name).toUpperCase()+'!',big=Math.min(L.W*.11,L.H*.085),cod=SS.picture('cr-comeondown'),cw=Math.min(L.W*.62,L.H*.62),ch=cod?cw*cod.height/cod.width:big*1.1,y0=L.top+4,
+    ny=y0+ch+big*.62,fy=yy-hh*.8,clash=fy-hh*.18<ny+big*.6?.35:1,pop=ease(st*2.5);
+   if(st>.2){const a=ease((st-.2)*3)*clash;g.save();g.globalAlpha=a;if(cod)g.drawImage(cod,L.W/2-cw/2,y0,cw,ch);else txt(g,'COME ON DOWN!',L.W/2,y0+ch/2,big*.9,'#fff',{font:'"SC Bangers",Impact,sans-serif',w:400,max:L.W*.9});g.restore();}
+   g.save();g.globalAlpha=clash;g.translate(L.W/2,ny);g.scale(pop,pop);txt(g,nm,0,0,big*Math.min(1,9/Math.max(5,nm.length)),'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:L.W*.92});g.restore();
    K.overlay(g,null,{noCast:true});return;}
   // the row: prize up top, the four podiums with the contestants behind them, the panel
   drawPrize(g,L.prize,t);
@@ -176,11 +177,11 @@ async function contestantsRow(s){
  // ---- the flow
  let cueUntil=0;
  async function callDown(i){const o=seats[i];o.in=0;o.here=false;scene='crowd';call={o,t:0};hype=1;K.mode='play';
-  if(performance.now()>cueUntil){sfx.comeOn();cueUntil=performance.now()+(snd.loaded('come-on-down')?17000:0);}{const id=o.p!=null?s.players[o.p]?.character:o.face;if(!(id&&snd.voice('v-dn-'+id,{at:.2})))snd.voice('say-come-on-down',{at:.2,alt:o.p!=null&&TV.NAMED.includes(o.name)?'v-down-'+o.name.toLowerCase():null});}sfx.cheer(3.2,.22);sfx.applause(3.4,.9);await K.wait(3300);
+  if(performance.now()>cueUntil){sfx.comeOn();cueUntil=performance.now()+(snd.loaded('come-on-down')?17000:0);}{const id=o.p!=null?s.players[o.p]?.character:o.face;if(id){snd.want(['v-dn-'+id]);for(let w=0;w<40&&!snd.loaded('v-dn-'+id+'-1')&&s.alive;w++)await K.sleep(60);}if(!(id&&snd.voice('v-dn-'+id,{at:.05})))snd.voice('say-come-on-down',{at:.2,alt:o.p!=null&&TV.NAMED.includes(o.name)?'v-down-'+o.name.toLowerCase():null});}sfx.cheer(3.2,.22);sfx.applause(3.4,.9);await K.wait(3300);
   scene='row';call=null;o.in=0;o.here=true;o.pose='jump';o.poseT=1.4;sfx.applause(1.6,.6);await K.wait(900);}
- async function getBid(i,tr){const o=seats[i];cur=i;typed='';warn=null;
+ async function getBid(i,tr){const o=seats[i];cur=i;typed='';warn=null;K.cast.present(3,'present');
   if(o.p==null||(!human(i)&&!remote(i))){K.say(`${o.name}?`,1400);await K.sleep(900+R()*900);
-   const sk=o.p!=null?K.skill():.35+((i*7+tr*3)%5)*.08,rr=seededRandom(`${s.seed}:crow:bid:${itemIdx}:${tr}:${i}`);return cpuBid(item[2],seats.map(q=>q.bid),limit,sk,rr,seats.filter(q=>q.bid==null).length===1);}
+   const sk=o.p!=null?K.skill():.22+((i*7+tr*3)%5)*.07,rr=seededRandom(`${s.seed}:crow:bid:${itemIdx}:${tr}:${i}`);return cpuBid(item[2],seats.map(q=>q.bid),limit,sk,rr,seats.filter(q=>q.bid==null).length===1);}
   if(remote(i)){K.say(`${o.name}, what's your bid?`,2400);K.mode='input';const m=await K.recv();K.mode='play';return m&&m.b?m.b:1;}
   K.say(`${o.name}, what's your bid?`,2400);K.mode='input';const v=await new Promise(r=>{resolveBid=r;});K.mode='play';if(net)net.send({b:v});return v;}
  let itemIdx=0;
@@ -201,20 +202,20 @@ async function contestantsRow(s){
   bid(v){typed=String(v);press('BID');},get waiting(){return !!resolveBid;},set hurry(v){K.hurry=v;},
   // online test bot: bids for this phone's player when asked, hurries the rest
   bot:net?()=>{if(resolveBid){s.debug.autoBid();return 'bid';}K.hurry=true;return '';}:null,
-  autoBid(){if(!resolveBid||!item)return;let v=Math.max(1,Math.round(item[2]*(.7+Math.random()*.5)));if(limit)v=Math.min(v,limit-1);while(bad(v)&&v>1)v--;if(bad(v))v=limit?1:item[2];typed=String(v);press('BID');}};
+  autoBid(){if(!resolveBid||!item)return;let v=Math.max(1,Math.round(item[2]*(globalThis.__tpirSharp?.985+Math.random()*.014:.7+Math.random()*.5)));if(limit)v=Math.min(v,limit-1);while(bad(v)&&v>1)v--;if(bad(v))v=limit?1:item[2];typed=String(v);press('BID');}};
  if(!s.fromMenu&&!await s.pass(0,'Contestants\' Row: four contestants, one bid each. Closest to the actual retail price without going over wins!','Come on down!'))return;
  await SS.ready(['cr-audience','cr-audience-tall','cr-audience-fold','stage-row','stage-row-tall','stage-row-fold','stage-wheel','stage-wheel-tall','stage-wheel-fold','cr-podium','cr-body-1','cr-body-2','cr-body-3','cr-body-4',...[1,2,3,4,5,6,7,8].map(n=>'cr-fan-'+n),'cr-comeondown','clock-platform','curtain'],5000);if(!s.alive)return;
  if(!s.fromMenu)snd.title(true);K.mode='intro';K.introT=0;K.show('CONTESTANTS\' ROW!','Four bidders, one bid each',2.4,'#ffe23a');snd.voice('say-lets-play',{at:.6,alt:'v-lets-row'});await K.wait(2600);snd.title(false);
  // the first four, called down one at a time
  await aud.ready(K.W,K.H,3000);if(!s.alive)return;
- snd.want(seats.map(o=>'v-dn-'+(o.p!=null?s.players[o.p]?.character:o.face)));
+ snd.want([...seats.map(o=>'v-dn-'+(o.p!=null?s.players[o.p]?.character:o.face)),...(dealGuest.peek?dealGuest.peek(4).map(g=>'v-dn-'+g.id):[])]);seats.forEach(o=>snd.wantName(o.name));if(dealGuest.peek)dealGuest.peek(4).forEach(g=>snd.wantName(g.short));
  for(const i of [0,1,2,3]){if(!s.alive)return;if(!seats[i].here)await callDown(i);}
  if(ep){if(ep.first){await ep.first(K,seats);if(!s.alive)return;}
-  const wi=await playItem(0,ep.start||0);if(wi==null||!s.alive)return;const o=seats[wi],lines=['Come on up here!','Come on up and join me!','Come on up!'];
-  K.say(lines[Math.floor(R()*3)],1800);await K.wait(1700);if(!s.alive)return;
-  ep.out={seat:wi,p:o.p,guest:o.guest?{name:o.full||o.name,short:o.name,id:o.face,col:o.col}:null,won:o.score,prize:item};
-  // the winner leaves the row like the show: a guest's podium gets the next guest (called down at the next row); the players stay
-  if(o.guest){const old=o.body;seats[wi]={...newGuest(),bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0};deck.push(old);}
+  const wi=await playItem(0,ep.start||0);if(wi==null||!s.alive)return;const o=seats[wi];
+  K.say(`${o.name}, come on up here!`,1800);await K.wait(1700);if(!s.alive)return;
+  ep.out={seat:wi,p:o.p,body:o.body,guest:o.guest?{name:o.full||o.name,short:o.name,id:o.face,col:o.col}:null,won:o.score,prize:item};
+  // the winner leaves the row like the show (players too, owner Nov 26): the podium gets the next guest, called down at the next row
+  {const old=o.body;seats[wi]={...newGuest(),bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0};deck.push(old);}
   ep.start=(wi+1)%4;item=null;s.finish(seats.filter(q=>q.p!=null).map(q=>q.score),'');return;}
  let start=0;for(let n=0;n<N;n++){if(!s.alive)return;const wi=await playItem(n,start);if(wi==null)return;start=(start+1)%4;
   // a guest winner goes up on stage; the next guest is called down to that podium and bids first

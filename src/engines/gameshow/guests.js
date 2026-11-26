@@ -16,5 +16,7 @@ function shortName(name){const n=String(name||'').split(/\s+[·\/]\s+/)[0].repla
 function nameOf(id){facePool();return names.get(id)||'';}
 function guestDeck(seed,exclude=[],salt='guests'){const R=seededRandom(`${seed}:${salt}`),ex=new Set(exclude),d=facePool().filter(id=>!ex.has(id));
  for(let i=d.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[d[i],d[j]]=[d[j],d[i]];}let k=0;
- return ()=>{if(!d.length)return null;const id=d[k%d.length],name=nameOf(id).split(/\s+[·\/]\s+/)[0].trim();k++;return {id,name,short:shortName(name),col:COLS[(k-1)%COLS.length]};};}
+ const deal=()=>{if(!d.length)return null;const id=d[k%d.length],name=nameOf(id).split(/\s+[·\/]\s+/)[0].trim();k++;return {id,name,short:shortName(name),col:COLS[(k-1)%COLS.length]};};
+ // the next n guests (to load their name clips before they're called)
+ deal.peek=n=>{const out=[];for(let i=0;i<n&&d.length;i++){const id=d[(k+i)%d.length],name=nameOf(id).split(/\s+[·\/]\s+/)[0].trim();out.push({id,name,short:shortName(name)});}return out;};return deal;}
 Object.assign(exports,{guestDeck,shortName,nameOf,facePool});

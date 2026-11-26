@@ -97,9 +97,7 @@ async function plinko(s){
  function drawPricing(g){const fs=L.fs,cw=Math.min(W*.86,fs*22),ch=fs*13,cx=W/2,cy=L.wide?H*.55:H*.55,x0=cx-cw/2,y0=cy-ch/2;priceBtns=[];
   g.fillStyle='rgba(20,6,46,.92)';g.beginPath();g.roundRect(x0,y0,cw,ch,16);g.fill();g.strokeStyle='#ffd75a';g.lineWidth=3;g.stroke();
   txtC(g,`PRIZE ${pick.k+1} OF 4`,cx,y0+fs*1.1,fs*.8,'#ffd75a');const ph=pick.id&&SP.prizePhoto(pick.id);g.textAlign='center';g.textBaseline='middle';
-  if(ph){const bh=fs*3.4,bw=Math.min(cw*.62,bh*1.6),k=Math.min(bw/ph.width,bh/ph.height),w=ph.width*k,h=ph.height*k,px=cx-w/2,py=y0+fs*3.75-h/2;
-   g.fillStyle='#fff';g.beginPath();g.roundRect(px-5,py-5,w+10,h+10,8);g.fill();g.drawImage(ph,px,py,w,h);}
-  else{g.font=`${fs*3.6}px serif`;g.fillText(pick.em,cx,y0+fs*3.6);}txtC(g,pick.name.toUpperCase(),cx,y0+fs*6.2,fs*.95,'#fff');
+  ST.drawPrizeOn(g,ph,cx,y0+fs*5.4,Math.min(cw*.8,fs*9),fs*4.6,{emoji:pick.em});txtC(g,pick.name.toUpperCase(),cx,y0+fs*6.2,fs*.95,'#fff');
   const bw=fs*4.4,gap=fs*1.4;pick.digits.forEach((d,j)=>{const bx=cx+(j?gap/2:-gap/2-bw),by=y0+fs*7.4,on=pick.res!=null&&j===pick.right,chosen=pick.choice===j;
    g.fillStyle=on?'#2fa84f':chosen&&pick.res!=null?'#c8102e':'#fff8dc';g.beginPath();g.roundRect(bx,by,bw,fs*4.2,10);g.fill();g.strokeStyle=chosen?'#ffe23a':'#c8102e';g.lineWidth=chosen?5:3;g.stroke();
    g.font=`900 ${fs*3.2}px "SC Bangers",Impact,sans-serif`;g.fillStyle=on||chosen&&pick.res!=null?'#fff':'#c8102e';g.fillText(String(d),bx+bw/2,by+fs*2.2);priceBtns.push({x:bx,y:by,w:bw,h:fs*4.2,j});});
@@ -149,7 +147,9 @@ async function plinko(s){
   else if(!v){say(HOST_LINES.zero,1800,'talk');}
   chip=null;mode='landed';setTimeout(()=>{const d=dropDone;dropDone=null;d?.();},v>=10000?2300:1100);}
  // the watcher keeps the slot the player's phone reports
- s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;{const pl=mode!=='intro'&&mode!=='over';if(pl!==murOn){murOn=pl;snd.murmur?.(pl);}}
+ let yellT=1.5;s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;{const pl=mode!=='intro'&&mode!=='over';if(pl!==murOn){murOn=pl;snd.murmur?.(pl);}}
+  // the audience yells advice while a contestant decides (owner, Nov 26: real crowd yelling, tpir-crowd-*)
+  if(mode==='aim'){yellT-=dt;if(yellT<=0){yellT=2.2+Math.random()*3;const ks=['crowd-leftright','crowd-shout'];snd.voice?.(ks[Math.floor(Math.random()*ks.length)],{vol:.6+Math.random()*.3,pan:Math.random()*1.4-.7});}}
   if(mode==='intro'){introT+=dt;curtain=clamp((introT-.4)/1.4,0,1);}
   if(hostSay){hostSay.t-=dt;if(hostSay.t<=0){hostSay=null;hostPose='talk';}}
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}

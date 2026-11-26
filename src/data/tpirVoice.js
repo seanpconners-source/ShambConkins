@@ -7,6 +7,7 @@
 // with a price or a guest's name in them: those say the part without it). A real recording under the old voice keys (say-*) comes first.
 // Row: [key, voice, spoken text, match (string|RegExp|null = only played by key), games (kinds; '*' = every pricing game), takes]
 const SP=require("src/data/showPrizes.js");
+const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const BOB='bob',RICH='rich';
 const VOICE_MODELS={bob:'ee1f42380e6643059268337f63986907',rich:'936d41f63e424e08bd4bcd1ff8523da4'};
 const ALL='*';
@@ -166,6 +167,19 @@ LINES.push(
  ['ep-sc-all-yours',RICH,'And it can all be yours... if the price is right!','And it can all be yours... if the price is right!',['episode'],1],
  ['ep-sc-two',BOB,'Here\'s the second showcase!','Here\'s the second showcase!',['episode'],1],
  ['ep-car-1',RICH,'A NEW CAR!','A NEW CAR!',['episode'],2]);
+
+// ---- MORE TALK (src/data/tpirScript.js; owner, Nov 26): Showcase bridges, trip write-ups, car blurbs, the host's comments, goodbyes,
+// the host's lines after a name ("<name>, what's your bid?" = the name clip nm-* + one of these), higher-or-lower amounts (hl-<n>)
+const SC=require("src/data/tpirScript.js");
+const slug=t=>norm(t).replace(/ /g,'-');
+for(const [id,ties] of Object.entries(SC.SHOWCASE_TIES))ties.forEach((t,i)=>LINES.push([`scx-${id}-${i+1}`,RICH,t,t,['episode'],1]));
+for(const [id,t] of Object.entries(SC.TRIP_DESC))LINES.push([`tripd-${id}`,RICH,t,t,['episode'],1]);
+SC.CAR_DESC.forEach((t,i)=>LINES.push([`car-desc-${i+1}`,RICH,t,t,['episode'],1]));
+SC.BOB_COMMENTS.forEach((t,i)=>LINES.push([`bob-c-${i+1}`,BOB,t,t,['episode'],1]));
+SC.GOODBYE.forEach((t,i)=>LINES.push([`bye-${i+1}`,i?RICH:BOB,t,t,['episode'],1]));
+const cap=t=>t[0].toUpperCase()+t.slice(1);
+for(const t of SC.WITH_NAME)LINES.push([`wn-${slug(t)}`,BOB,cap(t),cap(t),ALL,1]);
+for(let n=1;n<=SC.HL_MAX;n++)LINES.push([`hl-${n}`,BOB,`Is it higher or lower than $${n}?`,null,['punch'],1]);
 // the showcases' set-ups (the announcer's skit): sci-<id>
 for(const sc of SP.SHOWCASES)LINES.push([`sci-${sc.id}`,RICH,sc.intro,sc.intro,['prize'],1]);
 // CALL-DOWNS BY NAME (owner, Nov 26: every character's name said by the announcer): "<Name>, come on down!" -> dn-<character id>.
@@ -173,6 +187,13 @@ for(const sc of SP.SHOWCASES)LINES.push([`sci-${sc.id}`,RICH,sc.intro,sc.intro,[
 function nameLines(){const cs=require("src/contentPolicy.js").ACTIVE_CATALOG.characters;
  return cs.filter(c=>c.name).map(c=>[`dn-${c.id}`,RICH,`${String(c.name).split(/\s+[·\/]\s+/)[0].replace(/\s*\(.*?\)\s*/g,' ').trim()}, come on down!`,null,['named'],1]);}
 
+// NAMES ON THEIR OWN (owner, Nov 26: "Bob and the announcer need to say the characters' names often"): the host says "<name>," and
+// then the rest of his line as its own clip (stage.js speak). One per short name a character goes by on the podium (gameshow/guests.js
+// shortName) + the players' usual names. nameKey(text) = the key for a name as shown.
+const nameKey=t=>'nm-'+slug(t);
+function nameOnlyLines(){const {shortName}=require("src/engines/gameshow/guests.js"),cs=require("src/contentPolicy.js").ACTIVE_CATALOG.characters,seen=new Set(),out=[];
+ const addN=n=>{n=String(n||'').trim();const k=nameKey(n);if(!n||k==='nm-'||seen.has(k))return;seen.add(k);out.push([k,BOB,`${n},`,null,['named'],1]);};
+ for(const n of NAMED)addN(n);for(const c of cs)if(c.name){const full=String(c.name).split(/\s+[·\/]\s+/)[0].replace(/\s*\(.*?\)\s*/g,' ').trim();addN(shortName(full));}return out;}
 const NAME_ID=new Map();for(const r of SP.ALL)if(!NAME_ID.has(r[1].toLowerCase()))NAME_ID.set(r[1].toLowerCase(),r[0]);
 for(const r of SP.CARS)NAME_ID.set(('a new '+r[1]).toLowerCase(),r[0]);
 const pn=name=>{const id=NAME_ID.get(String(name).toLowerCase().trim());return id?'pn-'+id:null;};
@@ -182,12 +203,11 @@ const PARTS=[[/^In the safe: (.+) and (.+)! The combination is the price of the 
  [/^He made it! You win (.+)!$/,['p-cliff-won',1]],[/^First prize: (.+)\. What do you think it costs\?$/,['p-cliff-first',1,'cliff-cost']],
  [/^Next: (.+)\.$/,['p-cliff-next',1]],[/^Last one: (.+)\. He's on step \d+\.$/,['p-cliff-last',1]]];
 // the keys to say a bubble in pieces (null = no template fits, or a name with no clip)
-function partsFor(text){for(const [re,parts] of PARTS){const m=String(text).match(re);if(!m)continue;const out=[];for(const q of parts){const k=typeof q==='number'?pn(m[q]):q;if(!k)return null;out.push(k);}return out;}return null;}
-const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+function partsFor(text){{const m=String(text).match(/^(.+): is it higher or lower than \$(\d+)\?$/i);if(m){const k=pn(m[1]);return k&&+m[2]<=SC.HL_MAX?[k,'hl-'+m[2]]:null;}}for(const [re,parts] of PARTS){const m=String(text).match(re);if(!m)continue;const out=[];for(const q of parts){const k=typeof q==='number'?pn(m[q]):q;if(!k)return null;out.push(k);}return out;}return null;}
 const EXACT=new Map(LINES.filter(l=>typeof l[3]==='string').map(l=>[norm(l[3]),l[0]]));
 const PATTERNS=LINES.filter(l=>l[3] instanceof RegExp);
 // the line key for a host bubble's text (null = no line for it)
 function lineFor(text){const e=EXACT.get(norm(text));if(e)return e;const p=PATTERNS.find(l=>l[3].test(text));return p?p[0]:null;}
 // keys a game should load (its own lines + the shared ones)
 function linesFor(kind){return LINES.filter(l=>l[4]===ALL||(kind&&l[4].includes(kind))).map(l=>l[0]);}
-Object.assign(exports,{LINES,VOICE_MODELS,NAMED,lineFor,linesFor,partsFor,pn,art,norm,nameLines});
+Object.assign(exports,{LINES,VOICE_MODELS,NAMED,lineFor,linesFor,partsFor,pn,art,norm,nameLines,nameOnlyLines,nameKey,slug});

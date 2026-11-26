@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **The Price Is Right plays by the show's rules:** Contestants' Row keeps going until every player has won a bid and played a pricing game (no game twice in a show); studio guests who win go off camera and turn up at the Big Wheel. Win the wheel to reach the Showcase, win the Showcase for the ending. Lose anywhere and Bob thanks you by name and you go home with Rice-A-Roni and the home game. Your score is all your cash and prizes.
+- **A NEW CAR!** A big moment of its own: the car on the turntable with a model, then you run in and jump around it.
+- **The ending:** the family runs down, Bob signs off in front of everybody celebrating, and the credits roll over the party.
+- **A longer Showcase:** trips described like the show ("seven fabulous days aboard..."), car features, the announcer linking the prizes together, Bob chiming in.
+- **Names out loud:** Bob says contestants' names all through the show, and every call-down name is loaded before it's called.
+- **Prizes without white boxes:** every prize stands on its own, bigger, on the turntable, podium or a display stand; the model shows them off.
+- **Punch-a-Bunch:** the question is big in the middle of the screen with nothing cut off, Bob reads the prize and the price, and the punch sounds like paper, not a buzzer.
+- **A real-sounding studio audience:** the crowd yells "Higher!", "Lower!", "Spin!", "Stay!", numbers and advice, cheers and groans, instead of a synth rumble.
+- **TV guide:** in 1 player, choosing the show scrolls the guide down to Play alone / Vs CPU right on the guide; COME ON DOWN! sits above the name instead of over the face.
+
 ## v0.99.69
 
 - **The Price Is Right, the whole episode:** a 90s TV guide comes up first (static, channel number, lounge music); tune in to THE PRICE IS RIGHT for a full show: the announcer's opening and Bob's entrance, Contestants' Row and four random pricing games, two Showcase Showdowns on the Big Wheel, a commercial break, the Showcase with the doors opening on trips, cars and boats, the winner's family running down, Bob's "spay or neuter your pets" sign-off, the credits and a winnings tally. Play alone or vs CPU, or two players.

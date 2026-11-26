@@ -10,6 +10,7 @@ const ST=require("src/engines/gameshow/stage.js");
 const SS=require("src/data/showSprites.js");
 const SP=require("src/data/showPrizes.js");
 const TV=require("src/data/tpirVoice.js");
+const SC=require("src/data/tpirScript.js");
 const P=require("src/engines/tpir/people.js");
 const {createKit,txt,money}=require("src/engines/gameshow/pricingKit.js");
 const {seededRandom,clamp}=require("src/utils.js");
@@ -24,6 +25,7 @@ async function showcase(s){
  const pool=SP.SHOWCASES.slice();const a=pool.splice(Math.floor(R()*pool.length),1)[0],b=pool[Math.floor(R()*pool.length)];const cases=[a,b].sort((p,q)=>p.total-q.total);
  snd.prepare([...cases.map(c=>c.intro),...cases.flatMap(c=>c.items.map(it=>`It's ${TV.art(it[1])}!`)),'A NEW CAR!','And it can all be yours... if the price is right!']);
  cases.forEach(c=>c.items.forEach(it=>SP.prizePhoto(it[0])));
+ snd.prepare([...cases.flatMap(c=>[...(SC.SHOWCASE_TIES[c.id]||[]),...c.items.map(it=>SC.TRIP_DESC[it[0]]).filter(Boolean)]),...SC.CAR_DESC,...SC.BOB_COMMENTS,...who.map(o=>`${o.name}, here's your showcase!`)]);who.forEach(o=>snd.wantName(o.name));
  snd.prepare(['It\'s time for the Showcase!','You were our top winner on the wheel, so you decide. Do you want to bid on this first showcase, or pass it?','You\'ll pass it.','You\'ll bid on it.','Here\'s your showcase!','Here\'s the second showcase!','Take your time, and give me your bid.','Let\'s find out the actual retail prices of these showcases.','The actual retail price of your showcase is...','Oh, you overbid.','You were closer. You win your showcase!','You were within two hundred fifty dollars! You win both showcases!','Oh, you both overbid! Nobody wins a showcase today.']);
  let door=0,doorTo=0,cur=null,curT=0,shown=-1,cap=null,typed='',bidder=-1,resolveBid=null,choose=null,warn=null,warnT=0,reveal=-1,keys=[];
  // the announcer is off camera: his lines play over a lower-third caption
@@ -87,16 +89,22 @@ async function showcase(s){
   if(resolveBid&&bidder>=0&&who[bidder].human)drawKeypad(g,L);else if(choose&&who[sc.top].human)drawChoice(g,L);});
  // ---- the flow
  async function present(n){const c=cases[n];doorTo=1;sfx.applause(2.2,.6);snd.clip('ding');await K.wait(1100);ann(c.intro,3200);K.cast.present(5,'present');await K.wait(3200);
-  for(const it of c.items){if(!s.alive)return;cur=it;curT=0;
-   if(it[4]==='car'){K.show('A NEW CAR!',it[1].toUpperCase(),2.6,'#ffe23a');ann('A NEW CAR!',1500);sfx.cheer?.(2.6,.2);await K.wait(1500);if(!s.alive)return;}
-   ann(`It's ${TV.art(it[1])}!`,2400);K.cast.present(3,'present');sfx.applause(1.4,.45);await K.wait(2400);}
+  // each prize on the turntable a good while (owner, Nov 26: "show off each item longer... things in between... describe the trips"):
+  // the announcer names it, describes a trip or a car, then bridges to the next prize; the host chimes in once
+  const ties=SC.SHOWCASE_TIES[c.id]||[];let comment=Math.floor(R()*c.items.length);
+  for(let k=0;k<c.items.length;k++){const it=c.items[k];if(!s.alive)return;cur=it;curT=0;
+   if(it[4]==='car'){K.show('A NEW CAR!',it[1].toUpperCase(),2.6,'#ffe23a');if(!snd.clip('new-car',{max:4}))sfx.fanfare?.();ann('A NEW CAR!',1500);sfx.cheer?.(2.6,.2);await K.wait(1500);if(!s.alive)return;}
+   ann(`It's ${TV.art(it[1])}!`,2400);K.cast.present(6,'present');sfx.applause(1.4,.45);await K.wait(2400);if(!s.alive)return;
+   const desc=SC.TRIP_DESC[it[0]]||(it[4]==='car'?SC.CAR_DESC[Math.floor(R()*SC.CAR_DESC.length)]:null);if(desc){ann(desc,4200);K.cast.present(6,'present');await K.wait(4200);if(!s.alive)return;}
+   if(k===comment){K.say(SC.BOB_COMMENTS[Math.floor(R()*SC.BOB_COMMENTS.length)],1800);await K.wait(1800);if(!s.alive)return;}
+   if(ties[k]&&k<c.items.length-1){ann(ties[k],3400);await K.wait(3400);}}
   if(!s.alive)return;ann('And it can all be yours... if the price is right!',3000);sfx.applause(2.6,.8);await K.wait(3000);cur=null;doorTo=0;await K.sleep(700);}
  async function getBid(i,n){const o=who[i];bidder=i;typed='';warn=null;K.say('Take your time, and give me your bid.',2600);await K.wait(1800);if(!s.alive)return 0;
   if(o.human){K.mode='input';const v=await new Promise(r=>{resolveBid=r;});K.mode='play';bidder=-1;return v;}
   // the game bids for a guest / the CPU: near the total, more often under (skill sharpens it), rounded like people do
   await K.sleep(1400+R()*1400);const sk=o.skill??.4,tot=cases[n].total,est=tot*(1-(.04+R()*.22)*(1-sk*.5)+(R()-.35)*(.3-.2*sk));bidder=-1;return Math.max(1000,Math.round(est/(R()<.5?500:100))*(R()<.5?500:100));}
  s.debug={get who(){return who;},cases,get door(){return door;},get bidder(){return bidder;},bid(v){typed=String(v);press('BID');},get waiting(){return !!resolveBid;},choose:c=>choose&&choose(c),set hurry(v){K.hurry=v;},
-  autoBid(){if(!resolveBid)return;const n=bidOn[bidder];typed=String(Math.round(cases[n].total*(.85+Math.random()*.2)));press('BID');}};
+  autoBid(){if(!resolveBid)return;const n=bidOn[bidder];typed=String(Math.round(cases[n].total*(globalThis.__tpirSharp?.96+Math.random()*.035:.85+Math.random()*.2)));press('BID');}};
  await SS.ready(['stage-showcase','stage-showcase-tall','stage-showcase-fold','showcase-podium','turntable','cr-body-1','cr-body-2','cr-body-3','cr-body-4','host','model','model-2'],5000);if(!s.alive)return;
  K.mode='play';snd.music(false);sfx.applause(3,.9);K.show('THE SHOWCASE!',who.map(o=>String(o.name).toUpperCase()).join('  vs  '),2.6,'#ffe23a');K.say('It\'s time for the Showcase!',2400);await K.wait(2600);if(!s.alive)return;
  // the top winner chooses
@@ -104,7 +112,7 @@ async function showcase(s){
  let pick;if(who[top].human)pick=await new Promise(r=>{choose=v=>{choose=null;r(v);};});else{await K.sleep(1500);pick=R()<.72?'pass':'bid';}
  K.say(pick==='pass'?'You\'ll pass it.':'You\'ll bid on it.',1600);who[top].pose='clap';sfx.applause(1.2,.5);await K.wait(1600);
  const first=pick==='pass'?1-top:top,bidOn={[first]:0,[1-first]:1};
- for(const n of [0,1]){if(!s.alive)return;const i=n===0?first:1-first;if(n===1){K.say('Here\'s the second showcase!',2000);await K.wait(2000);}else{K.say('Here\'s your showcase!',1800);await K.wait(1800);}
+ for(const n of [0,1]){if(!s.alive)return;const i=n===0?first:1-first;if(n===1){K.say('Here\'s the second showcase!',2000);await K.wait(2000);}else{K.say(`${who[i].name}, here's your showcase!`,2000);await K.wait(2000);}
   await present(n);if(!s.alive)return;who[i].bid=await getBid(i,n);sfx.ding();snd.voice('crowd-cheer',{vol:.6});await K.wait(900);}
  if(!s.alive)return;
  // the reveal: the bid that was second first, like the show

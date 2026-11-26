@@ -33,7 +33,7 @@ function polish(raw,out){const tmp=out+'.raw.mp3';fs.writeFileSync(tmp,raw);
  fs.unlinkSync(tmp);}
 let made=0,skipped=0;
 // the lines + one call-down per character (--names=0 skips those)
-const ALL_LINES=[...V.LINES,...(arg('names')==='0'?[]:V.nameLines())];
+const ALL_LINES=[...V.LINES,...(arg('names')==='0'?[]:[...V.nameLines(),...V.nameOnlyLines()])];
 for(const [key,who,text,,,takes] of ALL_LINES){if(only&&!only.test(key))continue;
  for(let n=1;n<=takes;n++){const out=path.join(OUT,`tpir-v-${key}-${n}.mp3`);if(!force&&fs.existsSync(out)){skipped++;continue;}
   console.log(`${key}-${n} (${who}): ${text}`);if(dry)continue;

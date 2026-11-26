@@ -32,6 +32,7 @@ async function punchABunch(s){
  const P=names.map((n,i)=>{const R=seededRandom(`${s.seed}:punch:${i}`),pr=shuffle(small,R).slice(0,4).map(([id,name,price,em])=>{let off=2+Math.floor(R()*9);if(price-off<5)off=-off;const shown=R()<.5?price+off:price-off;return {id,name,price,em,shown:Math.max(1,shown),ans:null};});
   return {prizes:pr,slips:shuffle(SLIPS,R),punched:new Set(),punches:0,cur:null,kept:0,done:false,score:0,mood:'normal',q:-1};});
  for(const p of P)for(const q of p.prizes)SP.prizePhoto(q.id);
+ snd.prepare(P.flatMap(p=>p.prizes.map(q=>`${q.name}: is it higher or lower than ${K.money(q.shown)}?`)));
  let phase='',slipT=0,glove=null,L={};
  function layout(){K.base();const {W,H,top,fs,wide}=K,tagH=fs*3;
   if(wide){const bw=Math.min(W*.6,(H-top-tagH-fs)*BG.w/BG.h),bh=bw*BG.h/BG.w,bx=W-bw-W*.02,col=bx-W*.02;
@@ -48,12 +49,19 @@ async function punchABunch(s){
    if(phase==='punch'&&!K.waiting()&&!p.punched.has(i))K.hits.push({...cb,fn:()=>punch(i)});}
   ST().drawLogo(g,'punch-logo','PUNCH-A-BUNCH',L.logo.x,L.logo.y,L.logo.w,t,{cols:['#ffe23a','#ff3d6e']});
   // the prize + question
-  const Pz=L.prize,q=p.prizes[Math.max(0,p.q)];if(phase==='ask'||phase==='answer'){const ph=SP.prizePhoto(q.id),bw=Pz.w*.6,bh=Pz.h*.7,cx=Pz.x+Pz.w/2,cy=Pz.y+Pz.h*.72;
-   if(ph){const kk=Math.min(bw/ph.width,bh/ph.height);g.fillStyle='#fff';g.beginPath();g.roundRect(cx-ph.width*kk/2-8,cy-ph.height*kk-8,ph.width*kk+16,ph.height*kk+16,12);g.fill();g.drawImage(ph,cx-ph.width*kk/2,cy-ph.height*kk,ph.width*kk,ph.height*kk);}
-   else{g.font=`${bh*.75}px serif`;g.textAlign='center';g.textBaseline='alphabetic';g.fillText(q.em,cx,cy);}
-   txt(g,q.name.toUpperCase(),cx,cy+fs*.8,fs*.75,'#ffe23a',{max:Pz.w});
-   txt(g,phase==='answer'?`IT'S ${K.money(q.price)}`:`HIGHER OR LOWER THAN ${K.money(q.shown)}?`,cx,cy+fs*1.9,fs*.95,phase==='answer'?(q.right?'#7dff5a':'#ff8a6a'):'#fff',{max:Pz.w});
-   if(phase==='ask'&&!K.waiting()){const bb=L.btns,w2=bb.w/2-fs*.4;K.button(g,{x:bb.x,y:bb.y,w:w2,h:bb.h},'HIGHER ▲',()=>answer('h'),{col:'#2fa84f'});K.button(g,{x:bb.x+bb.w-w2,y:bb.y,w:w2,h:bb.h},'LOWER ▼',()=>answer('l'),{col:'#c8102e'});}}
+  const Pz=L.prize,q=p.prizes[Math.max(0,p.q)];if(phase==='ask'||phase==='answer'){
+   // HIGHER OR LOWER (owner, Nov 26: "the item, its title, and the higher or lower buttons should just appear large in the center of the
+   // screen"): the board dims, the prize stands big on a display stand in a card in the middle, its name, the question, two big buttons
+   g.fillStyle='rgba(8,2,24,.62)';g.fillRect(0,0,K.W,K.H);
+   const cw=Math.min(K.W*.94,fs*26),top=K.top+fs*.4,ch=Math.min(K.H-top-L.tags.h-fs*1.2,fs*30),cx=K.W/2,y0=top+Math.max(0,(K.H-top-L.tags.h-fs-ch)/2);
+   g.fillStyle='rgba(20,6,46,.94)';g.beginPath();g.roundRect(cx-cw/2,y0,cw,ch,18);g.fill();g.strokeStyle='#ffd75a';g.lineWidth=3;g.stroke();
+   txt(g,`PRIZE ${p.q+1} OF 4`,cx,y0+fs*1.2,fs*.85,'#ffd75a');
+   const bh=fs*3.6,qy=y0+ch-bh-fs*.9,ny=qy-fs*4.2,iy=y0+fs*2.2,ih=ny-fs*1.2-iy,pedW=Math.min(cw*.4,ih*.5),pedTop=ny-fs*1.6-pedW*.45;
+   ST().drawPrizeOn(g,SP.prizePhoto(q.id),cx,pedTop,cw*.78,pedTop-iy-fs*.3,{emoji:q.em,ped:true,pedW});
+   txt(g,q.name.toUpperCase(),cx,ny,fs*1.25,'#ffe23a',{max:cw*.92,font:'"SC Bangers",Impact,sans-serif',w:400});
+   txt(g,phase==='answer'?`IT'S ${K.money(q.price)}!`:`HIGHER OR LOWER THAN ${K.money(q.shown)}?`,cx,ny+fs*2,fs*1.25,phase==='answer'?(q.right?'#7dff5a':'#ff8a6a'):'#fff',{max:cw*.92});
+   if(phase==='ask'&&!K.waiting()){const w2=cw/2-fs*1.1;K.button(g,{x:cx-cw/2+fs*.7,y:qy,w:w2,h:bh},'HIGHER ▲',()=>answer('h'),{col:'#2fa84f',size:fs*1.4});K.button(g,{x:cx+cw/2-fs*.7-w2,y:qy,w:w2,h:bh},'LOWER ▼',()=>answer('l'),{col:'#c8102e',size:fs*1.4});}
+   else if(phase==='ask')txt(g,`${names[K.cur].toUpperCase()} IS THINKING…`,cx,qy+bh/2,fs*.95,'#bfe7ff',{max:cw*.9});}
   else{txt(g,`PUNCHES: ${p.punches}`,Pz.x+Pz.w/2,Pz.y+Pz.h*.4,fs*2,'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400});
    txt(g,phase==='punch'?(K.waiting()?`${names[K.cur].toUpperCase()} IS PICKING A HOLE…`:'PUNCH A HOLE!'):phase==='choose'?`YOU HAVE ${K.money(p.slips[p.cur])}`:'',Pz.x+Pz.w/2,Pz.y+Pz.h*.68,fs*.95,'#fff',{max:Pz.w});
    if(phase==='choose'&&!K.waiting()){const bb=L.btns,w2=bb.w/2-fs*.4;K.button(g,{x:bb.x,y:bb.y,w:w2,h:bb.h},'KEEP IT',()=>choose(1),{col:'#2fa84f'});K.button(g,{x:bb.x+bb.w-w2,y:bb.y,w:w2,h:bb.h},`PUNCH AGAIN (${p.punches})`,()=>choose(0),{col:'#c8102e'});}}
@@ -62,34 +70,34 @@ async function punchABunch(s){
    g.save();g.translate(x0+w/2,y0+h/2);g.rotate((1-e)*.6);g.translate(-w/2,-h/2);g.scale(k,k);drawSlip(g,e>.6?p.slips[p.cur]:null);g.restore();}
   // the glove punching in
   if(glove){const cb=cell(glove.i),f=glove.t/.35,s2=cb.w*(1.8-.8*Math.min(1,f));g.save();g.globalAlpha=Math.min(1,2-f*1.4);g.font=`${s2}px serif`;g.textAlign='center';g.textBaseline='middle';g.fillText('🥊',cb.x+cb.w/2,cb.y+cb.h/2);g.restore();}
-  K.tags(g,L.tags,i=>P[i].done?K.money(P[i].score):i===K.cur&&P[i].punches?`${P[i].punches} PUNCHES`:'—',P.map(q2=>q2.mood));K.overlay(g,L.bub);}
+  K.tags(g,L.tags,i=>P[i].done?K.money(P[i].score):i===K.cur&&P[i].punches?`${P[i].punches} PUNCHES`:'—',P.map(q2=>q2.mood));K.overlay(g,L.bub,{noCast:phase==='ask'||phase==='answer'});}
  // ---- input
  let wake=null;const go=()=>{const w=wake;wake=null;w?.();};
  function answer(v){const p=P[K.cur],q=p.prizes[p.q];if(phase!=='ask'||q.ans)return;q.ans=v;if(net&&K.mine(K.cur))net.send({pb:v});go();}
- function punch(i){const p=P[K.cur];if(phase!=='punch'||p.punched.has(i))return;p.punched.add(i);p.cur=i;p.punches--;phase='reveal';glove={i,t:0};slipT=0;sfx.over?.();vibrate(40);if(net&&K.mine(K.cur))net.send({pp:i});go();}
+ function punch(i){const p=P[K.cur];if(phase!=='punch'||p.punched.has(i))return;p.punched.add(i);p.cur=i;p.punches--;phase='reveal';glove={i,t:0};slipT=0;sfx.punch?.();vibrate(40);if(net&&K.mine(K.cur))net.send({pp:i});go();}
  function choose(keep){if(phase!=='choose')return;if(net&&K.mine(K.cur))net.send({pk:keep?1:0});phase=keep?'kept':'again';go();}
  const waitFor=()=>new Promise(r=>{wake=r;});
  K.frame(dt=>{if(glove){glove.t+=dt;if(glove.t>.5)glove=null;}if(phase==='reveal'||phase==='choose'||phase==='kept')slipT=Math.min(1.2,slipT+dt*1.4);draw();});
  async function remote(key){for(;;){const m=await K.recv();if(!m)return null;if(m[key]!=null)return m[key];}}
  async function play(i){const p=P[i];K.cur=i;phase='';
   K.say('Four prizes. Tell me if the real price is higher or lower, and every right answer is a punch!',3000);await K.wait(3000);
-  for(let k=0;k<4;k++){if(!s.alive)return;p.q=k;const q=p.prizes[k];phase='ask';K.mode='input';K.say(`${q.name}: is it higher or lower than ${K.money(q.shown)}?`,2600);
+  for(let k=0;k<4;k++){if(!s.alive)return;p.q=k;const q=p.prizes[k];phase='ask';K.yell=['crowd-higher','crowd-lower','crowd-shout'];K.mode='input';K.say(`${q.name}: is it higher or lower than ${K.money(q.shown)}?`,2600);
    if(K.cpuTurn()){await K.sleep(1500);const R=seededRandom(`${s.seed}:punchcpu:${k}`),right=q.price>q.shown?'h':'l';answer(R()<.6+.35*K.skill()?right:(right==='h'?'l':'h'));}
    else if(!K.mine(i)){const v=await remote('pb');if(v==null)return;answer(v);}
    else await waitFor();
-   if(!s.alive)return;K.mode='play';phase='answer';q.right=(q.ans==='h')===(q.price>q.shown);if(q.right){p.punches++;sfx.ding();K.show('RIGHT!',`That's ${p.punches} punch${p.punches>1?'es':''}`,1.3,'#7dff5a');}else{sfx.buzz();K.show('NO!',`It was ${K.money(q.price)}`,1.3,'#ff6a5a');}
+   if(!s.alive)return;K.mode='play';phase='answer';q.right=(q.ans==='h')===(q.price>q.shown);if(q.right){p.punches++;sfx.ding();K.show('RIGHT!',`That's ${p.punches} punch${p.punches>1?'es':''}`,1.3,'#7dff5a');}else{if(!snd.clip('buzzer-wrong'))sfx.buzz();K.show('NO!',`It was ${K.money(q.price)}`,1.3,'#ff6a5a');}
    await K.wait(1500);}
   if(!p.punches){phase='';p.done=true;p.mood='sad';K.show('NO PUNCHES','Better luck next time',2.4,'#ff6a5a');if(!snd.clip('losing-horn'))sfx.aww?.();await K.wait(2600);return;}
   K.say(`You've earned ${p.punches} punch${p.punches>1?'es':''}! Pick a hole, any hole!`,2600);await K.wait(1400);
-  for(;;){if(!s.alive)return;phase='punch';K.mode='input';p.cur=null;slipT=0;
+  for(;;){if(!s.alive)return;phase='punch';K.yell=['crowd-shout','crowd-leftright'];K.mode='input';p.cur=null;slipT=0;
    if(K.cpuTurn()){await K.sleep(1200);const R=seededRandom(`${s.seed}:punchhole:${p.punched.size}`),open=[...Array(50).keys()].filter(j=>!p.punched.has(j));punch(open[Math.floor(R()*open.length)]);}
    else if(!K.mine(i)){const v=await remote('pp');if(v==null)return;punch(+v);}
    else await waitFor();
    if(!s.alive)return;K.mode='play';await K.sleep(1100);const v=p.slips[p.cur];
    if(v>=25000){sfx.jackpot(true);snd.crowd(4,1);p.kept=v;K.show('$25,000!','The top prize!',3,'#ffe23a');await K.wait(3000);break;}
-   if(v>=5000){if(!snd.clip('bell'))sfx.ding();snd.crowd(2.2,.8);}else sfx.ding();
+   if(v>=5000){if(!snd.clip('ding-ding-ding')&&!snd.clip('bell'))sfx.ding();snd.crowd(2.2,.8);}else if(v>=1000)sfx.ding();else{sfx.ding();snd.voice('crowd-aww',{at:.3})||sfx.aww?.(.3);}
    if(!p.punches){p.kept=v;K.say(`That was your last punch: you keep ${K.money(v)}!`,2400);await K.wait(2400);break;}
-   phase='choose';K.mode='input';K.say(`${K.money(v)}! Keep it, or throw it away and punch again?`,2600);
+   phase='choose';K.yell=['crowd-yesno'];K.mode='input';K.say(`${K.money(v)}! Keep it, or throw it away and punch again?`,2600);
    if(K.cpuTurn()){await K.sleep(1600);choose(v>=2500||(v>=1000&&p.punches<2)?1:0);}
    else if(!K.mine(i)){const c=await remote('pk');if(c==null)return;choose(+c);}
    else await waitFor();
