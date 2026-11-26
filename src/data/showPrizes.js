@@ -47,7 +47,9 @@ const SHOWCASES=CAT.SHOWCASES.map(([id,theme,intro,items])=>{const it=items.map(
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 const imgs=new Map();
 // the prize's photo once it has loaded (null until then / when missing: draw the emoji)
-function prizePhoto(id){const url=USER['prize:'+id];if(!url||typeof Image==='undefined')return null;let e=imgs.get(id);
+// a trip listed more than once (-g = grand-prize price, -bid = bid price) borrows its twin's photo when it has none of its own
+const photoKey=id=>{if(USER['prize:'+id]||!/^trip-/.test(id))return id;const b=id.replace(/-(g|bid)$/,'');return [b,b+'-g',b+'-bid'].find(k=>USER['prize:'+k])||id;};
+function prizePhoto(id){id=photoKey(id);const url=USER['prize:'+id];if(!url||typeof Image==='undefined')return null;let e=imgs.get(id);
  if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(id,e);}return e.ok?e.img:null;}
-const hasPhoto=id=>!!USER['prize:'+id];
+const hasPhoto=id=>!!USER['prize:'+photoKey(id)];
 Object.assign(exports,{MID_PRIZES,GRAND_PRIZES,PRIZES,BID_PRIZES,CARS,TRIPS,BIG,GROCERY,SHOWCASES,ALL,BY_ID,PRICES_AS_OF,prizePhoto,hasPhoto});

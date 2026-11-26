@@ -56,7 +56,7 @@ async function episode(s,{alone=false}={}){
  async function seg(run,o){scene=null;snd.hush();snd.music(false);const r=await runSegment(s,run,o);if(!s.alive||!r)return null;stage();return r;}
  const studio=(kind)=>(g,W,H,t)=>{ST.drawStage(g,W,H,kind,t);};
  // ---- 1. the open: the curtain, the logo, the announcer over the theme
- stage();await SS.ready(['curtain','keyart:price-bid-off-logo','stage-row','stage-row-tall','stage-row-fold','stage-wheel','host','model','model-2',...ADS.map(a=>a[0]),'credits-bg','family-1','family-2','family-3','family-4','stage-showcase','stage-showcase-tall','stage-showcase-fold','cr-body-1','cr-body-2','cr-body-3','cr-body-4'],5000);if(!s.alive)return;
+ stage();await SS.ready(['curtain','keyart:price-bid-off-logo','stage-row','stage-row-tall','stage-row-fold','stage-wheel','host','model','model-2',...ADS.map(a=>a[0]),'credits-bg','host-bye','family-1','family-2','family-3','family-4','stage-showcase','stage-showcase-tall','stage-showcase-fold','cr-body-1','cr-body-2','cr-body-3','cr-body-4'],5000);if(!s.alive)return;
  snd.want(['v-ep-intro-1','v-ep-first-four','v-ep-star','v-ep-welcome-1','v-ep-welcome-2','v-ep-welcome-3','v-ep-welcome-tail','v-ep-break-1','v-ep-back','v-ep-family','v-ep-signoff','v-ep-credits-1','v-ep-credits-2','v-ep-tally','v-ep-tally-win',...ADS.flatMap(a=>[1,2,3].map(n=>`v-ep-ad-${a[3]}-${n}`))]);
  setScene({name:'open',cast:false,draw(g,W,H,t){ST.drawStage(g,W,H,'row',t);const logo=SS.picture('keyart:price-bid-off-logo'),k=ease((t-1.4)/1.1),pulse=1+.02*Math.sin(t*3);
   if(logo&&k>0){const w=Math.min(W*.86,H*1.3)*pulse,h=w*logo.height/logo.width;g.save();g.globalAlpha=k;g.translate(W/2,H*.42);g.scale(.6+.4*k,.6+.4*k);g.drawImage(logo,-w/2,-h/2,w,h);g.restore();}
@@ -130,7 +130,7 @@ async function episode(s,{alone=false}={}){
   txt(g,`${champE.name.toUpperCase()}`,W/2,H*.14,fs*2,'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:W*.9});txt(g,`${money(champE.total)} IN CASH AND PRIZES!`,W/2,H*.14+fs*2,fs*1.1,'#fff',{max:W*.9});}});
  snd.clip('big-winner',{max:7});sfx.applause?.(5,1);cast.cheer(6);say('Come on, everybody! Come on down here!',2600);await wait(5200);if(!s.alive)return;
  // ---- the sign-off
- setScene({name:'signoff',cast:false,draw(g,W,H,t,fs){ST.drawStage(g,W,H,'wheel',t);const h=Math.min(H*.92,W*.9),z=1+t*.01;ST.drawHost(g,W/2,H+h*.08,h*z,'talk',t);
+ setScene({name:'signoff',cast:false,draw(g,W,H,t,fs){ST.drawStage(g,W,H,'wheel',t);const h=Math.min(H*.92,W*.9),z=1+t*.01;const hb=SS.picture('host-bye'),B=SS.HOST_BYE;if(hb){const fi=B.frames.indexOf(t<4.6?'sincere':t<6.6?'wave':'bow'),k=h*z*1.08/B.h;g.drawImage(hb,fi*B.w,0,B.w,B.h,W/2-B.feet[0]*k,H+h*.08-B.feet[1]*k,B.w*k,B.h*k);}else ST.drawHost(g,W/2,H+h*.08,h*z,'talk',t);
   ST.drawModel(g,W*.14,H*.98,h*.7,t%1.6<.8?'wave':'present',t,0);ST.drawModel(g,W*.86,H*.98,h*.7,t%1.6<.8?'present':'wave',t,1,true);}});
  snd.title(true);snd.music(false);await wait(600);if(!s.alive)return;say('This is Bob Barker, reminding you: help control the pet population. Have your pets spayed or neutered. Bye bye, everybody!',7000);await wait(7000);if(!s.alive)return;
  // ---- the credits
