@@ -20,9 +20,10 @@ const SPELL=[[/\bRAV4\b/g,'Rav four'],[/\bCR-V\b/g,'C R V'],[/\bMX-5\b/g,'M X fi
 const spell=s=>SPELL.reduce((a,[re,to])=>a.replace(re,to),s);
 const say=s=>spell(s).replace(/\+/g,' Plus').replace(/\s*\(A16\)/,'').replace(/11-inch/,'eleven-inch').replace(/HERO13/,'Hero thirteen').replace(/CREAMi/,'Creamy').replace(/E-325/,'E three twenty-five').replace(/Pro 3\b/,'Pro three').replace(/Tundra 45/,'Tundra forty-five').replace(/Vitamix 5200/,'Vitamix fifty-two hundred').replace(/Switch 2\b/,'Switch two').replace(/Primavera 50\b/,'Primavera fifty');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function tts(text,ref){for(let i=0;i<5;i++){
- const r=await fetch('https://api.fish.audio/v1/tts',{method:'POST',headers:{'Authorization':'Bearer '+KEY,'Content-Type':'application/json','model':MODEL},
-  body:JSON.stringify({text,reference_id:ref,format:'mp3',mp3_bitrate:192,normalize:true,latency:'normal',temperature:.75,top_p:.75})});
+async function tts(text,ref){for(let i=0;i<8;i++){
+ let r;try{r=await fetch('https://api.fish.audio/v1/tts',{method:'POST',headers:{'Authorization':'Bearer '+KEY,'Content-Type':'application/json','model':MODEL},
+  body:JSON.stringify({text,reference_id:ref,format:'mp3',mp3_bitrate:192,normalize:true,latency:'normal',temperature:.75,top_p:.75})});}
+  catch(e){console.log('   network error, retrying:',e.cause?.code||e.message);await sleep(5000*(i+1));continue;}
  if(r.ok&&(r.headers.get('content-type')||'').includes('audio'))return Buffer.from(await r.arrayBuffer());
  const msg=await r.text().catch(()=>'');console.log('  ',r.status,msg.slice(0,120));if(r.status===401||r.status===402)throw new Error('fish.audio refused: '+r.status);await sleep(5000*(i+1));}
  throw new Error('gave up');}
