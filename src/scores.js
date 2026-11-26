@@ -32,8 +32,14 @@ async function loadTop(game){try{const r=await call('/scores/'+encodeURIComponen
 const entry=(game,{name,score,character})=>({game,name:String(name||'').slice(0,16),score:Math.max(0,Math.floor(score)||0),character:String(character||'').slice(0,64)});
 async function send(e){const r=await call('/scores/'+encodeURIComponent(e.game),{name:e.name,score:e.score,character:e.character,v:VERSION,install:installId()});remember(e.game,r.top);return r;}
 // queued scores, oldest first; a score the site refused as junk (400) is dropped, anything else waits for next time
+// scores a phone set but couldn't save, added by hand (owner, Nov 25: Hannah's Plinko run on Sean's phone closed before it
+// saved). Each goes into the outbox once per install; the site keeps each name's best, so two phones sending it is fine.
+const SEEDS=[{id:'hannah-plinko-22000',game:'plinko-show',name:'Hannah',score:22000,character:'uss-hannah'}];
+function seedScores(){const done=get('sc-score-seeds')||[],out=get(OUT)||[];let n=0;
+ for(const sd of SEEDS)if(!done.includes(sd.id)){out.push(entry(sd.game,sd));done.push(sd.id);n++;}
+ if(n){put(OUT,out.slice(-50));put('sc-score-seeds',done);}}
 let flushing=null;
-function flushScores(){return flushing||=(async()=>{const out=get(OUT)||[];const keep=[];
+function flushScores(){seedScores();return flushing||=(async()=>{const out=get(OUT)||[];const keep=[];
  for(const e of out){try{await send(e);}catch(err){if(!/answered 4(00|13)/.test(err.message))keep.push(e);}}
  put(OUT,keep.slice(-50));flushing=null;})();}
 // a finished run: {top, rank, best} from the site, or null when it waits in the outbox

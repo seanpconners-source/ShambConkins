@@ -41,9 +41,10 @@ async function fuzz(id) {
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(e.message.split('\n')[0]));
-  // file:// smoke tests cannot use Wikipedia's live page-image API; ignore only its expected CORS denial.
+  // the character-photo lookup on Wikipedia's live page-image API is denied when offline (file://: origin 'null') or rate-limited
+  // (429 answers carry no CORS header, so a served build sees a CORS denial too): ignore only that expected denial.
   // Other console and JavaScript errors must continue to fail the game fuzz test.
-  page.on('console', m => { const msg=m.text();const offlineWiki=/Access to fetch at 'https:\/\/(?:en\.wikipedia\.org|commons\.wikimedia\.org)\/w\/api\.php[^']*' from origin 'null' has been blocked by CORS policy/.test(msg);if(m.type()==='error'&&!offlineWiki&&!/ERR_|Failed to load resource/.test(msg))errs.push('console: '+msg.slice(0,200)); });
+  page.on('console', m => { const msg=m.text();const offlineWiki=/Access to fetch at 'https:\/\/(?:en\.wikipedia\.org|commons\.wikimedia\.org)\/w\/api\.php[^']*' from origin '[^']*' has been blocked by CORS policy/.test(msg);if(m.type()==='error'&&!offlineWiki&&!/ERR_|Failed to load resource/.test(msg))errs.push('console: '+msg.slice(0,200)); });
   await page.goto(file, {waitUntil: 'domcontentloaded', timeout: navTimeoutMs});
   await page.waitForTimeout(300);
   await page.evaluate(id => { window.ShambConkins.requestGame({id, origin: 'arcade'}); }, id);

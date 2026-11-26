@@ -10,8 +10,31 @@ const TAU=Math.PI*2;
 // ---- pictures
 function cover(g,img,W,H){const k=Math.max(W/img.width,H/img.height),w=img.width*k,h=img.height*k;g.drawImage(img,(W-w)/2,(H-h)/2,w,h);}
 // the studio behind everything; kind 'plinko' | 'wheel'
-function drawStage(g,W,H,kind,t){const pic=require("src/bgShape.js").pick(W,H,{tall:`stage-${kind}-tall`,wide:`stage-${kind}`,fold:`stage-${kind}-fold`},SS.picture);
- if(pic){cover(g,pic,W,H);return;}
+// a game without its own (empty) studio picture borrows another game's empty studio before the drawn one (Nov 25: GPT's first
+// Range/Safe/Race/Punch studios had the props painted in, so they were held back until empty versions come)
+const STAGE_BORROW={range:'wheel',race:'wheel',row:'wheel',punch:'plinko',safe:'clock'};
+// where the stage floor meets the back wall in each studio picture (fraction of its height; wide, tall, fold), measured on GPT's
+// pictures (the colourful sets by eye, the pink ones where the saturated wall stops). Things that stand on the stage (the host, the
+// models, the safe, the prize turntable...) stand at or below this line, never on the wall (owner, Nov 25: "not floating")
+const STAGE_FLOOR={safe:[.625,.644,.635],range:[.606,.659,.661],race:[.65,.654,.649],punch:[.658,.659,.658],row:[.626,.647,.626],
+ plinko:[.66,.65,.66],wheel:[.66,.66,.67],clock:[.65,.66,.66],cliff:[.66,.66,.66]};
+// the stage picture for this screen + how it's laid on it. floorY = put the picture's floor line at that screen y (zooms in as far as
+// it has to so the picture still covers the screen, at most ZMAX x); without it = plain cover. Drawn stage (no picture): floor at .63 H
+const ZMAX=1.7;
+function stageFit(W,H,kind,floorY){const pk=k=>require("src/bgShape.js").pick(W,H,{tall:`stage-${k}-tall`,wide:`stage-${k}`,fold:`stage-${k}-fold`},SS.picture);
+ let pic=pk(kind),fk=kind;if(!pic&&STAGE_BORROW[kind]){pic=pk(STAGE_BORROW[kind]);fk=STAGE_BORROW[kind];}
+ if(!pic)return {pic:null,floor:kind==='cliff'?H*.66:H*.63};
+ const iw=pic.width,ih=pic.height,sh=iw>ih*1.3?0:ih>iw*1.3?1:2,f=(STAGE_FLOOR[fk]||[.65,.65,.65])[sh],k0=Math.max(W/iw,H/ih);let k=k0,oy=(H-ih*k)/2;
+ if(floorY!=null){k=Math.min(k0*ZMAX,Math.max(k0,floorY/(f*ih),(H-floorY)/((1-f)*ih)));oy=Math.min(0,Math.max(H-ih*k,floorY-f*ih*k));}
+ return {pic,k,ox:(W-iw*k)/2,oy,floor:oy+f*ih*k};}
+// the floor line on screen for this game's stage (o.floorY as passed to drawStage)
+function floorAt(W,H,kind,floorY){return stageFit(W,H,kind,floorY).floor;}
+// a soft contact shadow on the floor under something standing at (x,y), w wide
+function floorShadow(g,x,y,w,a=.38){g.save();const r=g.createRadialGradient(x,y,0,x,y,w/2);r.addColorStop(0,`rgba(0,0,0,${a})`);r.addColorStop(.6,`rgba(0,0,0,${a*.45})`);r.addColorStop(1,'rgba(0,0,0,0)');
+ g.fillStyle=r;g.translate(x,y);g.scale(1,.16);g.translate(-x,-y);g.beginPath();g.arc(x,y,w/2,0,TAU);g.fill();g.restore();}
+function drawStage(g,W,H,kind,t,o={}){const F=stageFit(W,H,kind,o.floorY);
+ if(F.pic){g.drawImage(F.pic,F.ox,F.oy,F.pic.width*F.k,F.pic.height*F.k);return;}
+ if(kind==='cliff')return drawAlpine(g,W,H,t);
  const bg=g.createLinearGradient(0,0,0,H);bg.addColorStop(0,kind==='wheel'?'#1a0a3a':'#2a0a2e');bg.addColorStop(.62,kind==='wheel'?'#3a1666':'#5a1240');bg.addColorStop(.63,'#1a1410');bg.addColorStop(1,'#060504');g.fillStyle=bg;g.fillRect(0,0,W,H);
  // big round bulb discs and colour stripes like a 70s set
  const fy=H*.63,cols=['#ff4fa0','#ffb12b','#2fd0ff','#7dff5a','#b05cff','#ff5a3c'];
@@ -25,6 +48,16 @@ function drawStage(g,W,H,kind,t){const pic=require("src/bgShape.js").pick(W,H,{t
  const fl=g.createLinearGradient(0,fy,0,H);fl.addColorStop(0,'#3a2c1c');fl.addColorStop(1,'#0c0805');g.fillStyle=fl;g.fillRect(0,fy+4,W,H-fy);
  g.globalAlpha=.12;g.fillStyle='#ffe9a8';for(let i=0;i<7;i++){g.beginPath();g.ellipse(W*(i+.5)/7,fy+(H-fy)*.25,W*.05,(H-fy)*.1,0,0,TAU);g.fill();}g.globalAlpha=1;
  g.fillStyle='#000';for(let i=0;i<40;i++){const x=W*(i+.5)/40,y=H-2+Math.sin(i*2.3)*3,r=W/40*.62;g.beginPath();g.arc(x,y,r,Math.PI,0);g.fill();}}
+// Cliff Hangers' set (drawn until stage-cliff art arrives): a painted alpine sky backdrop framed by bulb-lit set pieces, stage floor
+function drawAlpine(g,W,H,t){const fy=H*.66,sky=g.createLinearGradient(0,0,0,fy);sky.addColorStop(0,'#2a6fc0');sky.addColorStop(1,'#bfe4ff');g.fillStyle=sky;g.fillRect(0,0,W,fy);
+ g.fillStyle='rgba(255,255,255,.85)';for(let i=0;i<6;i++){const cx=((i*.21+t*.004)%1.2-.1)*W,cy=H*(.08+.07*(i%3)),r=Math.min(W,H)*.05;g.beginPath();g.arc(cx,cy,r,0,TAU);g.arc(cx+r*1.1,cy+r*.2,r*.8,0,TAU);g.arc(cx-r*1.1,cy+r*.25,r*.7,0,TAU);g.fill();}
+ g.fillStyle='#d8e8f6';g.beginPath();g.moveTo(0,fy);for(let i=0;i<=8;i++)g.lineTo(W*i/8,fy-H*(.12+.1*((i*7)%3)/2));g.lineTo(W,fy);g.fill();
+ g.fillStyle='#3f7a46';g.beginPath();g.moveTo(0,fy);for(let i=0;i<=12;i++)g.lineTo(W*i/12,fy-H*(.03+.025*((i*5)%3)));g.lineTo(W,fy);g.fill();
+ // bulb-lit frame pillars at the sides and a marquee across the top
+ const pw=Math.max(14,W*.035);for(const x0 of [0,W-pw]){g.fillStyle='#5a1a6a';g.fillRect(x0,0,pw,fy);for(let y=pw*.6;y<fy;y+=pw*.9){const on=(Math.floor(y/pw)+Math.floor(t*6))%3===0;g.fillStyle=on?'#fff3b0':'#8a6a2a';g.beginPath();g.arc(x0+pw/2,y,pw*.22,0,TAU);g.fill();}}
+ const n=Math.round(W/22);for(let i=0;i<n;i++){const on=(i+Math.floor(t*8))%4<2;g.fillStyle=on?'#fff3b0':'#6e5420';g.beginPath();g.arc(W*(i+.5)/n,Math.max(6,H*.012),Math.max(2,W/n*.22),0,TAU);g.fill();}
+ const fl=g.createLinearGradient(0,fy,0,H);fl.addColorStop(0,'#3a2c1c');fl.addColorStop(1,'#0c0805');g.fillStyle=fl;g.fillRect(0,fy,W,H-fy);
+ g.globalAlpha=.12;g.fillStyle='#ffe9a8';for(let i=0;i<7;i++){g.beginPath();g.ellipse(W*(i+.5)/7,fy+(H-fy)*.25,W*.05,(H-fy)*.1,0,0,TAU);g.fill();}g.globalAlpha=1;}
 // the curtain going up (open 0 = shut, 1 = gone)
 function drawCurtain(g,W,H,open,t){if(open>=1)return;const y=-H*open*open*1.05,pic=SS.picture('curtain');g.save();g.translate(0,y);
  if(pic)cover(g,pic,W,H);else{const n=Math.ceil(W/38);for(let i=0;i<n;i++){const x=i*W/n,gr=g.createLinearGradient(x,0,x+W/n,0);gr.addColorStop(0,'#6a0a1e');gr.addColorStop(.5,'#c8183a');gr.addColorStop(1,'#5a0618');g.fillStyle=gr;g.fillRect(x,0,W/n+1,H);}
@@ -102,20 +135,50 @@ function moneyBanner(g,W,H,big,small,a=1,col='#ffe23a'){g.save();g.globalAlpha=a
 // levelled by TPIR_GAIN (beds to ~-20 LUFS, stings by their loudest moment to ~-13). A sound whose recording isn't in
 // (or hasn't decoded yet) plays the original synth kit below instead: brass + bass + drums bed, crowd, fanfares.
 let USERP={};try{USERP=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
-const TPIR_GAIN={'applause':0.6,'first-chip':0.92,'gay-winner':4.0,'barkers-bargain-bar':0.41,'bell':0.58,'big-winner':0.33,'bumper':0.72,'buzzer-losing-horn-2':0.69,'buzzer-losing-horn':0.46,'buzzer-overbid-2':0.92,'buzzer-overbid':0.92,'buzzer-wrong':0.37,'buzzer':0.57,'check-game':0.38,'cliff-hangers-crash-2':0.52,'cliff-hangers-crash':0.50,'cliff-hangers':0.28,'come-on-down':0.35,'consolation-prize':0.46,'credit-card':0.52,'ding':0.53,'grand-game':0.29,'hurdles-gun-2':1.11,'hurdles-gun':1.02,'hurdles':0.51,'ineligible':0.45,'losing-horn':0.51,'main-street':0.50,'new-car':0.25,'one-away-horn-2':0.51,'one-away-horn':0.35,'pathfinder-bell':0.45,'pathfinder-wrong':0.72,'penny-ante':0.52,'perfect-bid':0.45,'phone-home-game':0.43,'plinko':0.51,'race-game':0.43,'range-game':0.18,'safe-crackers':0.62,'showcase-1':0.42,'showcase-2':0.38,'showcase-3':0.35,'showcase-4':0.23,'showcase-showdown':0.38,'siren':0.44,'super-ball':0.30,'switcharoo':0.46,'theme':0.34,'train-2':0.58,'train-3':0.54,'train':0.55,'tugboat-2':0.69,'tugboat-3':0.64,'tugboat':0.54,'wheel-beep':0.30,'winner':0.48};
+const TPIR_GAIN={'wheel-dollar':1.16,'showcase-win':.64,'range-game-full':.28,'ding-ding-ding':1.6,'safe-creak':2.24,'safe-slam':1.16,'applause':0.6,'first-chip':0.92,'gay-winner':4.0,'barkers-bargain-bar':0.41,'bell':0.58,'big-winner':0.33,'bumper':0.72,'buzzer-losing-horn-2':0.69,'buzzer-losing-horn':0.46,'buzzer-overbid-2':0.92,'buzzer-overbid':0.92,'buzzer-wrong':0.37,'buzzer':0.57,'check-game':0.38,'cliff-hangers-crash-2':0.52,'cliff-hangers-crash':0.50,'cliff-hangers':0.28,'come-on-down':0.35,'consolation-prize':0.46,'credit-card':0.52,'ding':0.53,'grand-game':0.29,'hurdles-gun-2':1.11,'hurdles-gun':1.02,'hurdles':0.51,'ineligible':0.45,'losing-horn':0.51,'main-street':0.50,'new-car':0.25,'one-away-horn-2':0.51,'one-away-horn':0.35,'pathfinder-bell':0.45,'pathfinder-wrong':0.72,'penny-ante':0.52,'perfect-bid':0.45,'phone-home-game':0.43,'plinko':0.51,'race-game':0.43,'range-game':0.18,'safe-crackers':0.62,'showcase-1':0.42,'showcase-2':0.38,'showcase-3':0.35,'showcase-4':0.23,'showcase-showdown':0.38,'siren':0.44,'super-ball':0.30,'switcharoo':0.46,'theme':0.34,'train-2':0.58,'train-3':0.54,'train':0.55,'tugboat-2':0.69,'tugboat-3':0.64,'tugboat':0.54,'wheel-beep':0.30,'winner':0.48};
 const clipBufs={},clipLoading={};
 function loadClip(a,n){const url=USERP['music:tpir-'+n];if(!url||clipBufs[n]||clipLoading[n]||typeof fetch==='undefined')return;clipLoading[n]=1;
  fetch(url).then(r=>r.arrayBuffer()).then(b=>a.decodeAudioData(b)).then(buf=>{clipBufs[n]=buf;}).catch(()=>{clipLoading[n]=0;});}
+// VOICES AND THE AUDIENCE YELLING (owner, Nov 25: speech soundbites + "more crowd sounds yelling prices and chatter and cheering";
+// he'll find recordings): drop-in recordings assets/music/tpir-<key>.mp3 (or several takes tpir-<key>-1, -2 ... picked at random).
+// Every key is optional: a game asks for one and nothing plays when it isn't in. Keys: say-come-on-down, say-lets-play,
+// say-actual-retail-price, say-higher, say-lower, say-new-car, say-winner, say-sorry, say-showcase, say-pet-population,
+// crowd-shout (people yelling prices/advice), crowd-higher, crowd-lower, crowd-chatter (a murmur bed), crowd-ooh, crowd-aww, crowd-cheer.
+const VOICE_KEYS=['say-come-on-down','say-lets-play','say-actual-retail-price','say-higher','say-lower','say-new-car','say-winner','say-sorry','say-showcase','say-pet-population','crowd-shout','crowd-higher','crowd-lower','crowd-chatter','crowd-ooh','crowd-aww','crowd-cheer'];
+// the generated voices (src/data/tpirVoice.js, files tpir-v-<key>-<n>): they stand in for a say-* key with no real recording and speak
+// the host's bubble lines; levelled to -16 LUFS by the tool, VGAIN brings them in line with the show clips
+const TV=require("src/data/tpirVoice.js"),VGAIN=.95;
+const takesOf=k=>[k,...[1,2,3,4,5,6,7,8].map(i=>k+'-'+i)].filter(n=>USERP['music:tpir-'+n]);
 const SHOW_CLIPS=['theme','applause','gay-winner','come-on-down','bell','ding','buzzer','buzzer-wrong','buzzer-losing-horn','losing-horn','big-winner','winner','wheel-beep'];
 // opts.song = the recording looped under play ('plinko', 'showcase-showdown'); opts.clips = more to load
+// THE HOST AND THE MODELS IN EVERY PRICING GAME (owner, Nov 25: "include Bob Barker and the girls in each of the games...
+// just like the real show"). The host walks in from the side of the screen whenever he talks (and stays for the intro and
+// the result), a model glides in to present the prize, both cheer at a win. A game gives the spots each frame:
+// spots = {host:{x,y,h,side}, model:{x,y,h,side}} (y = feet, h = full height, side -1 = comes from the left edge, 1 = right).
+// Without spots they stand at the bottom corners. cast.step(dt,{host,model}) eases them in/out; cast.draw(g,W,H,t,spots).
+function createCast(){const C={hv:0,mv:0,mt:0,joy:0,hostPose:'talk',modelPose:'present',variant:0};
+ C.present=(secs=2.8,pose='present')=>{C.mt=Math.max(C.mt,secs);C.modelPose=pose;};
+ C.cheer=(secs=2.6)=>{C.joy=secs;C.mt=Math.max(C.mt,secs);};
+ C.step=(dt,{host=false,model=false}={})=>{C.mt=Math.max(0,C.mt-dt);C.joy=Math.max(0,C.joy-dt);const ht=host||C.joy>0?1:0,mt=model||C.mt>0?1:0;
+  C.hv+=(ht-C.hv)*Math.min(1,dt*(ht?5:3.5));C.mv+=(mt-C.mv)*Math.min(1,dt*(mt?4.5:3));};
+ C.spots=(W,H,o={})=>{const h=o.h||(W>H*1.15?H*.74:Math.min(H*.42,W*.62)),foot=o.foot??H-4;return {host:{x:h*.2,y:foot,h,side:-1},model:{x:W-h*.19,y:foot,h:h*.96,side:1}};};
+ C.draw=(g,W,H,t,sp,talking=false)=>{sp=sp||C.spots(W,H);const ease=v=>1-Math.pow(1-Math.max(0,Math.min(1,v)),3);
+  if(C.mv>.01){const M=sp.model,off=(1-ease(C.mv))*(M.side>0?W-M.x+M.h*.3:-(M.x+M.h*.3));g.save();g.globalAlpha=Math.min(1,C.mv*1.6);
+   floorShadow(g,M.x+off,M.y,M.h*.36,.34*Math.min(1,C.mv*1.6));drawModel(g,M.x+off,M.y,M.h,C.joy>0?'clap':C.modelPose,t,C.variant,M.side<0);g.restore();}
+  if(C.hv>.01){const Hs=sp.host,off=(1-ease(C.hv))*(Hs.side>0?W-Hs.x+Hs.h*.3:-(Hs.x+Hs.h*.3));g.save();g.globalAlpha=Math.min(1,C.hv*1.6);
+   floorShadow(g,Hs.x+off,Hs.y,Hs.h*.38,.36*Math.min(1,C.hv*1.6));drawHost(g,Hs.x+off,Hs.y,Hs.h,C.joy>0?'cheer':talking?(Math.floor(t*.7)%3===2?'point':'talk'):'point',t,Hs.side>0);g.restore();}};
+ // where his speech bubble goes: over his shoulder toward the middle of the screen, the tail at his mouth
+ C.bubbleAt=(W,H,sp,fs)=>{sp=sp||C.spots(W,H);const Hs=sp.host,mx=Hs.x+Hs.side*-Hs.h*.02,my=Hs.y-Hs.h*.9,w=Math.min(W*.62,fs*15);
+  const x=Math.max(w/2+6,Math.min(W-w/2-6,Hs.x-Hs.side*(Hs.h*.22+w*.4))),y=Math.max(fs*5,my-fs*.6);return {x,y,w,tx:mx,ty:my};};
+ return C;}
 function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;let A=null,out=null,musicOn=false,musicT=0,timer=null,noiseB=null;
  const ac=()=>{if(!on())return null;A=audioContext();if(!A)return null;if(!out){out=A.createGain();out.gain.value=.55;out.connect(A.destination);}return A;};
  let clipOut=null,bed=null,bedTimer=null,holdTo=0;const playing=new Set();
- const want=[...SHOW_CLIPS,...(opts.song?[opts.song]:[]),...(opts.clips||[])];
+ const want=[...SHOW_CLIPS,...VOICE_KEYS.flatMap(takesOf),...TV.linesFor(opts.voice).flatMap(k=>takesOf('v-'+k)),...(opts.song?[opts.song]:[]),...(opts.clips||[])];
  if(on()){const a=audioContext();if(a)want.forEach(n=>loadClip(a,n));}
  // play recording n now (or `at` s later); max = cut it short with a fade. Returns null if it isn't loaded (= use the synth)
  function clip(n,o={}){const a=ac(),b=clipBufs[n];if(!a||!b)return null;if(!clipOut){clipOut=a.createGain();clipOut.gain.value=1;clipOut.connect(a.destination);}
-  const rate=o.rate||1,off=o.off||0,full=(b.duration-off)/rate,t0=a.currentTime+(o.at||0),src=a.createBufferSource(),g=a.createGain(),v=(TPIR_GAIN[n]??.5)*(o.vol??1),len=o.max?Math.min(o.max,full):full,fo=o.fout??.45;
+  const rate=o.rate||1,off=o.off||0,full=(b.duration-off)/rate,t0=a.currentTime+(o.at||0),src=a.createBufferSource(),g=a.createGain(),v=(TPIR_GAIN[n]??(n.startsWith('v-')?VGAIN:.5))*(o.vol??1),len=o.max?Math.min(o.max,full):full,fo=o.fout??.45;
   src.buffer=b;src.playbackRate.value=rate;if(o.fin){g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v,t0+o.fin);}else g.gain.setValueAtTime(v,t0);
   if(len<full){g.gain.setValueAtTime(v,Math.max(t0+(o.fin||0),t0+len-fo));g.gain.linearRampToValueAtTime(.0001,t0+len);}
   let last=g;if(o.pan&&a.createStereoPanner){const pn=a.createStereoPanner();pn.pan.value=o.pan;g.connect(pn);last=pn;}
@@ -154,13 +217,19 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   dollar:()=>{for(let i=0;i<10;i++)tone(i%2?1568:2093,.09,{type:'square',vol:.05,at:i*.08});sfx.cheer(2.4,.2);},
   over:()=>{tone(180,.55,{type:'sawtooth',vol:.08,to:120});sfx.aww(.4);},
   buzz:()=>tone(110,.45,{type:'square',vol:.07}),
+  // a heavy steel door swinging shut: low thud + the latch catching (the safe; was the overbid buzzer)
+  clunk:()=>{tone(72,.42,{type:'sine',vol:.16,to:38});hiss(.14,{vol:.13,f:260,q:.7});tone(880,.05,{type:'square',vol:.03,at:.16});tone(1320,.04,{type:'square',vol:.02,at:.2});},
   cheer:(dur=1.6,vol=.13)=>{hiss(dur,{vol,f:1600,q:.6,swell:true});for(let i=0;i<Math.round(dur*14);i++)hiss(.04,{vol:vol*.6,f:2500+Math.random()*1500,q:3,at:Math.random()*dur*.85});},
   aww:(at=0)=>{const a=ac();if(!a)return;const t0=a.currentTime+at,src=a.createBufferSource(),bf=a.createBiquadFilter(),gn=a.createGain();src.buffer=noise();src.loop=true;bf.type='bandpass';bf.Q.value=4;bf.frequency.setValueAtTime(900,t0);bf.frequency.exponentialRampToValueAtTime(380,t0+1.2);
    gn.gain.setValueAtTime(0,t0);gn.gain.linearRampToValueAtTime(.16,t0+.2);gn.gain.exponentialRampToValueAtTime(.001,t0+1.3);src.connect(bf);bf.connect(gn);gn.connect(out);src.start(t0);src.stop(t0+1.4);},
   applause:(dur=2.2)=>{for(let i=0;i<Math.round(dur*30);i++)hiss(.035,{vol:.06,f:1800+Math.random()*2200,q:2.5,at:Math.random()*dur});},
   drumroll:(dur=1.4)=>{for(let i=0;i<Math.round(dur*26);i++)hiss(.03,{vol:.04+.06*i/(dur*26),f:2600,q:1.2,at:i/26});},
   comeOn:()=>{[523,523,659,784,1046].forEach((f,i)=>brass(f,i===4?.7:.12,i*.13,.05));sfx.cheer(2.8,.16);},
-  tick:()=>tone(1800,.015,{type:'square',vol:.025})};
+  // the Clock Game's ticking clock: a woody tock (body + click) every second, loud enough to hear over the crowd
+  tick:()=>{tone(1250,.06,{type:'triangle',vol:.11,att:.002});tone(2600,.022,{type:'square',vol:.035,att:.001});hiss(.025,{vol:.06,f:5200,q:3});},
+  // the Clock Game host's calls: a quick rising / falling chirp under the HIGHER! / LOWER! callout
+  higher:()=>{tone(523,.09,{type:'square',vol:.05,to:784});tone(784,.12,{type:'square',vol:.05,at:.09,to:1047});},
+  lower:()=>{tone(784,.09,{type:'square',vol:.05,to:523});tone(523,.12,{type:'square',vol:.05,at:.09,to:392});}};
  // the show's recordings over the synth versions (each falls back to the synth when its file isn't in)
  const syn={...sfx},rec=(n,o)=>clip(n,o);
  Object.assign(sfx,{
@@ -192,9 +261,28 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
  // TITLE: the show's main theme from the top while the curtain opens (owner: 'play the main theme during the title screen');
  // title(false) fades it out and lets the bed (or the synth vamp) start. Waits up to 1.5 s for the file to decode.
  let themeOn=false,themeH=null;
- async function title(onOff){if(onOff){if(!store.profile?.settings?.music)return;themeOn=true;clearInterval(timer);bedStop();const t0=Date.now();while(!clipBufs.theme&&Date.now()-t0<1500&&themeOn)await new Promise(r=>setTimeout(r,60));
-   if(!themeOn)return;themeH=clip('theme',{vol:1.15,fin:.05});if(!themeH){themeOn=false;const m=musicOn;musicOn=false;if(m)music(true);}return;}
+ async function title(onOff,{loop=false}={}){if(onOff){if(!store.profile?.settings?.music)return;themeOn=true;clearInterval(timer);bedStop();const t0=Date.now();while(!clipBufs.theme&&Date.now()-t0<1500&&themeOn)await new Promise(r=>setTimeout(r,60));
+   if(!themeOn)return;themeH=clip('theme',{vol:1.15,fin:.05});if(themeH&&loop){const h=themeH,src=h.src;src.onended=()=>{playing.delete(src);if(themeOn&&themeH===h)setTimeout(()=>{if(themeOn&&themeH===h){themeOn=false;title(true,{loop:true});}},2500);};}if(!themeH){themeOn=false;const m=musicOn;musicOn=false;if(m)music(true);}return;}
   if(!themeOn)return;themeOn=false;const a=A,h=themeH;themeH=null;if(h&&a){const t=a.currentTime;try{h.g.gain.cancelScheduledValues(t);h.g.gain.setValueAtTime(h.g.gain.value,t);h.g.gain.linearRampToValueAtTime(.0001,t+1.4);h.src.stop(t+1.5);}catch{}}
   holdTo=(a?a.currentTime:0)+1;if(musicOn){musicOn=false;music(true);}}
- return {sfx,music,title,clip,crowd,loaded:n=>!!clipBufs[n],stop:()=>{musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
-Object.assign(exports,{drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});
+ // one of the takes of a voice/crowd recording (null = none in: the caller carries on without it); never the same take twice running
+ // order: a real recording of the key, then o.alt (a generated line that fits better, e.g. with the player's name), then the generated
+ // stand-in v-<key>. The host never talks over himself: a new line cuts the one still playing (o.host)
+ const lastTake={};let hostClip=null,talkEnd=0;function take(key,o){const ns=takesOf(key).filter(n=>clipBufs[n]);if(!ns.length)return null;let n=ns[Math.floor(Math.random()*ns.length)];
+  if(ns.length>1&&n===lastTake[key])n=ns[(ns.indexOf(n)+1)%ns.length];lastTake[key]=n;return clip(n,o);}
+ function voice(key,o={}){const isSay=key.startsWith('say-')||key.startsWith('v-');if(isSay&&hostClip){try{hostClip.g.gain.setTargetAtTime(.0001,ac()?.currentTime||0,.03);hostClip.src.stop((ac()?.currentTime||0)+.15);}catch{}hostClip=null;}
+  const c=take(key,o)||(o.alt&&take(o.alt,o))||(!key.startsWith('v-')&&take('v-'+key,o));if(c&&isSay){hostClip=c;const a=ac();talkEnd=performance.now()+Math.max(0,c.end-(a?a.currentTime:0))*1000;}return c;}
+ // ms the host has still got to say (games let him finish before they move on) / cut him off (a tap that hurries the show)
+ const talking=()=>Math.max(0,talkEnd-performance.now());
+ function hush(){talkEnd=0;if(hostClip){try{const a=ac(),t0=a?a.currentTime:0;hostClip.g.gain.setTargetAtTime(.0001,t0,.03);hostClip.src.stop(t0+.15);}catch{}hostClip=null;}}
+ // the host says his bubble text out loud when there's a line for it (src/data/tpirVoice.js lineFor)
+ function speak(text,o={}){const k=TV.lineFor(text);if(!k)return null;return voice(k.startsWith('say-')?k:'v-'+k,o);}
+ // the audience murmuring under a game: the chatter recording looped if it's in, else the applause recording slowed and muffled
+ // into a low rumble of voices
+ let mur=null;function murmur(on){const a=ac();if(!on||!a){if(mur){try{const t=a?.currentTime||0;mur.g.gain.setTargetAtTime(.0001,t,.3);mur.src.stop(t+1.2);}catch{}mur=null;}return;}
+  if(mur)return;const own=takesOf('crowd-chatter').find(n=>clipBufs[n]),b=clipBufs[own||'applause'];if(!b)return;const src=a.createBufferSource(),g=a.createGain(),lp=a.createBiquadFilter();
+  src.buffer=b;src.loop=true;if(!own){src.playbackRate.value=.5;lp.type='lowpass';lp.frequency.value=620;}else{lp.type='allpass';}
+  g.gain.setValueAtTime(.0001,a.currentTime);g.gain.linearRampToValueAtTime(own?(TPIR_GAIN[own]??.5)*.6:.16,a.currentTime+1.2);
+  if(!clipOut){clipOut=a.createGain();clipOut.connect(a.destination);}src.connect(lp);lp.connect(g);g.connect(clipOut);src.start(a.currentTime,Math.random()*b.duration*.5);mur={src,g};}
+ return {sfx,music,title,clip,crowd,voice,speak,talking,hush,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
+Object.assign(exports,{STAGE_FLOOR,stageFit,floorAt,floorShadow,STAGE_BORROW,createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});

@@ -1,5 +1,69 @@
 # Changelog
 
+## v0.99.68
+
+- **Safe Crackers:** the show's real door creak and slam (instead of a buzzer), the host says exactly what's in his speech bubble, and nothing cuts him off.
+- **More show sounds:** the Big Wheel's dollar beeps and Showcase Showdown win cue, the full Range Game music, ding-ding-ding for all four in the Race Game.
+- **Sound log:** every sound on both Price Is Right soundboards is listed in docs/SOUND-SOURCES-TPIR.md, with the unused ones archived for later games.
+
+## v0.99.67
+
+- **The Price Is Right talks:** Bob Barker now says the host's lines out loud in every pricing game, and the announcer calls contestants down and presents the prizes on Contestants' Row ("It's a Nintendo Switch 2!"). He finishes his sentence before the show moves on; tap to hurry him. Real show recordings, when added, still play first.
+- **Real names on the show:** studio guests on Contestants' Row and the Big Wheel are characters from the game under their own names, and nobody gets called down twice in one game.
+- **Contestants' Row, podiums:** names only appear once that contestant is called down, and the podiums now come up to their waists like the show.
+- **The host and the models:** bigger in every pricing game and standing on the studio floor; on Contestants' Row they're as tall as the contestants.
+- **Nothing floating:** the safe, the prize turntable, the Range Game board and the Race Game podiums stand on the studio floor, with shadows.
+
+## v0.99.66
+
+- **Contestants' Row, all twelve contestants:** any of the 12 Price Is Right audience and contestant outfits can be called down now, and once in a while (about 1 in 50) someone shows up in a body from another one of our games.
+- **Contestants' Row, the walk-on:** contestants only appear once their name is called, then run in to podiums that stay put.
+- **Contestants' Row, the music:** the "Come on down" cue plays once for the whole run of call-downs instead of starting over on top of itself.
+- **The studio audience and contestants:** faces sit a little lower on the bodies, and shirt writing never shows up backwards.
+
+## v0.99.65
+
+- **The Price Is Right, Contestants' Row:** the one-bid game is here. Names get called from the audience ("COME ON DOWN!"), four contestants bid on each prize from their podiums, closest without going over wins, and a perfect bid pays $500 extra. It's the first card in The Price Is Right.
+- **The Price Is Right, the studio audience:** a packed house exactly like the real show (big red aisle, theater seats, rainbow curtains, studio lights) full of our characters in real show-audience clothes. They jump, clap, fist-pump and point when a name is called, and every so often someone from another game sneaks in.
+- **The Price Is Right, new studios:** Range Game, Safe Crackers, Race Game and Punch-a-Bunch now have their own real studio sets, and their props are real pictures too.
+- **The Warriors, cutscene faces:** the first shot of a cutscene now waits until everyone's real face has loaded, so no drawn heads show up.
+
+## v0.99.64
+
+- **The Price Is Right, Bob and the girls everywhere:** the host walks on to talk in every pricing game (Range Game, Safe Crackers, Race Game, Punch-a-Bunch, Cliff Hangers, The Clock Game), a model waves in for each contestant's turn, and both cheer when someone wins.
+- **The Price Is Right, the audience:** a studio-audience murmur now plays under the pricing games, and the game is ready for more voice and crowd recordings (Bob's lines, the audience yelling prices, "Higher!" / "Lower!", cheering).
+- **The Warriors, real-size props:** benches, gravestones, trash cans, crates, barrels, mailboxes, newsstands, lamp posts and cars are now the right size next to the fighters.
+- **The Warriors, cutscenes:** the heads sit on the bodies just like in the fights, everyone wears a real face from the game, and the painted backgrounds move with the camera so nobody slides around.
+- **The Warriors, full screen:** the street now fills the whole screen on the Fold and tall phones (no black band under the floor).
+- **The Warriors, new buttons:** punch, kick, jump and special are now shiny arcade buttons with icons.
+
+## v0.99.63
+
+- **The Warriors, two players online:** play the story together on two phones in one shared world, like Sean of a Gun, Mario and Seanic. You fight the same gangs side by side, lost lives come back next to your partner, and if you're out you watch until the area is cleared.
+- **The Warriors, spin kick:** the spinning kick now has its own painted animation for both heroes.
+- **Four new Price Is Right games:**
+  - **Range Game:** stop the rising red finder so the prize's price is inside it.
+  - **Safe Crackers:** put the prize's price digits in the right order to open the safe and win what's inside.
+  - **Race Game:** race the clock to put four price tags on four prizes, then pull the lever to see how many are right.
+  - **Punch-a-Bunch:** call higher or lower on four small prizes to earn punches, then punch the board for up to $25,000.
+- All four use the show's own music, play against the CPU, on one phone, online and on the board.
+- **The Big Wheel:** the made-up studio guest now wears the face of a random character from the game (still with a random name).
+
+## v0.99.62
+
+- **The Warriors, heads placed by hand:** every one of the 563 fighter poses now has its head where it belongs on the neck, turned and sized to fit (placed one by one in the Head Placer).
+- **The Warriors, real faces on the nameless:** enemies without their own art now wear real character faces from the game, and every so often beating one unlocks that character.
+- **Cliff Hangers and The Clock Game get their show look:** the painted mountain, the yodeler with his feathered hat, the contestant stand, the big lighted clock, the price display, the platform, both logos and the studio sets on every screen size.
+- **The Price Is Right:** the host and the models are much bigger in Plinko and The Big Wheel, and The Clock Game's clock now ticks out loud.
+- **Plinko scoreboard:** Hannah's $22,000 Plinko game (the one that closed before it could save) is now on the board.
+
+## v0.99.61
+
+- **The Price Is Right, all in one place:** Plinko and The Big Wheel now live inside one Arcade entry, The Price Is Right. The curtain goes up while the show's theme plays and you pick a pricing game from the title screen. (The old "Come On Down!" episode is retired; its art is the new entry's look.)
+- **New pricing game: Cliff Hangers.** Guess the prices of three small prizes; every dollar you're off sends the little yodeler one step up the mountain. Past step 25 he goes over the cliff. Make it and win a real grand prize.
+- **New pricing game: The Clock Game.** Thirty seconds on the big clock to price two real prizes exactly while the host calls "Higher!" or "Lower!". Win both for a $1,000 bonus.
+- Each pricing game keeps its own high score and scoreboard. Both new games play against the CPU, on one phone, online and on the board.
+
 ## v0.99.60
 - Warriors: heads placed by hand (Head Placer); cops stay one size; no black band in the backgrounds; spin-kick art slots (templates sent to GPT).
 

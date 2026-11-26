@@ -44,7 +44,7 @@ const SOLO_IDS={
  'trivia-mixed':'cpu','trivia-nick90':'cpu','trivia-dbz':'cpu','trivia-hxh':'cpu','trivia-sitcom':'cpu','trivia-hardcore':'cpu',
  'trivia-lightning':'cpu','trivia-wager':'cpu','trivia-survival':'cpu',
  'blackjack':'cpu','five-card':'cpu','roulette':'cpu','bond-baccarat':'cpu','full-shambyahtzee':'cpu','cheaters-yahtzee':'cpu',
- 'shamb-uno':'cpu','traitors-guess-who':'cpu','liars-dice':'cpu','battleship-fog':'cpu','simon-faceoff':'cpu','price-bid-off':'cpu','plinko-show':'cpu','big-wheel':'cpu',
+ 'shamb-uno':'cpu','traitors-guess-who':'cpu','liars-dice':'cpu','battleship-fog':'cpu','simon-faceoff':'cpu','price-bid-off':'cpu','plinko-show':'cpu','big-wheel':'cpu','cliff-hangers':'cpu','contestants-row':'cpu','range-game':'cpu','safe-crackers':'cpu','race-game':'cpu','punch-a-bunch':'cpu','clock-game':'cpu',
  'clue-whodunit':'cpu','clue-lineup':'cpu','monopoly-speed-die':'cpu','monopoly-auction':'cpu','smb3-nspade':'cpu',
  'django-hangman-wanted':'cpu','microgame-rush':'cpu','rush-marathon':'cpu',
  // batch 5: co-op games with a take-turns version (Space Swarm plays solo) keep a CPU teammate (engine sets s.solo.coop +
@@ -89,7 +89,7 @@ const NET_NATIVE=new Set(['flappy-disaster','angry-heads','banana-money-grab','m
  'four-lights','strategema-grid','full-shambyahtzee','cheaters-yahtzee',
  'blackjack','five-card','roulette','bond-baccarat','traitors-guess-who','battleship-fog',
  'liars-dice','clue-whodunit','monopoly-speed-die','monopoly-auction',
- 'simon-faceoff','price-bid-off','plinko-show','big-wheel','paddys-darts','django-hangman-showdown','django-hangman-wanted',
+ 'simon-faceoff','price-bid-off','plinko-show','big-wheel','cliff-hangers','clock-game','contestants-row','range-game','safe-crackers','race-game','punch-a-bunch','paddys-darts','django-hangman-showdown','django-hangman-wanted',
  'matrix-ultimate','greed-island-mancala','office-dots-boxes',
  'trek-mini-chess','wopr-grid','smb3-nspade','sqwordle','words-n-shit','crappy-crush','clue-lineup','django-hangman',
  'taskmaster-curling','bug-artillery','happy-gilmore-golf','color-of-money','paddys-eight-ball','kingpin-bowling','lebowski-bowling','baseketball-shootout','baseketball-hoop-jones',

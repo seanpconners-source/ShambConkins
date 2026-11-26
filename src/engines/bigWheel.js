@@ -26,20 +26,24 @@ function simSpin(a0,w0){const DT=1/240,out=[[a0,0]],clicks=[];let a=a0,w=w0,t=0,
  // the flapper settles it into the middle of the section it rests in
  const end=Math.round(a);for(let k=1;k<=12;k++){t+=1/60;out.push([a+(end-a)*(1-Math.pow(1-k/12,2)),t]);}
  return {path:out,clicks,end,travel:end-a0,value:valueAt(end),dur:t};}
-// the studio contestant (third podium): our own made-up audience member
-const GUESTS=[['DOLORES','#e86a92'],['BIG RON','#3a86ff'],['GLADYS','#ff9f1c'],['TEDDY','#2ec4b6'],['MARGE','#9b5de5'],['SAL','#f15bb5']];
+// the studio contestant (third podium): a random character from the game under its own name (owner, Nov 25: "use the real character
+// names from the game instead of the random names"; gameshow/guests.js: own picture + measured face, not the players'); drawn face = fallback
+const {faceSprite,headFacts}=require("src/headFacts.js");
+const {guestDeck}=require("src/engines/gameshow/guests.js");
 async function bigWheel(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#1a0a3a'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({song:'showcase-showdown'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
- const R=seededRandom(`${s.seed}:bigwheel`),gs=GUESTS[Math.floor(R()*GUESTS.length)];
+ const snd=ST.createShowSound({song:'showcase-showdown',voice:'wheel',clips:['wheel-dollar','showcase-win']}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const R=seededRandom(`${s.seed}:bigwheel`);
  // contestants: 0/1 players, 2 the studio guest (played by the game on every phone)
- const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gs[0],guest:true,color:gs[1]}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
+ const gst=guestDeck(s.seed,s.players.map(p=>p.character),'bigwheel:guest')()||{name:'Guest',short:'Guest',col:'#e86a92',id:null};
+ const C=[{name:names[0],p:0},{name:names[1],p:1},{name:gst.short,full:gst.name,guest:true,color:gst.col,face:gst.id}].map(o=>({...o,spins:[],total:0,over:false,bonus:0,mood:'normal'}));
  const order=[0,1,2];for(let k=2;k>0;k--){const j=Math.floor(R()*(k+1));[order[k],order[j]]=[order[j],order[k]];}
  const human=ci=>ci<2&&(net?ci===me:!(cpu&&ci===1));
- let W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=-1,ang=Math.floor(R()*N),spin=null,banner=null,hostSay=null,hostPose='talk',modelPose='present',hurry=false,choice=null,chooseBtns=[],drag=null,shake=0;
- const wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||hurry||performance.now()>=end){hurry=false;r();return;}setTimeout(f,30);};f();});
- const say=(text,ms=2400,pose='talk')=>{hostSay={text,t:ms/1000};hostPose=pose;};
+ let murOn=false,W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=-1,ang=Math.floor(R()*N),spin=null,banner=null,hostSay=null,hostPose='talk',modelPose='present',hurry=false,choice=null,chooseBtns=[],drag=null,shake=0;
+ // waits let the host finish what he's saying (not online: both phones keep the same pace); a tap hurries the show and cuts him off
+ const wait=ms=>new Promise(r=>{const end=performance.now()+Math.max(ms,net?0:snd.talking());const f=()=>{if(!s.alive||hurry||performance.now()>=end){if(hurry)snd.hush();hurry=false;r();return;}setTimeout(f,30);};f();});
+ const say=(text,ms=2400,pose='talk')=>{hostSay={text,t:ms/1000};hostPose=pose;if(snd.speak(text))hostSay.t=Math.max(hostSay.t,snd.talking()/1000+.3);};
  let L={};function layout(){W=s.W;H=s.H;const wide=W>H*1.15,top=(fb.top||40)+6,fs=clamp(Math.min(W,H)*.04,12,20);
   const wh=wide?H-top-16:Math.min(H*.66,H-top-fs*7),ww=Math.min(wh*.6,wide?W*.3:W*.62),wx=W/2-ww/2,wy=wide?top+8:top+fs*2.2;
   L={wide,top,fs,wx,wy,ww,wh,cx:W/2,cy:wy+wh/2};}
@@ -73,7 +77,7 @@ async function bigWheel(s){
  function podiums(g){const fs=L.fs,n=3,wide=L.wide,pw=wide?Math.min(W*.2,fs*9):Math.min((W-24)/3,fs*8),ph=fs*4.6;
   order.forEach((ci,k)=>{const c2=C[ci],x0=wide?10:8+k*(pw+4),y0=wide?L.top+fs*3+k*(ph+8):H-ph-10,on=ci===cur;
    g.fillStyle=on?'rgba(255,226,58,.95)':'rgba(20,6,46,.85)';g.beginPath();g.roundRect(x0,y0,pw,ph,10);g.fill();g.strokeStyle='#ffd75a';g.lineWidth=2;g.stroke();
-   const fx=x0+fs*1.6,fy=y0+fs*1.9;if(c2.guest){guestFace(g,fx,fy,fs*1.25,c2.color,c2.mood);}else s.sprite(g,c2.p,fx,fy,fs*2.6,{exact:true,still:true,mood:c2.mood});
+   const fx=x0+fs*1.6,fy=y0+fs*1.9;if(c2.guest){const sp=c2.face&&faceSprite(c2.face,headFacts(c2.face,c2.mood)?c2.mood:'normal',fs*1.7,1);if(sp)g.drawImage(sp.cv,fx+sp.x,fy+sp.y);else guestFace(g,fx,fy,fs*1.25,c2.color,c2.mood);}else s.sprite(g,c2.p,fx,fy,fs*2.6,{exact:true,still:true,mood:c2.mood});
    ST.nameTag(g,fx,y0+ph-fs*.85,fs*2.6,c2.name.slice(0,9));
    g.fillStyle=on?'#14062e':'#fff';g.textAlign='right';g.textBaseline='middle';g.font=`900 ${fs*1.9}px "SC Bangers",Impact,sans-serif`;
    g.fillText(c2.over?'OVER':c2.spins.length?label(c2.total):'—',x0+pw-8,y0+fs*1.8);g.font=`800 ${fs*.62}px "SC Nunito",sans-serif`;
@@ -84,7 +88,7 @@ async function bigWheel(s){
   if(mood==='sad')g.arc(x0,y0+r*.6,r*.3,Math.PI*1.15,Math.PI*1.85);else g.arc(x0,y0+r*.25,r*.35,.2,Math.PI-.2);g.stroke();g.restore();}
  const txtC=(g,s2,x0,y0,size,col)=>{g.save();g.font=`900 ${size}px "SC Nunito",sans-serif`;g.textAlign='center';g.textBaseline='middle';g.lineWidth=size*.3;g.strokeStyle='rgba(0,0,0,.7)';g.strokeText(s2,x0,y0);g.fillStyle=col;g.fillText(s2,x0,y0);g.restore();};
  function draw(){layout();x.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);const g=x,fs=L.fs;ST.drawStage(g,W,H,'wheel',t);
-  const hostH=L.wide?H*.6:Math.min(H*.26,W*.36),hx=L.wide?W-W*.09:W*.86,hy=L.wide?H*.97:H-fs*5.6;
+  const hostH=L.wide?H*.84:Math.min(H*.4,W*.8),hx=L.wide?W-W*.09:Math.min(W*.86,W-hostH*.19),hy=L.wide?H*.97:H-fs*5.6;
   if(L.wide){ST.drawModel(g,L.wx-L.ww*.32,H*.97,hostH*.92,modelPose,t,0);ST.drawModel(g,L.wx+L.ww*1.3,H*.97,hostH*.9,modelPose,t+1,1,true);}
   g.save();if(shake){g.translate(Math.sin(t*90)*shake*4,0);}drawWheel(g);g.restore();
   ST.drawLogo(g,'wheel-logo','THE BIG WHEEL',W/2,Math.max(L.top+fs*.6,L.wy-fs*.4),Math.min(W*.46,fs*15),t,{cols:['#ffe23a','#ff8a1e']});
@@ -138,14 +142,14 @@ async function bigWheel(s){
  function shouldSpin(ci){const c2=C[ci],best=bestSoFar(),left=order.slice(order.indexOf(ci)+1).length,v=c2.total;if(v<best||v===best&&left===0)return true;
   const sk=c2.guest?.85:cpuSkill(s);return v<(left?60:50)+(1-sk)*10;}
  function reactTo(ci,v,second){const c2=C[ci],tot=c2.total;
-  if(tot===100){c2.mood='win';sfx.dollar();banner={big:'ONE DOLLAR!',small:'$1,000 and a bonus spin!',t:2.4,col:'#ffe23a'};say('A DOLLAR! You win a thousand dollars!',2400,'cheer');modelPose='clap';vibrate([40,60,40,60,120]);}
+  if(tot===100){c2.mood='win';if(snd.clip('wheel-dollar'))sfx.cheer(2.4,.2);else sfx.dollar();banner={big:'ONE DOLLAR!',small:'$1,000 and a bonus spin!',t:2.4,col:'#ffe23a'};say('A DOLLAR! You win a thousand dollars!',2400,'cheer');modelPose='clap';vibrate([40,60,40,60,120]);}
   else if(c2.over){c2.mood='sad';sfx.over();banner={big:'OVER!',small:`${label(tot)}: over a dollar`,t:2,col:'#ff6a5a'};say('Oh, you went over. I\'m sorry.',2000);}
   else{sfx.ding();c2.mood=tot>=80?'win':'normal';banner={big:label(v),small:second?`TOTAL ${label(tot)}`:'',t:1.4,col:'#fff'};if(tot>=85)sfx.applause(1.4);}}
  async function bonusSpin(ci){const c2=C[ci];cur=ci;banner={big:'BONUS SPIN!',small:'5 or 15 wins $10,000 · the dollar wins $25,000',t:2.2,col:'#7dff5a'};await wait(2200);
   const v=await oneSpin(ci,true);if(v==null)return;const win=v===100?25000:v===5||v===15?10000:0;c2.bonus=1000+win;
   if(win){sfx.jackpot(true);banner={big:money(win)+'!',small:'BONUS SPIN WINNER!',t:2.6,col:'#ffe23a'};modelPose='clap';say('Unbelievable!',2200,'cheer');}else{sfx.ding();banner={big:label(v),small:'Still $1,000!',t:1.8,col:'#fff'};}await wait(2400);}
  // ---- frame
- s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;
+ s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;{const pl=mode!=='intro'&&mode!=='over';if(pl!==murOn){murOn=pl;snd.murmur?.(pl);}}
   if(mode==='intro'){introT+=dt;curtain=clamp((introT-.4)/1.4,0,1);}
   if(hostSay){hostSay.t-=dt;if(hostSay.t<=0){hostSay=null;hostPose='talk';}}
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}
@@ -156,9 +160,9 @@ async function bigWheel(s){
  s.debug={snd,get mode(){return mode;},C,order,get cur(){return cur;},simSpin,valueAt,spin:(w0=16)=>startSpin(w0),choose:id=>choose(id),set hurry(v){hurry=!!v;},
   bot:net?()=>{if(!human(cur))return '';if(mode==='pull'){startSpin(10+Math.random()*12);return 'spin';}if(mode==='choose'){choose(C[cur].total<55?'again':'stay');return 'choose';}hurry=true;return '';}:null};
  // ---- the show
- if(!await s.pass(0,net?'THE BIG WHEEL online: three contestants, closest to $1.00 without going over wins.':cpu?`THE BIG WHEEL vs ${names[1]} and a studio contestant: pull the wheel down hard, closest to $1.00 without going over wins.`:'THE BIG WHEEL: two players and a studio contestant. Pull the wheel down hard; closest to $1.00 without going over wins.','Come on down!'))return;
+ if(!s.fromMenu&&!await s.pass(0,net?'THE BIG WHEEL online: three contestants, closest to $1.00 without going over wins.':cpu?`THE BIG WHEEL vs ${names[1]} and a studio contestant: pull the wheel down hard, closest to $1.00 without going over wins.`:'THE BIG WHEEL: two players and a studio contestant. Pull the wheel down hard; closest to $1.00 without going over wins.','Come on down!'))return;
  await SS.ready(['stage-wheel','stage-wheel-tall','curtain','wheel-frame','wheel-logo','host','model','model-2','nametag'],5000);
- snd.title(true);snd.music(true);snd.crowd(3.2,.9,{at:.3});mode='intro';introT=0;
+ if(!s.fromMenu)snd.title(true);snd.music(true);snd.crowd(3.2,.9,{at:.3});mode='intro';introT=0;
  banner={big:'SHOWCASE SHOWDOWN!',small:C.map(o=>o.name.toUpperCase()).join(' · '),t:2.6,col:'#ffe23a'};await wait(2600);
  say('Time to spin the big wheel! Closest to a dollar without going over wins.',2600,'point');introT=Math.max(introT,2.3);await wait(2600);snd.title(false);
  for(const ci of order){if(!s.alive)return;await turn(ci);if(!s.alive)return;
@@ -171,7 +175,7 @@ async function bigWheel(s){
   for(const ci of top){cur=ci;const v=await oneSpin(ci,true);if(v==null)return;got.push(v);banner={big:label(v),small:C[ci].name.toUpperCase(),t:1.4,col:'#fff'};sfx.ding();await wait(1400);}
   const mx=Math.max(...got);top=top.filter((ci,k)=>got[k]===mx);}
  const w=top[0];mode='over';cur=w;snd.music(false);C[w].mood='win';
- banner={big:`${C[w].name.toUpperCase()} WINS!`,small:'On to the Showcase!',t:3,col:'#ffe23a'};if(w<2)sfx.winner();else sfx.jackpot();modelPose='clap';say(`${C[w].name}, you're going to the Showcase!`,3000,'cheer');if(w<2)s.react?.(w,'win');
+ banner={big:`${C[w].name.toUpperCase()} WINS!`,small:'On to the Showcase!',t:3,col:'#ffe23a'};if(!snd.clip('showcase-win',{max:9,fout:1.4})){if(w<2)sfx.winner();else sfx.jackpot();}else sfx.applause(3,.7);modelPose='clap';say(`${C[w].name}, you're going to the Showcase!`,3000,'cheer');if(w<2)s.react?.(w,'win');
  await wait(3200);
  const score=i=>(C[i].over?0:C[i].total)+(i===w?200:0)+Math.round(C[i].bonus/100);
  s.finish([score(0),score(1)],`THE BIG WHEEL · ${C.map(o=>`${o.name} ${o.over?'over':label(o.total)}`).join(' · ')} · ${C[w].name} wins`);}

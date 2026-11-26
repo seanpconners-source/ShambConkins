@@ -60,7 +60,7 @@ input[type=range]{width:100%;accent-color:var(--blue)}
  <div><h1>Warriors Head Placer</h1><div class="status" id="status">Loading…</div></div>
  <div class="progress" id="progress"></div>
 </div>
-<p class="help">Drag the head where it belongs on the neck. Use two fingers to turn and resize it, or the sliders. Arrow keys nudge it 1 px. <b>Lock in</b> saves it and moves to the next pose. Every change saves as you go, so you can stop any time.</p>
+<p class="help">Drag the head where it belongs on the neck (the gang sheets wear real faces now: tap <b>Try another face</b> to check the spot on a different head). Use two fingers to turn and resize it, or the sliders. Arrow keys nudge it 1 px. <b>Lock in</b> saves it and moves to the next pose. Every change saves as you go, so you can stop any time.</p>
 <div class="chips" id="chips"></div>
 <div class="main">
  <section class="editor" aria-label="Place the head">
@@ -76,6 +76,7 @@ input[type=range]{width:100%;accent-color:var(--blue)}
    <button class="btn" id="copy">Same as last pose</button><button class="btn" id="reset">Reset</button>
    <button class="btn" id="mirror" aria-pressed="false">Face left</button>
    <button class="btn" id="behind" aria-pressed="false">Head behind body</button>
+   <button class="btn" id="otherface" hidden>Try another face ↻</button>
   </div>
   <div class="row"><button class="btn primary" id="lock">Lock in ✓</button><button class="btn" id="unlock" hidden>Unlock</button></div>
  </section>
@@ -87,7 +88,9 @@ input[type=range]{width:100%;accent-color:var(--blue)}
 
 <script>
 const $=id=>document.getElementById(id);
-const S={data:null,sheet:0,cell:0,saved:{},imgs:{},faces:{},db:null,mirror:false,last:null};
+const S={data:null,sheet:0,cell:0,saved:{},imgs:{},faces:{},db:null,mirror:false,last:null,gf:{}};
+// the gang sheets wear real faces (data.gangFaces), one per sheet to start; "Try another face" cycles them
+function faceKey(sh){if(sh.face!=='gang')return sh.face;const L=S.data.gangFaces||[];if(!L.length)return null;const i=S.data.sheets.indexOf(sh);return L[((S.gf[sh.id]??i)%L.length+L.length)%L.length];}
 const key=(sh,c)=>sh.id+'--'+c.p;
 const cur=()=>{const sh=S.data.sheets[S.sheet];return [sh,sh.cells[S.cell]];};
 // a pose's placement: what was saved, else the automatic spot [x,y,angle,size]
@@ -96,7 +99,7 @@ function behind(sh,c){const s=S.saved[key(sh,c)];return s&&s.b!=null?!!s.b:!!c.b
 function isMoved(sh,c){const s=S.saved[key(sh,c)];if(!s)return false;const d=c.d;return Math.abs(s.x-d[0])>.4||Math.abs(s.y-d[1])>.4||Math.abs(s.a-d[2])>.4||Math.abs(s.s-d[3])>.004;}
 // the face as the game draws it: the FACE box (brow to chin) 30 cell px wide x size, centred on (x,y), turned by angle
 function drawHead(g,sh,x,y,a,s){const fw=30*s;g.save();g.translate(x,y);g.rotate(a*Math.PI/180);
- const F=S.faces[sh.face];
+ const F=S.faces[faceKey(sh)];
  if(F&&F.img.complete&&F.img.naturalWidth){const [fx,fy,fW,fH]=F.f,ar=F.aspect,wk=ar>=1?1:ar,hk=ar>=1?1/ar:1,L=fw/(fW*wk),w=L*wk,h=L*hk;
   const dx=(.5-(fx+fW/2))*w,dy=(.5-(fy+fH/2))*h;g.drawImage(F.img,dx-w/2,dy-h/2,w,h);}
  else{// gangs wear a drawn head: same spot and size
@@ -135,6 +138,7 @@ function renderEditor(){const [sh,c]=cur();if(!c)return;const pl=place(sh,c),st=
  // game size: a fighter cell is drawn at about 0.4x on a phone
  const m=$('mini'),g=m.getContext('2d');drawCell(m,sh,c,pl);
  const bh=behind(sh,c);$('behind').setAttribute('aria-pressed',bh);$('behind').textContent=bh?'Head behind body ✓':'Head behind body';$('behind').style.borderColor=bh?'var(--blue)':'';
+ $('otherface').hidden=sh.face!=='gang'||!(S.data.gangFaces||[]).length;
  $('prev').disabled=S.cell===0;$('next').disabled=S.cell===sh.cells.length-1;$('copy').disabled=S.cell===0&&!S.last;}
 function renderAll(){renderChips();renderGrid();renderEditor();}
 // edits: every change saves (debounced); Lock in saves with locked:true and moves on
@@ -153,6 +157,7 @@ $('lock').onclick=()=>{const [sh,c]=cur();setPlace(place(sh,c),{locked:true});re
  const j=sh.cells.findIndex((cc,i)=>i>S.cell&&!S.saved[key(sh,cc)]?.locked);if(j>=0){S.cell=j;renderEditor();markGrid();}};
 $('unlock').onclick=()=>{const [sh,c]=cur();setPlace(place(sh,c),{locked:false});renderChips();};
 $('behind').onclick=()=>{const [sh,c]=cur(),k=key(sh,c),now=!behind(sh,c),p=place(sh,c);S.saved[k]={...(S.saved[k]||{x:p[0],y:p[1],a:p[2],s:p[3]}),b:now?1:0};setPlace(p);};
+$('otherface').onclick=()=>{const [sh]=cur(),i=S.data.sheets.indexOf(sh);S.gf[sh.id]=(S.gf[sh.id]??i)+1;renderGrid();renderEditor();};
 $('mirror').onclick=()=>{S.mirror=!S.mirror;$('mirror').setAttribute('aria-pressed',S.mirror);$('mirror').textContent=S.mirror?'Face right':'Face left';renderEditor();};
 $('ang').oninput=e=>{const [sh,c]=cur(),p=place(sh,c);p[2]=+e.target.value;setPlace(p);};
 $('siz').oninput=e=>{const [sh,c]=cur(),p=place(sh,c);p[3]=e.target.value/100;setPlace(p);};

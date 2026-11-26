@@ -175,16 +175,22 @@ const RUSH={train:3200,trainDawn:1400};
 // the connecting doors at the car ends (enemies come through them), drawn over a wall picture
 function carDoors(g,c){const y0=c.B*.08,wy=c.B*.22;for(const dx of c.A.doors||[]){const X=dx-c.cam;if(X<-60||X>c.vw+60)continue;rect(g,'#5c6468',X-22,y0,44,c.B-y0);rect(g,'#2c3034',X-14,y0+12,28,c.B-y0-12);rect(g,'#0c0c10',X-8,wy+4,16,22);g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1.5;g.strokeRect(X-22,y0,44,c.B-y0);}}
 // draw an area's backdrop (far + wall + floor): pictures first, else the drawn painter
-function drawArea(g,A,camX,vw,BACK,FRONT,t){const c={A,cam:camX,vw,B:BACK,F:FRONT,t},P=K[A.kind]||K.elstreet;
+// ext = {top,bot}: the world y the screen shows above/below the play band (owner, Nov 25: no black band under the floor on the
+// Fold and tall phones): the far picture grows up to the top, the floor carries on below mirrored and darkening
+function drawArea(g,A,camX,vw,BACK,FRONT,t,ext){const c={A,cam:camX,vw,B:BACK,F:FRONT,t},P=K[A.kind]||K.elstreet;
  const far=pic(A.kind,'far'),wall=pic(A.kind,'wall'),floor=pic(A.kind,'floor');
  // a moving train: the tunnel / the dawn city outside rushes past the windows by the clock
  // the far picture runs from above the top of the view down to the floor line (owner, Nov 24: it used to stop at 80% of the
  // way down and left a black band wherever the wall picture is see-through at the top); bigger, the horizon stays about put
- if(far)tilePic(g,far,camX+(A.moving?t*(RUSH[A.kind]||600):0),.25,vw,-70,BACK+74);else P.far(g,c);
+ const fTop=Math.min(-70,ext?.top??-70);if(far)tilePic(g,far,camX+(A.moving?t*(RUSH[A.kind]||600):0),.25,vw,fTop,BACK+4-fTop);else P.far(g,c);
  // the wall band; a subway car interior fills it from the ceiling down (WALL_TOP)
  const wt=WALL_TOP[A.kind]??.46;
  if(wall){tilePic(g,wall,camX,1,vw,BACK*wt,BACK*(1-wt));if(A.moving)carDoors(g,c);}else P.wall(g,c);
  if(floor)tilePic(g,floor,camX,1,vw,BACK,FRONT-BACK+60);else P.floor(g,c);
+ const fb=FRONT+60;if(ext?.bot>fb){const hh=FRONT-BACK+60;
+  if(floor){for(let y=fb,i=0;y<ext.bot;y+=hh,i++){g.save();if(i%2===0){g.translate(0,2*y);g.scale(1,-1);tilePic(g,floor,camX,1,vw,y-hh,hh);}else tilePic(g,floor,camX,1,vw,y,hh);g.restore();}}
+  else{g.fillStyle='#0c0b0a';g.fillRect(0,fb,vw,ext.bot-fb);}
+  const gr=g.createLinearGradient(0,fb,0,ext.bot);gr.addColorStop(0,'rgba(0,0,0,.15)');gr.addColorStop(1,'rgba(0,0,0,.62)');g.fillStyle=gr;g.fillRect(0,fb,vw,ext.bot-fb);}
  // pits: open graves, a trench in the rail yard
  for(const [a,b,d0,d1] of A.pits||[]){const X0=a-camX,X1=b-camX;if(X1<-30||X0>vw+30)continue;const y0=BACK+Math.max(0,d0),y1=Math.min(FRONT,BACK+d1),sk=(y1-y0)/(FRONT-BACK)*18;
   // a mound of dirt behind an open grave, a lip round a trench
@@ -197,10 +203,14 @@ function drawArea(g,A,camX,vw,BACK,FRONT,t){const c={A,cam:camX,vw,B:BACK,F:FRON
 // (Nov 24, GPT's photo props in: the small street pieces and graves were ~60% of real size next to a fighter, so they are drawn
 // ~1.4x their old width; the collision footprint is unchanged and the base still sits on its front edge)
 const PROP_W={car:1.05,wreck:1.05,newsstand:1.45,bench:1.15,couch:1.1,swings:1.1,hotdog:1.15,grave:1.75,hydrant:2.2,meter:2.8,mailbox:1.95,trashcan:1.9,phone:1.95,lamp:3.2,pylon:2,sink:1.8};
+// real size next to a fighter (owner, Nov 25: benches, graves, trash cans way too small): the width each painted prop picture
+// is drawn at so the thing in it stands its real height (a fighter is ~90 units = 1.8 m, so 50 units a metre; bench 0.95 m,
+// headstone 1 m, trash can 0.95 m, mailbox 1.25 m, newsstand 2 m, lamp post 4.4 m...). The footprints in story.js match.
+const PROP_FULLW={'bench':85,'grave-1':40,'grave-2':40,'grave-3':40,'grave-4':57,'hydrant':29,'trashcan':43,'mailbox':50,'meter':23,'newsstand':152,'phone':58,'lamp':66,'pylon':23,'hotdog':134,'car':210,'wreck':200,'couch':91,'swings':156,'sink':43};
 function drawBlock(g,b,X,yb,yf,t){const w=b.w,k=b.kind,box=(h,front,top)=>{rect(g,top,X,yb-h,w,yf-yb);rect(g,front,X,yf-h,w,h);g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1;g.strokeRect(X,yf-h,w,h);};
  g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(X+w/2,yf,w*.6,4,0,0,7);g.fill();
  // a painted prop (ddSprites prop-<kind>): as wide as the footprint (cars/newsstands a touch wider), standing on the front edge
- const im=DS.picture('prop-'+k);if(im){const pw=w*(PROP_W[k.split('-')[0]]||1.2),ph=pw*im.height/im.width;g.drawImage(im,X+w/2-pw/2,yf-ph+2,pw,ph);return;}
+ const im=DS.picture('prop-'+k);if(im){const pw=PROP_FULLW[k]||PROP_FULLW[k.split('-')[0]]||w*(PROP_W[k.split('-')[0]]||1.2),ph=pw*im.height/im.width;g.drawImage(im,X+w/2-pw/2,yf-ph+2,pw,ph);return;}
  const kk=k.split('-')[0],v=+(k.split('-')[1]||1);
  if(kk==='grave'){const st=v===2?'#7c7c84':v===3?'#5c5c64':'#6c6c78',H=v===3?40:v===4?20:28;g.fillStyle=st;g.strokeStyle='#22222a';g.lineWidth=1;
   if(v===2){g.fillRect(X+w*.4,yf-H-6,w*.2,H+6);g.fillRect(X+w*.12,yf-H+4,w*.76,w*.2);g.fillRect(X,yf-6,w,6);g.strokeRect(X,yf-6,w,6);}

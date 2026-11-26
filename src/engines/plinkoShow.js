@@ -36,13 +36,14 @@ const HOST_LINES={intro:['Here\'s a game a whole lot of people love to watch...'
 async function plinko(s){
  const [c,x]=s.canvas(900,560,{fill:true});const fb=fullBleed(s,{bg:'#14062e'});
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
- const snd=ST.createShowSound({song:'plinko',clips:['first-chip']}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
+ const snd=ST.createShowSound({song:'plinko',clips:['first-chip'],voice:'plinko'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const mine=i=>net?i===me:!(cpu&&i===1);
- let W=s.W,H=s.H,t=0,mode='intro',introT=0,cur=0,curtain=0,banner=null,hostSay=null,modelPose='present',hostPose='talk',hurry=false,cheerT=0;
+ let murOn=false,W=s.W,H=s.H,t=0,mode='intro',introT=0,cur=0,curtain=0,banner=null,hostSay=null,modelPose='present',hostPose='talk',hurry=false,cheerT=0;
  const P=names.map(()=>({won:0,chips:1,dropped:0,picks:[]}));
  let prizes=[],pick=null,aim=BW/2,dragging=false,chip=null,lit=new Map(),pops=[],landed=[],boardCv=null,boardKey='';
- const wait=ms=>new Promise(r=>{const end=performance.now()+ms;const f=()=>{if(!s.alive||hurry||performance.now()>=end){hurry=false;r();return;}setTimeout(f,30);};f();});
- const say=(text,ms=2400,pose='talk')=>{hostSay={text,t:ms/1000};hostPose=pose;};
+ // waits let the host finish what he's saying (not online: both phones keep the same pace); a tap hurries the show and cuts him off
+ const wait=ms=>new Promise(r=>{const end=performance.now()+Math.max(ms,net?0:snd.talking());const f=()=>{if(!s.alive||hurry||performance.now()>=end){if(hurry)snd.hush();hurry=false;r();return;}setTimeout(f,30);};f();});
+ const say=(text,ms=2400,pose='talk')=>{hostSay={text,t:ms/1000};hostPose=pose;if(snd.speak(text))hostSay.t=Math.max(hostSay.t,snd.talking()/1000+.3);};
  // ---- layout: board box on screen
  let L={};function layout(){W=s.W;H=s.H;const wide=W>H*1.15,top=(fb.top||40)+6,fs=clamp(Math.min(W,H)*.04,12,20),strip=fs*3.4+16;
   if(wide){const bh=H-top-10,k=Math.min(bh/BH,W*.5/BW),bw=BW*k,h2=BH*k,bx=(W-bw)/2,by=top+(H-top-h2)/2,side=W-bx-bw,lw=Math.min(side*.9,fs*14);
@@ -70,7 +71,7 @@ async function plinko(s){
  function draw(){layout();x.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);const g=x,fs=L.fs;ST.drawStage(g,W,H,'plinko',t);
   const showBoard=mode!=='intro'||introT>2.2;
   // host and models: beside the board when wide, small at the bottom corners when tall
-  const hostH=L.wide?H*.62:Math.min(H*.3,W*.42),hx=L.wide?L.bx*.45:W*.13,hy=L.wide?H*.96:H-4;
+  const hostH=L.wide?H*.86:Math.min(H*.44,W*.88),hx=L.wide?L.bx*.45:Math.max(W*.13,hostH*.19),hy=L.wide?H*.96:H-4;
   if(showBoard){const bc=boardLayer();g.drawImage(bc,L.bx,L.by,bc.width/(Math.min(2,window.devicePixelRatio||1)),bc.height/(Math.min(2,window.devicePixelRatio||1)));
    for(const [i,v] of lit){const [px,py]=PEGS[i];g.fillStyle=`rgba(255,247,170,${v})`;g.beginPath();g.arc(bxp(px),byp(py),(PEG_R+6*v)*L.k,0,TAU);g.fill();}
    ST.drawLogo(g,'plinko-logo','PLINKO',L.logo.x,L.logo.y,L.logo.w,t);
@@ -79,7 +80,7 @@ async function plinko(s){
    if(chip){const q=chip.pos;drawChip(g,bxp(q[0]),byp(q[1]),CHIP_R*L.k);}
    for(const l of landed)drawChip(g,bxp(l[0]),byp(l[1]),CHIP_R*L.k*.92,.85);
    for(const p of pops){g.save();g.globalAlpha=Math.min(1,p.t*3)*Math.min(1,(1.6-p.t)*2);g.font=`900 ${fs*2.2}px "SC Bangers",Impact,sans-serif`;g.textAlign='center';g.lineWidth=fs*.3;g.strokeStyle='#000';const yy=byp(SLOT_Y-40)-p.t*fs*3;g.strokeText(p.v?money(p.v):'$0',bxp(p.x),yy);g.fillStyle=p.v>=10000?'#ffe23a':p.v?'#fff':'#ff6a5a';g.fillText(p.v?money(p.v):'$0',bxp(p.x),yy);g.restore();}}
-  if(L.wide||mode==='intro'||mode==='price'){ST.drawHost(g,hx,hy,hostH,hostPose,t);ST.drawModel(g,W-(L.wide?L.bx*.45:W*.12),hy,hostH*.95,modelPose,t,0,true);if(L.wide)ST.drawModel(g,W-L.bx*.18,hy,hostH*.9,modelPose,t+1,1,true);}
+  if(L.wide||mode==='intro'||mode==='price'){ST.drawHost(g,hx,hy,hostH,hostPose,t);ST.drawModel(g,W-(L.wide?L.bx*.45:Math.max(W*.12,hostH*.18)),hy,hostH*.95,modelPose,t,0,true);if(L.wide)ST.drawModel(g,W-L.bx*.18,hy,hostH*.9,modelPose,t+1,1,true);}
   // contestants' tags + money
   P.forEach((p,i)=>{const w=Math.min(W*.42,fs*11),x0=i?W-w-8:8,y0=H-fs*3.4-8;if(L.wide&&mode!=='over'){}g.fillStyle=i===cur?'rgba(255,226,58,.92)':'rgba(20,6,46,.78)';g.beginPath();g.roundRect(x0,y0,w,fs*3.2,10);g.fill();
    s.sprite(g,i,x0+fs*1.5,y0+fs*1.6,fs*2.4,{exact:true,still:true,mood:p.mood||'normal'});g.fillStyle=i===cur?'#14062e':'#fff';g.font=`900 ${fs*.9}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';
@@ -148,7 +149,7 @@ async function plinko(s){
   else if(!v){say(HOST_LINES.zero,1800,'talk');}
   chip=null;mode='landed';setTimeout(()=>{const d=dropDone;dropDone=null;d?.();},v>=10000?2300:1100);}
  // the watcher keeps the slot the player's phone reports
- s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;
+ s.frame(dt=>{dt=Math.min(dt,.05);t+=dt;{const pl=mode!=='intro'&&mode!=='over';if(pl!==murOn){murOn=pl;snd.murmur?.(pl);}}
   if(mode==='intro'){introT+=dt;curtain=clamp((introT-.4)/1.4,0,1);}
   if(hostSay){hostSay.t-=dt;if(hostSay.t<=0){hostSay=null;hostPose='talk';}}
   if(banner){banner.t-=dt;if(banner.t<=0)banner=null;}
@@ -164,10 +165,10 @@ async function plinko(s){
  const origNext=net?net.next.bind(net):null;
  if(net){net.next=async()=>{for(;;){const m=await origNext();if(m&&m.l){remoteSlot=m.l;continue;}return m;}};}
  // ---- the show
- if(!await s.pass(0,net?'PLINKO online: take turns. Price four small prizes to win chips, then drop them for up to $50,000.':cpu?`PLINKO vs ${names[1]}. Price four small prizes to win chips, then drop them down the board. Most money wins.`:'PLINKO: two contestants. Price four small prizes to win chips, then drop them for up to $50,000. Most money wins.','Come on down!'))return;
+ if(!s.fromMenu&&!await s.pass(0,net?'PLINKO online: take turns. Price four small prizes to win chips, then drop them for up to $50,000.':cpu?`PLINKO vs ${names[1]}. Price four small prizes to win chips, then drop them down the board. Most money wins.`:'PLINKO: two contestants. Price four small prizes to win chips, then drop them for up to $50,000. Most money wins.','Come on down!'))return;
  await SS.ready(['stage-plinko','stage-plinko-tall','curtain','plinko-board','plinko-chip','plinko-logo','host','model','model-2','nametag'],5000);
- snd.title(true);snd.music(true);snd.crowd(3.2,.9,{at:.3});
- mode='intro';introT=0;banner={big:'COME ON DOWN!',small:names.map(n=>n.toUpperCase()).join(' · '),t:2.6,col:'#ffe23a'};await wait(2600);
+ if(!s.fromMenu)snd.title(true);snd.music(true);snd.crowd(3.2,.9,{at:.3});
+ mode='intro';introT=0;banner={big:'COME ON DOWN!',small:names.map(n=>n.toUpperCase()).join(' · '),t:2.6,col:'#ffe23a'};snd.voice?.('say-come-on-down');await wait(2600);
  say(HOST_LINES.intro[0],2200);await wait(2200);say(HOST_LINES.intro[1],1800,'cheer');modelPose='present';sfx.fanfare();introT=Math.max(introT,2.3);await wait(1800);snd.title(false);
  for(let i=0;i<2;i++){if(!s.alive)return;cur=i;if(i===1&&!net&&!cpu&&!board){snd.music(false);if(!await s.pass(1,`${names[1]}, come on down! Your turn at PLINKO.`,'Play'))return;snd.music(true);}
   banner={big:names[i].toUpperCase(),small:'IT\'S YOUR TURN AT PLINKO!',t:1.8,col:'#fff'};sfx.applause(1.8,.55);await wait(1800);

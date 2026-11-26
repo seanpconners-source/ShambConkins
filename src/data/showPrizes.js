@@ -26,10 +26,21 @@ const PRIZES=[
  ['silly-putty','Silly Putty, 6 eggs',12,'🥚'],['koosh','Koosh ball',10,'🔴'],['nintendo-controller','Nintendo Switch Pro Controller',75,'🎮'],
  ['spam','Spam, a case of 12 cans',50,'🥫'],['twinkies','Twinkies, 4 boxes',24,'🧁'],['rice-a-roni','Rice-A-Roni, 12 boxes',25,'🍚'],
  ['heinz','Heinz ketchup, 6 big bottles',30,'🍅'],['camp-stove','Backpacking camp stove',40,'🔥']];
+// GRAND PRIZES for the pricing games that play for one big prize (Cliff Hangers): real products, US starting price / list price
+// checked Nov 24 2026 (Sea-Doo's US page: 2026 Spark from $6,999; MotoHunt/Autotrader: 2026 Vespa Primavera 50 base MSRP $4,449;
+// onepeloton.com: Bike+ $2,695 list). Photo slot = the same prize:<id> (assets/prizes/<id>.webp) when one is added.
+const GRAND_PRIZES=[['sea-doo-spark','a Sea-Doo Spark personal watercraft',6999,'🚤'],['vespa-primavera','a Vespa Primavera 50 scooter',4449,'🛵'],['peloton-bike-plus','a Peloton Bike+',2695,'🚴']];
+// MID PRIZES ($100-$999, whole dollars like the show's price displays) for the Clock Game: real products, US list price checked
+// Nov 24 2026 (Nintendo Switch 2 $499.99 since Sept 1 2026; KitchenAid Artisan 5 qt $499.99 regular; AirPods Pro 3 $249; YETI Tundra 45
+// $325 on yeti.com; Vitamix 5200 $549.99 list; GoPro HERO13 Black $429.99 at Best Buy; Weber Spirit E-325 LP $549 list; iPad 11-inch
+// A16 128 GB $449 after the June 2026 rise; Ninja CREAMi 7-in-1 NC301 $229.99 list). Left out: PS5 (sources disagree on the price).
+const MID_PRIZES=[['switch-2','Nintendo Switch 2',500,'🎮'],['kitchenaid-artisan','KitchenAid Artisan stand mixer',500,'🥣'],['airpods-pro-3','Apple AirPods Pro 3',249,'🎧'],
+ ['yeti-tundra-45','YETI Tundra 45 cooler',325,'🧊'],['vitamix-5200','Vitamix 5200 blender',550,'🥤'],['gopro-hero13','GoPro HERO13 Black',430,'📷'],
+ ['weber-spirit-e325','Weber Spirit E-325 gas grill',549,'🔥'],['ipad-a16','Apple iPad 11-inch (A16)',449,'📱'],['ninja-creami','Ninja CREAMi ice cream maker',230,'🍦']];
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 const imgs=new Map();
 // the prize's photo once it has loaded (null until then / when missing: draw the emoji)
 function prizePhoto(id){const url=USER['prize:'+id];if(!url||typeof Image==='undefined')return null;let e=imgs.get(id);
  if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(id,e);}return e.ok?e.img:null;}
 const hasPhoto=id=>!!USER['prize:'+id];
-Object.assign(exports,{PRIZES,PRICES_AS_OF,prizePhoto,hasPhoto});
+Object.assign(exports,{MID_PRIZES,GRAND_PRIZES,PRIZES,PRICES_AS_OF,prizePhoto,hasPhoto});

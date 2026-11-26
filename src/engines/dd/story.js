@@ -135,7 +135,9 @@ const parse=(str,f)=>String(str||'').split(' ').filter(Boolean).map(f);
 // extra fights; later chapters also bring more enemies per wave and more on screen at once
 const stretch=ch=>1.4+ch*.03;
 // what stands about in each kind of area, and how often (every N world units); sizes = footprint [width, depth] in world units
-const PROP_SIZE={grave:[16,8],hydrant:[9,6],meter:[5,5],newsstand:[40,14],mailbox:[13,9],trashcan:[13,9],phone:[16,12],bench:[30,10],lamp:[8,6],hotdog:[34,14],pylon:[8,6]};
+const PROP_SIZE={grave:[30,10],hydrant:[22,8],meter:[12,6],newsstand:[128,22],mailbox:[33,12],trashcan:[29,12],phone:[40,14],bench:[66,14],lamp:[10,6],hotdog:[86,20],pylon:[18,8]};
+// placed blocks (bench@x:w:d...) grow to their real size round their middle (Nov 25, props at real scale: see scenes.js PROP_FULLW)
+const BLOCK_W={bench:66,grave:30,'grave-4':48,car:180,wreck:170,couch:76,swings:130,sink:27,lamp:10,newsstand:128,hotdog:86,trashcan:29,mailbox:33,phone:40,hydrant:22,pylon:18};
 const STREET={every:240,kinds:['hydrant','meter','meter','newsstand','mailbox','trashcan','trashcan','phone','pylon']};
 const DECOR={cemetery:{every:60,front:.5,gap:10,kinds:['grave-1','grave-2','grave-3','grave-4','grave-1','grave-3']},conclave:{every:330,kinds:['trashcan','lamp','bench']},
  park:{every:300,kinds:['bench','trashcan','lamp']},riverside:{every:300,kinds:['bench','trashcan','lamp']},playground:{every:300,kinds:['trashcan','bench','pylon']},
@@ -157,7 +159,7 @@ function buildArea(ch,ai,seed){const C=CHAPTERS[ch],A0=C.areas[ai],r=seededRando
  const waves=A.waves.map((w,wi)=>({at:w.at,max:2+Math.min(4,Math.floor(ch/2)),list:w.list.map((type,i)=>({type,side:i%2?-1:1,door:w.door&&doors.length&&r()<.6?doors[Math.floor(r()*doors.length)]:null,delay:i*.75+r()*.5,d:r()*DEPTH}))}));
  const items=parse(A.items,q=>{const [k,x]=q.split('@');return {kind:k,x:+x,d:20+r()*(DEPTH-40)};});
  const props=parse(A.props,q=>{const [k,x]=q.split('@');return {kind:k,x:+x,d:14+r()*(DEPTH-28),hides:r()<.5?['chicken','burger','pizza'][Math.floor(r()*3)]:null};});
- const blocks=parse(A.blocks,q=>{const [k,rest]=q.split('@'),[x,w,d]=rest.split(':').map(Number);const dd={bench:18,grave:12,car:30,wreck:34,lamp:8,swings:14,couch:22,sink:16}[k]||16;return {kind:k,x,w,d0:d,d1:d+dd};});
+ const blocks=parse(A.blocks,q=>{const [k,rest]=q.split('@'),[x,w,d]=rest.split(':').map(Number);const dd={bench:18,grave:12,car:30,wreck:34,lamp:8,swings:14,couch:22,sink:16}[k]||16,nw=Math.max(w,BLOCK_W[k]||BLOCK_W[k.split('-')[0]]||0);return {kind:k,x:Math.round(x-(nw-w)/2),w:nw,d0:d,d1:d+dd};});
  const pits=parse(A.pits,q=>{const [x,w,d0,dd]=q.split(':').map(Number);return d0!=null&&!isNaN(d0)?[x,x+w,d0,d0+dd]:[x,x+w,-99,999];});
  // street furniture and graves scattered along the floor (owner, Nov 24: way more of them, the game should look awesome); most
  // stand by the back wall, some in the foreground at the front edge. Seeded, kept off pits, other blocks and the area's ends.
