@@ -75,6 +75,10 @@ assets/originals/music/tpir-realmofdarkness/1-a.mp3, and `1-st` (0.08 s, empty).
 https://www.101soundboards.com/boards/33350-the-price-is-right-sfx (files on tank.101soundboards.com; the page's links
 carry a signed ?verify= token that expires, so re-open the board page to get fresh ones). All 28 are archived as
 assets/originals/music/tpir-101soundboards/<slug>.mp3.
+**Every file from this board starts with a robotic voice reading the board's name ("...dot com") followed by a short digital silence.**
+The game copies have that cut off (Nov 26: the owner heard a robot woman's "com.." in Safe Crackers): safe-creak from 1.02 s,
+safe-slam 2.02, showcase-win 0.40, range-game-full 1.54, ding-ding-ding 1.42 (cut at the first digital silence, re-encoded 192 kbps mono;
+wheel-dollar has no watermark). Cut any new file from this board the same way (scratch gap.py idea: first >=60 ms run of near-silence).
 
 | Sound | Page | Length | In game | Notes |
 |---|---|---|---|---|

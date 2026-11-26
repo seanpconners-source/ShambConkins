@@ -83,9 +83,10 @@ async function safeCrackers(s){
  async function play(i){const p=P[i];K.cur=i;if(!doorOpen)snd.clip('safe-creak',{max:2,fout:.5});doorOpen=true;dialRoll=-1;
   if(/^a new /.test(p.big.name)){K.show('A NEW CAR!',p.big.name.replace(/^a new /,'').toUpperCase(),2.6,'#ffe23a');snd.voice('say-new-car');sfx.cheer?.(2.4,.16);await K.wait(2600);if(!s.alive)return;}
   K.say(`In the safe: ${p.small.name} and ${p.big.name}! The combination is the price of the ${p.small.name}.`,3600);await K.wait(3600);if(!s.alive)return;
-  // the show's own door: tpir-safe-slam = the door swinging, a beat, then the slam (at 1.9 s); start it 1.2 s in so the slam lands as
+  // the show's own door: tpir-safe-slam = the slam right at the start (Nov 26: the soundboard's spoken '...dot com' watermark cut off the front of
+  // every 101soundboards clip; the old start at 1.2 s played its tail = the robot 'com..' the owner heard); the slam lands as
   // the door shuts on screen; drawn thud if the recording isn't in
-  if(snd.clip('safe-slam',{off:1.2})){await K.sleep(650);doorOpen=false;vibrate(30);await K.sleep(500);}else{doorOpen=false;sfx.clunk?.();vibrate(30);await K.sleep(450);}
+  if(snd.clip('safe-slam')){await K.sleep(120);doorOpen=false;vibrate(30);await K.sleep(500);}else{doorOpen=false;sfx.clunk?.();vibrate(30);await K.sleep(450);}
   // the digits are on the tiles: the host says only what's in his bubble (owner, Nov 25: lines must match the screen)
   K.say('Here are your three digits. Use each one once. You get one try!',3000);await K.wait(1200);
   K.mode='input';snd.music(true);
