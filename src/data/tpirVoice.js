@@ -92,14 +92,25 @@ for(const n of NAMED){const k=n.toLowerCase();
 // the prizes: the announcer presents each one on Contestants' Row ("It's a ...!"), the host names the grand prizes in the Range Game
 // and Cliff Hangers (the text is built exactly the way those games build their bubbles)
 const art=n=>/^(a|an|the) /i.test(n)?n:'a '+n;
-for(const [id,name] of [...SP.MID_PRIZES,...SP.GRAND_PRIZES])LINES.push([`its-${id}`,RICH,`It's ${art(name)}!`,`It's ${art(name)}!`,['row'],1]);
-for(const [id,name] of SP.GRAND_PRIZES){
- LINES.push([`range-for-${id}`,BOB,`You're playing for ${name}! The range finder covers fifteen hundred dollars. Stop it when you think the price is inside.`,`You're playing for ${name}! The range finder covers $1,500. Stop it when you think the price is inside.`,['range'],1]);
- LINES.push([`cliff-won-${id}`,BOB,`He made it! You win ${name}!`,`He made it! You win ${name}!`,['cliff'],1]);}
-// Safe Crackers says exactly what its bubble says: one line per pair it can deal (smaller prize = a MID prize whose price has three
-// different digits, the game's own rule; bigger = a grand prize)
-for(const [sid,sname,sprice] of SP.MID_PRIZES.filter(q=>new Set(String(q[2])).size===String(q[2]).length&&String(q[2]).length===3))for(const [gid,gname] of SP.GRAND_PRIZES)
- LINES.push([`safe-in-${sid}--${gid}`,BOB,`In the safe: ${sname} and ${gname}! The combination is the price of the ${sname}.`,`In the safe: ${sname} and ${gname}! The combination is the price of the ${sname}.`,['safe'],1]);
+// "It's a ...!": the announcer presents a prize (Contestants' Row, the episode's prizes and showcases): one line per catalog prize
+for(const [id,name] of [...SP.BID_PRIZES,...SP.MID_PRIZES,...SP.GRAND_PRIZES,...SP.CARS,...SP.TRIPS,...SP.BIG])LINES.push([`its-${id}`,RICH,`It's ${art(name)}!`,`It's ${art(name)}!`,['prize'],1]);
+// PRIZE NAMES IN THE HOST'S SENTENCES (owner, Nov 26: hundreds of prizes): a bubble with a prize name in it is said in pieces, the host's
+// words around it (p-*) + the name on its own (pn-<id>), played back to back (stage.js speak -> partsFor). One clip per prize instead of
+// one per sentence and prize (Safe Crackers alone would need thousands).
+for(const [id,name] of [...SP.PRIZES,...SP.MID_PRIZES,...SP.GRAND_PRIZES,...SP.CARS,...SP.TRIPS,...SP.BIG,...SP.BID_PRIZES])LINES.push([`pn-${id}`,BOB,`${name}.`,null,['prize'],1]);
+LINES.push(['p-safe-in',BOB,'In the safe...',null,['safe'],1],['p-and',BOB,'and...',null,ALL,1],['p-safe-combo',BOB,'The combination is the price of the...',null,['safe'],1],
+ ['p-range-for',BOB,'You\'re playing for...',null,['range'],1],['p-range-rest',BOB,'The range finder covers fifteen hundred dollars. Stop it when you think the price is inside.',null,['range'],1],
+ ['p-cliff-won',BOB,'He made it! You win...',null,['cliff'],1],['p-cliff-first',BOB,'First prize...',null,['cliff'],1],['p-cliff-next',BOB,'Next...',null,['cliff'],1],['p-cliff-last',BOB,'Last one...',null,['cliff'],1]);
+const NAME_ID=new Map();for(const r of SP.ALL)if(!NAME_ID.has(r[1].toLowerCase()))NAME_ID.set(r[1].toLowerCase(),r[0]);
+for(const r of SP.CARS)NAME_ID.set(('a new '+r[1]).toLowerCase(),r[0]);
+const pn=name=>{const id=NAME_ID.get(String(name).toLowerCase().trim());return id?'pn-'+id:null;};
+// sentence templates: regex -> parts (a string = a p-* key; a number = that capture is a prize name)
+const PARTS=[[/^In the safe: (.+) and (.+)! The combination is the price of the (.+)\.$/,['p-safe-in',1,'p-and',2,'p-safe-combo',3]],
+ [/^You're playing for (.+)! The range finder covers \$1,500\. Stop it when you think the price is inside\.$/,['p-range-for',1,'p-range-rest']],
+ [/^He made it! You win (.+)!$/,['p-cliff-won',1]],[/^First prize: (.+)\. What do you think it costs\?$/,['p-cliff-first',1,'cliff-cost']],
+ [/^Next: (.+)\.$/,['p-cliff-next',1]],[/^Last one: (.+)\. He's on step \d+\.$/,['p-cliff-last',1]]];
+// the keys to say a bubble in pieces (null = no template fits, or a name with no clip)
+function partsFor(text){for(const [re,parts] of PARTS){const m=String(text).match(re);if(!m)continue;const out=[];for(const q of parts){const k=typeof q==='number'?pn(m[q]):q;if(!k)return null;out.push(k);}return out;}return null;}
 const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const EXACT=new Map(LINES.filter(l=>typeof l[3]==='string').map(l=>[norm(l[3]),l[0]]));
 const PATTERNS=LINES.filter(l=>l[3] instanceof RegExp);
@@ -107,4 +118,4 @@ const PATTERNS=LINES.filter(l=>l[3] instanceof RegExp);
 function lineFor(text){const e=EXACT.get(norm(text));if(e)return e;const p=PATTERNS.find(l=>l[3].test(text));return p?p[0]:null;}
 // keys a game should load (its own lines + the shared ones)
 function linesFor(kind){return LINES.filter(l=>l[4]===ALL||(kind&&l[4].includes(kind))).map(l=>l[0]);}
-Object.assign(exports,{LINES,VOICE_MODELS,NAMED,lineFor,linesFor,norm});
+Object.assign(exports,{LINES,VOICE_MODELS,NAMED,lineFor,linesFor,partsFor,pn,norm});

@@ -37,10 +37,17 @@ const GRAND_PRIZES=[['sea-doo-spark','a Sea-Doo Spark personal watercraft',6999,
 const MID_PRIZES=[['switch-2','Nintendo Switch 2',500,'🎮'],['kitchenaid-artisan','KitchenAid Artisan stand mixer',500,'🥣'],['airpods-pro-3','Apple AirPods Pro 3',249,'🎧'],
  ['yeti-tundra-45','YETI Tundra 45 cooler',325,'🧊'],['vitamix-5200','Vitamix 5200 blender',550,'🥤'],['gopro-hero13','GoPro HERO13 Black',430,'📷'],
  ['weber-spirit-e325','Weber Spirit E-325 gas grill',549,'🔥'],['ipad-a16','Apple iPad 11-inch (A16)',449,'📱'],['ninja-creami','Ninja CREAMi ice cream maker',230,'🍦']];
+// the big catalog (src/data/showCatalog.js, owner Nov 26: hundreds of real items placed like the show places them) joins the lists
+// above; rows there carry a 5th field (kind) the games may ignore
+const CAT=require("src/data/showCatalog.js");
+PRIZES.push(...CAT.SMALL);MID_PRIZES.push(...CAT.MID);GRAND_PRIZES.push(...CAT.GRAND);
+const BID_PRIZES=CAT.BID,CARS=CAT.CARS,TRIPS=CAT.TRIPS,BIG=CAT.BIG,GROCERY=CAT.GROCERY;
+const ALL=[...PRIZES,...MID_PRIZES,...BID_PRIZES,...GRAND_PRIZES,...CARS,...TRIPS,...BIG],BY_ID=Object.fromEntries(ALL.map(p=>[p[0],p]));
+const SHOWCASES=CAT.SHOWCASES.map(([id,theme,intro,items])=>{const it=items.map(i=>BY_ID[i]).filter(Boolean);return {id,theme,intro,items:it,total:it.reduce((a,p)=>a+p[2],0)};});
 let USER={};try{USER=require("src/data/userPortraits.js").USER_PORTRAITS||{};}catch{}
 const imgs=new Map();
 // the prize's photo once it has loaded (null until then / when missing: draw the emoji)
 function prizePhoto(id){const url=USER['prize:'+id];if(!url||typeof Image==='undefined')return null;let e=imgs.get(id);
  if(!e){e={img:new Image(),ok:false};e.img.decoding='async';e.img.onload=()=>{e.ok=true;};e.img.src=url;imgs.set(id,e);}return e.ok?e.img:null;}
 const hasPhoto=id=>!!USER['prize:'+id];
-Object.assign(exports,{MID_PRIZES,GRAND_PRIZES,PRIZES,PRICES_AS_OF,prizePhoto,hasPhoto});
+Object.assign(exports,{MID_PRIZES,GRAND_PRIZES,PRIZES,BID_PRIZES,CARS,TRIPS,BIG,GROCERY,SHOWCASES,ALL,BY_ID,PRICES_AS_OF,prizePhoto,hasPhoto});

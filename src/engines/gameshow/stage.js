@@ -274,9 +274,18 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   const c=take(key,o)||(o.alt&&take(o.alt,o))||(!key.startsWith('v-')&&take('v-'+key,o));if(c&&isSay){hostClip=c;const a=ac();talkEnd=performance.now()+Math.max(0,c.end-(a?a.currentTime:0))*1000;}return c;}
  // ms the host has still got to say (games let him finish before they move on) / cut him off (a tap that hurries the show)
  const talking=()=>Math.max(0,talkEnd-performance.now());
- function hush(){talkEnd=0;if(hostClip){try{const a=ac(),t0=a?a.currentTime:0;hostClip.g.gain.setTargetAtTime(.0001,t0,.03);hostClip.src.stop(t0+.15);}catch{}hostClip=null;}}
+ function hush(){talkEnd=0;for(const c of [hostClip,...seqClips]){if(!c)continue;try{const a=ac(),t0=a?a.currentTime:0;c.g.gain.setTargetAtTime(.0001,t0,.03);c.src.stop(t0+.15);}catch{}}hostClip=null;seqClips=[];}
  // the host says his bubble text out loud when there's a line for it (src/data/tpirVoice.js lineFor)
- function speak(text,o={}){const k=TV.lineFor(text);if(!k)return null;return voice(k.startsWith('say-')?k:'v-'+k,o);}
+ function speak(text,o={}){const k=TV.lineFor(text);if(k)return voice(k.startsWith('say-')?k:'v-'+k,o);const parts=TV.partsFor(text);return parts?seq(parts,o):null;}
+ // a sentence said in pieces (the host's words + a prize name, tpirVoice partsFor): the takes back to back, a hair apart; all of them
+ // count as the host talking (hush cuts the lot). Pieces that haven't loaded are skipped.
+ let seqClips=[];
+ function seq(keys,o={}){const a=ac();if(!a)return null;hush();let at=o.at||0,last=null;
+  for(const key of keys){const c=take('v-'+key,{...o,at});if(!c)continue;seqClips.push(c);last=c;at=c.end-a.currentTime+.06;}
+  if(last){hostClip=null;talkEnd=performance.now()+Math.max(0,last.end-a.currentTime)*1000;}return last;}
+ // load the clips a bubble will need before it's said (a game calls this with its texts once it knows its prizes)
+ function prepare(texts){const a=ac();if(!a)return;for(const t of texts){const k=TV.lineFor(t),keys=k?[k]:TV.partsFor(t)||[];for(const key of keys)for(const n of takesOf(key.startsWith('say-')?key:'v-'+key))loadClip(a,n);}}
+ function want(keys){const a=ac();if(!a)return;for(const key of keys)for(const n of takesOf(key))loadClip(a,n);}
  // the audience murmuring under a game: the chatter recording looped if it's in, else the applause recording slowed and muffled
  // into a low rumble of voices
  let mur=null;function murmur(on){const a=ac();if(!on||!a){if(mur){try{const t=a?.currentTime||0;mur.g.gain.setTargetAtTime(.0001,t,.3);mur.src.stop(t+1.2);}catch{}mur=null;}return;}
@@ -284,5 +293,5 @@ function createShowSound(opts={}){const on=()=>!!store.profile?.settings?.sound;
   src.buffer=b;src.loop=true;if(!own){src.playbackRate.value=.5;lp.type='lowpass';lp.frequency.value=620;}else{lp.type='allpass';}
   g.gain.setValueAtTime(.0001,a.currentTime);g.gain.linearRampToValueAtTime(own?(TPIR_GAIN[own]??.5)*.6:.16,a.currentTime+1.2);
   if(!clipOut){clipOut=a.createGain();clipOut.connect(a.destination);}src.connect(lp);lp.connect(g);g.connect(clipOut);src.start(a.currentTime,Math.random()*b.duration*.5);mur={src,g};}
- return {sfx,music,title,clip,crowd,voice,speak,talking,hush,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
+ return {sfx,music,title,clip,crowd,voice,speak,seq,prepare,want,talking,hush,murmur,loaded:n=>!!clipBufs[n],stop:()=>{murmur(false);musicOn=false;themeOn=false;clearInterval(timer);bedStop();for(const src of playing){try{src.stop();}catch{}}playing.clear();}};}
 Object.assign(exports,{STAGE_FLOOR,stageFit,floorAt,floorShadow,STAGE_BORROW,createCast,drawStage,drawCurtain,drawHost,drawModel,drawContestant,nameTag,drawLogo,bubble,moneyBanner,createShowSound,cover});

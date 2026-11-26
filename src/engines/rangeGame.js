@@ -28,9 +28,10 @@ function drawButton(g,down=false){const pic=SS.picture('range-button'),S=SS.BUTT
  const top=down?215:175;g.fillStyle='#8a0a10';g.fillRect(70,top,260,240-top+10);g.fillStyle='#e8202a';g.beginPath();g.ellipse(200,top,130,52,0,0,Math.PI*2);g.fill();g.fillStyle='rgba(255,255,255,.35)';g.beginPath();g.ellipse(170,top-14,60,18,-.2,0,Math.PI*2);g.fill();g.restore();}
 async function rangeGame(s){
  const K=createKit(s,{kind:'range',clips:['range-game','losing-horn','big-winner','ding','bell'],song:'range-game-full'}),{net,names,snd,sfx}=K;
- const R0=seededRandom(`${s.seed}:range`),order=shuffle(SP.GRAND_PRIZES,R0);
+ const R0=seededRandom(`${s.seed}:range`),order=shuffle([...SP.GRAND_PRIZES,...SP.BID_PRIZES].filter(p=>p[2]>=1600&&p[2]<=5600),R0);
  const P=names.map((n,i)=>{const [id,name,price,em]=order[i%order.length],R=seededRandom(`${s.seed}:range:${i}`),lo=Math.max(0,Math.floor((price-300-R()*(SCALE-1100))/500)*500);
   return {prize:{id,name,price,em},lo,f:0,stopped:false,shown:0,won:false,score:0,done:false,mood:'normal'};});
+ snd.prepare(P.map(p=>`You're playing for ${p.prize.name}! The range finder covers $1,500. Stop it when you think the price is inside.`));
  for(const p of P)SP.prizePhoto(p.prize.id);
  let rising=false,press=0,reveal=-1,L={};
  const finderLo=p=>p.lo+p.f*(SCALE-WIN);

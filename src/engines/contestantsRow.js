@@ -21,7 +21,8 @@ const {guestDeck}=require("src/engines/gameshow/guests.js");
 const TV=require("src/data/tpirVoice.js");
 const TAU=Math.PI*2,ease=v=>1-Math.pow(1-clamp(v,0,1),3);
 const SHIRTS=['#e63946','#3a86ff','#ffbe0b','#8338ec','#06d6a0','#fb5607','#ff006e','#4cc9f0','#80b918','#f15bb5'];
-const ITEMS=[...SP.MID_PRIZES,...SP.GRAND_PRIZES];
+// One Bid items like the show's: TVs, furniture, appliances, gear, instruments, now and then a trip (showCatalog BID) + the dearer MID items
+const ITEMS=[...SP.BID_PRIZES,...SP.MID_PRIZES.filter(p=>p[2]>=300)];
 function nice(v,R){v=Math.max(1,v);const r=R();if(v<100)return Math.round(v);if(r<.35)return Math.round(v/50)*50||50;if(r<.6)return Math.max(1,Math.round(v/100)*100-1);if(r<.8)return Math.round(v/10)*10;return Math.round(v);}
 // a studio guest's / the CPU's bid: a guess near the price (better with skill), the last bidder plays the show's tricks ($1 over
 // the top bid, or $1 when it thinks everybody else is over); never a bid that's taken or (rebid) not under the limit
@@ -55,6 +56,7 @@ async function contestantsRow(s){
  const short=n=>String(n).replace(/\s*\(CPU\)\s*$/i,'');
  const seats=[newGuest(),{p:0,name:short(names[0]),col:'#e63946',...nextBody()},{p:1,name:short(names[1]),col:'#3a86ff',...nextBody()},newGuest()].map(o=>({...o,bid:null,won:[],score:0,in:0,here:false,pose:'stand',poseT:0,mood:'normal',lit:0}));seats_=seats;
  const N=board?2:4,items=[];{const bag=ITEMS.slice();for(let i=0;i<N;i++)items.push(bag.splice(Math.floor(R()*bag.length),1)[0]);}
+ snd.prepare(items.map(it=>`It's ${/^(a|an|the) /i.test(it[1])?it[1]:'a '+it[1]}!`));
  items.forEach(it=>SP.prizePhoto(it[0]));
  let scene='row',call=null,item=null,itemT=0,priceShown=false,limit=0,cur=-1,typed='',warn=null,warnT=0,hype=0,keys=[],quick=[],tries=0,actual=null;
  const human=ci=>{const st=seats[ci];return st.p!=null&&(net?st.p===me:!(cpu&&st.p===1));};

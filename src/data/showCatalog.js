@@ -1,0 +1,193 @@
+// THE PRICE IS RIGHT PRIZE CATALOG (owner, Nov 26: "way more variety... as many items as possible with real prices... placed in
+// the games exactly like the real show"). Real products you can buy in the US, at about their regular list price (MSRP) in
+// November 2026, whole dollars like the show's price displays (a $499.99 list price = $500). Trips are priced the way the show prices
+// them (a week for two: airfare, hotel, sometimes extras). Cars: base MSRP with destination, the trim the show would use.
+// showPrizes.js merges these into the lists the games already read; every row is [id, name, price, emoji, kind].
+// WHERE THEY GO ON THE SHOW (and in the games):
+//   SMALL  $10-$99     Plinko's small prizes, Cliff Hangers' three small prizes, Punch-a-Bunch, Hole in One's groceries' big brother
+//   MID    $100-$999   Clock Game, Race Game, Safe Crackers' smaller prize, Contestants' Row now and then
+//   BID    $500-$4,999 Contestants' Row (One Bid): TVs, furniture, appliances, exercise and outdoor gear, instruments, sometimes a trip
+//   GRAND  $2,000-$15,000 the prize a pricing game is played for: trips, motorcycles, watercraft, hot tubs, pianos, boats' little brothers
+//   CARS   new cars: car pricing games (once in most episodes, rarely twice) and the big finish of many showcases ("A NEW CAR!")
+//   TRIPS  showcase and pricing-game trips
+//   BIG    showcase finishers that aren't cars: boats, travel trailers, campers, a golf cart, a Corvette-sized surprise now and then
+// Prices to refresh when you release: change them here (PRICES_AS_OF in showPrizes.js).
+const SMALL=[
+ ['oxo-spinner','OXO salad spinner',35,'🥗','kitchen'],['lodge-skillet','Lodge 12-inch cast iron skillet',30,'🍳','kitchen'],['mr-coffee','Mr. Coffee 12-cup coffee maker',35,'☕','kitchen'],
+ ['keurig-mini','Keurig K-Mini coffee maker',90,'☕','kitchen'],['hb-toaster','Hamilton Beach 2-slice toaster',30,'🍞','kitchen'],['nutribullet','NutriBullet blender',80,'🥤','kitchen'],
+ ['cuisinart-knives','Cuisinart 15-piece knife set',60,'🔪','kitchen'],['pyrex-storage','Pyrex 18-piece storage set',40,'🥡','kitchen'],['stanley-quencher','Stanley Quencher 40 oz tumbler',45,'🥤','kitchen'],
+ ['hydro-flask','Hydro Flask 32 oz bottle',45,'🧴','kitchen'],['yeti-rambler','YETI Rambler 20 oz tumbler',35,'🥤','kitchen'],['brita','Brita water filter pitcher',30,'💧','kitchen'],
+ ['presto-popper','Presto hot air popcorn popper',30,'🍿','kitchen'],['dash-waffle','Dash mini waffle maker',13,'🧇','kitchen'],['ninja-airfryer','Ninja 4-quart air fryer',99,'🍟','kitchen'],
+ ['cuisinart-ice','Cuisinart ice cream maker',70,'🍨','kitchen'],['nespresso-pods','Nespresso capsules, 50 count',45,'☕','kitchen'],['oxo-mandoline','OXO mandoline slicer',50,'🥒','kitchen'],
+ ['rival-fondue','fondue pot set',40,'🫕','kitchen'],['margaritaville-mug','Margaritaville frozen drink mug set',25,'🍹','kitchen'],['corelle','Corelle 18-piece dinnerware',60,'🍽️','kitchen'],
+ ['lego-classic','LEGO Classic large brick box',35,'🧱','toy'],['play-doh','Play-Doh 10-pack',10,'🟣','toy'],['hot-wheels','Hot Wheels 20-car gift pack',25,'🏎️','toy'],
+ ['jenga','Jenga',15,'🪵','toy'],['operation','Operation',20,'🩺','toy'],['twister','Twister',20,'🌀','toy'],['clue','Clue',22,'🔍','toy'],['catan','Catan',55,'🐑','toy'],
+ ['risk','Risk',30,'🗺️','toy'],['pictionary','Pictionary',22,'✏️','toy'],['mouse-trap','Mouse Trap',25,'🧀','toy'],['candy-land','Candy Land',13,'🍭','toy'],
+ ['chutes-ladders','Chutes and Ladders',12,'🪜','toy'],['guess-who','Guess Who?',15,'🤔','toy'],['perfection','Perfection',20,'⏲️','toy'],['easy-bake','Easy-Bake Ultimate Oven',40,'🧁','toy'],
+ ['furby','Furby',70,'🦉','toy'],['nerf-football','Nerf football',13,'🏈','toy'],['spalding-ball','Spalding NBA basketball',30,'🏀','toy'],['wilson-football','Wilson NFL football',25,'🏈','toy'],
+ ['rawlings-glove','Rawlings baseball glove',40,'🧤','toy'],['boogie-board','Morey boogie board',40,'🏄','toy'],['radio-flyer-mini','Radio Flyer scooter',50,'🛴','toy'],
+ ['uno-flip','UNO deluxe set',20,'🃏','toy'],['magic-tracks','Magic Tracks glow race set',30,'🎢','toy'],['crayola-art','Crayola 140-piece art set',25,'🖍️','toy'],
+ ['roku-express','Roku Express 4K',40,'📺','tech'],['fire-stick','Amazon Fire TV Stick 4K',50,'📺','tech'],['echo-dot','Amazon Echo Dot',50,'🔊','tech'],['jbl-go','JBL Go 4 speaker',50,'🔊','tech'],
+ ['skullcandy','Skullcandy wireless earbuds',30,'🎧','tech'],['tile-mate','Tile Mate tracker, 2-pack',45,'📍','tech'],['polaroid-film','Polaroid i-Type film, 2-pack',35,'🎞️','tech'],
+ ['anker-charger','Anker power bank',40,'🔋','tech'],['logitech-mouse','Logitech wireless mouse',25,'🖱️','tech'],['ring-chime','Ring Chime',35,'🔔','tech'],
+ ['swiffer','Swiffer Sweeper starter kit',20,'🧹','home'],['bissell-featherweight','Bissell Featherweight vacuum',40,'🧹','home'],['duracell','Duracell AA batteries, 24 pack',25,'🔋','home'],
+ ['shark-steam','Shark steam mop',90,'🧽','home'],['febreze','Febreze plug-in set',20,'🌸','home'],['yankee-candle','Yankee Candle large jar',32,'🕯️','home'],['snuggie','Snuggie',20,'🛋️','home'],
+ ['pillow-pet','Pillow Pet',30,'🧸','home'],['my-pillow','MyPillow',60,'🛏️','home'],['weighted-blanket','weighted blanket',60,'🛏️','home'],['shower-head','rainfall shower head',45,'🚿','home'],
+ ['revlon-dryer','Revlon One-Step hair dryer brush',60,'💇','beauty'],['conair-curling','Conair curling iron',25,'💇','beauty'],['oral-b','Oral-B electric toothbrush',50,'🪥','beauty'],
+ ['philips-trimmer','Philips Norelco beard trimmer',60,'🧔','beauty'],['crest-strips','Crest 3D Whitestrips',50,'😁','beauty'],['old-spice-set','Old Spice gift set',20,'🧴','beauty'],
+ ['burts-bees','Burt\'s Bees gift set',15,'🐝','beauty'],['chi-flat-iron','CHI flat iron',90,'💇','beauty'],
+ ['coleman-lantern','Coleman LED lantern',35,'🏮','outdoor'],['coleman-cooler','Coleman 48-quart cooler',40,'🧊','outdoor'],['sleeping-bag','Coleman sleeping bag',40,'🛌','outdoor'],
+ ['hammock','ENO hammock',70,'🌴','outdoor'],['badminton','badminton set',40,'🏸','outdoor'],['cornhole-mini','tailgate cornhole set',70,'🎯','outdoor'],['bocce','bocce ball set',45,'🟢','outdoor'],
+ ['garden-hose','Flexzilla garden hose',55,'🌱','outdoor'],['bird-feeder','squirrel-proof bird feeder',40,'🐦','outdoor'],['tiki-torches','tiki torches, 4 pack',35,'🔥','outdoor'],
+ ['kong-toys','KONG dog toy bundle',30,'🐶','pet'],['cat-tree','cat tree',60,'🐱','pet'],['pet-bed','orthopedic dog bed',70,'🐕','pet'],['furminator','FURminator brush',35,'🐾','pet'],
+ ['tide-case','Tide detergent, 3 jugs',45,'🧺','grocery'],['charmin-case','Charmin toilet paper, 24 mega rolls',35,'🧻','grocery'],['bounty-case','Bounty paper towels, 12 rolls',30,'🧻','grocery'],
+ ['pampers','Pampers diapers, giant box',50,'👶','grocery'],['campbells','Campbell\'s soup, case of 12',20,'🥫','grocery'],['kraft-mac','Kraft Mac & Cheese, 12 boxes',15,'🧀','grocery'],
+ ['starbucks-coffee','Starbucks coffee, 3 bags',35,'☕','grocery'],['coca-cola','Coca-Cola, 24 cans',13,'🥤','grocery'],['ritz','Ritz crackers, 6 boxes',25,'🧇','grocery'],
+ ['hersheys','Hershey\'s bars, 36 count',40,'🍫','grocery'],['jif-case','Jif peanut butter, 6 jars',25,'🥜','grocery'],['folgers-case','Folgers coffee, 3 canisters',40,'☕','grocery'],
+ ['cheerios-case','Cheerios, 4 family boxes',25,'🥣','grocery'],['oreo-case','Oreo cookies, 6 packs',30,'🍪','grocery'],['bush-beans','Bush\'s baked beans, 12 cans',20,'🫘','grocery'],
+ ['quaker-oats','Quaker oats, 4 canisters',20,'🌾','grocery'],['tabasco','Tabasco sauce, 6 bottles',25,'🌶️','grocery'],['velveeta-case','Velveeta, 4 blocks',35,'🧀','grocery'],
+ ['gatorade-case','Gatorade, 24 bottles',30,'🥤','grocery'],['pringles-case','Pringles, 12 cans',30,'🥔','grocery'],['nutella-case','Nutella, 4 jars',25,'🍫','grocery'],
+ ['pop-tarts-case','Pop-Tarts, 6 boxes',25,'🍓','grocery'],['ramen-case','Maruchan ramen, 48 pack',20,'🍜','grocery'],['dawn-case','Dawn dish soap, 6 bottles',25,'🧼','grocery']];
+const MID=[
+ ['ps5-slim','PlayStation 5 Slim digital',500,'🎮','tech'],['xbox-series-s','Xbox Series S',380,'🎮','tech'],['meta-quest-3s','Meta Quest 3S',300,'🥽','tech'],['kindle-paperwhite','Kindle Paperwhite',160,'📖','tech'],
+ ['apple-watch-se','Apple Watch SE',250,'⌚','tech'],['fitbit-charge','Fitbit Charge 6',160,'⌚','tech'],['bose-qc','Bose QuietComfort headphones',350,'🎧','tech'],['sonos-era','Sonos Era 100 speaker',220,'🔊','tech'],
+ ['beats-pill','Beats Pill speaker',150,'🔊','tech'],['ring-doorbell','Ring video doorbell',100,'🔔','tech'],['nest-thermostat','Google Nest thermostat',130,'🌡️','tech'],['dji-mini','DJI Mini 4K drone',300,'🚁','tech'],
+ ['instax-wide','Instax Wide instant camera',150,'📸','tech'],['ti-84','TI-84 Plus CE calculator',150,'🧮','tech'],['tv-43','TCL 43-inch 4K TV',250,'📺','tech'],['tv-55','Hisense 55-inch 4K TV',400,'📺','tech'],
+ ['soundbar','Vizio soundbar',200,'🔊','tech'],['galaxy-tab','Samsung Galaxy Tab A9+',220,'📱','tech'],['nintendo-lite','Nintendo Switch Lite',200,'🎮','tech'],['karaoke-machine','Singing Machine karaoke system',150,'🎤','tech'],
+ ['record-player','Victrola record player',100,'💿','tech'],['airpods-4','Apple AirPods 4',130,'🎧','tech'],['garmin-gps','Garmin Forerunner watch',300,'⌚','tech'],['canon-printer','Canon photo printer',150,'🖨️','tech'],
+ ['kitchenaid-mixer-mini','KitchenAid Artisan Mini mixer',380,'🥣','kitchen'],['breville-toaster','Breville smart oven',300,'🔥','kitchen'],['nespresso','Nespresso Vertuo coffee maker',200,'☕','kitchen'],
+ ['ninja-foodi','Ninja Foodi pressure cooker',230,'🍲','kitchen'],['le-creuset','Le Creuset Dutch oven',420,'🍲','kitchen'],['all-clad','All-Clad 10-piece cookware',700,'🍳','kitchen'],
+ ['calphalon','Calphalon nonstick cookware set',300,'🍳','kitchen'],['cuisinart-food','Cuisinart food processor',230,'🥕','kitchen'],['smeg-kettle','SMEG electric kettle',190,'🫖','kitchen'],
+ ['traeger-ranger','Traeger Ranger tabletop grill',400,'🍖','kitchen'],['blackstone','Blackstone 36-inch griddle',400,'🔥','kitchen'],['ooni-pizza','Ooni pizza oven',400,'🍕','kitchen'],
+ ['sodastream-art','SodaStream Art',160,'🫧','kitchen'],['keurig-k-elite','Keurig K-Elite',190,'☕','kitchen'],['wusthof','Wüsthof knife block set',500,'🔪','kitchen'],['zojirushi','Zojirushi rice cooker',230,'🍚','kitchen'],
+ ['dyson-v8','Dyson V8 cordless vacuum',470,'🧹','home'],['shark-robot','Shark robot vacuum',300,'🤖','home'],['roomba-combo','iRobot Roomba Combo',400,'🤖','home'],['bissell-crosswave','Bissell CrossWave',260,'🧽','home'],
+ ['dyson-fan','Dyson Pure Cool fan',430,'🌀','home'],['levoit-purifier','Levoit air purifier',150,'🌬️','home'],['casper-pillows','Casper pillows, set of 2',130,'🛏️','home'],['purple-pillow','Purple pillow',200,'🛏️','home'],
+ ['egyptian-sheets','Egyptian cotton sheet set',200,'🛏️','home'],['nugget-couch','kids\' play couch',230,'🛋️','home'],['recliner-power','power lift recliner',800,'🛋️','furniture'],['gaming-chair','Secretlab gaming chair',550,'🪑','furniture'],
+ ['ikea-desk','standing desk',500,'🪑','furniture'],['bookcase','solid wood bookcase',350,'📚','furniture'],['bar-stools','set of 3 bar stools',300,'🪑','furniture'],['area-rug','8 by 10 area rug',450,'🟫','furniture'],
+ ['coffee-table','coffee table',380,'🪵','furniture'],['papasan','papasan chair',250,'🪑','furniture'],['futon','futon',450,'🛋️','furniture'],['bean-bag','Lovesac bean bag',600,'🛋️','furniture'],
+ ['schwinn-cruiser','Schwinn beach cruiser',400,'🚲','outdoor'],['radio-flyer-wagon','Radio Flyer wagon',150,'🛻','outdoor'],['coleman-tent','Coleman 6-person tent',200,'⛺','outdoor'],['yeti-hopper','YETI Hopper soft cooler',300,'🧊','outdoor'],
+ ['fire-pit','Solo Stove fire pit',300,'🔥','outdoor'],['cornhole','regulation cornhole boards',200,'🎯','outdoor'],['kayak-single','Pelican kayak',400,'🛶','outdoor'],['paddle-board','inflatable paddle board',450,'🏄','outdoor'],
+ ['trampoline','12-foot trampoline',400,'🤸','outdoor'],['basketball-hoop','Lifetime portable basketball hoop',450,'🏀','outdoor'],['pickleball','pickleball set + net',200,'🏓','outdoor'],['golf-bag','TaylorMade golf bag',300,'⛳','outdoor'],
+ ['callaway-driver','Callaway driver',550,'⛳','outdoor'],['fishing-combo','fishing rod and reel combo',150,'🎣','outdoor'],['metal-detector','Garrett metal detector',250,'🧲','outdoor'],['telescope-small','Celestron telescope',300,'🔭','outdoor'],
+ ['patio-heater','patio heater',250,'🔥','outdoor'],['adirondack','pair of Adirondack chairs',400,'🪑','outdoor'],['porch-swing','porch swing',350,'🪑','outdoor'],['weber-kettle','Weber Original kettle grill',230,'🔥','outdoor'],
+ ['toro-blower','Toro leaf blower',150,'🍂','outdoor'],['greenworks-mower','Greenworks electric mower',350,'🌱','outdoor'],['snow-blower','electric snow blower',400,'❄️','outdoor'],['pressure-washer','Sun Joe pressure washer',200,'💦','outdoor'],
+ ['bowflex-dumbbells','Bowflex adjustable dumbbells',430,'🏋️','fitness'],['rowing-machine','rowing machine',600,'🚣','fitness'],['exercise-bike','Schwinn exercise bike',650,'🚴','fitness'],['theragun','Theragun massager',300,'💆','fitness'],
+ ['yoga-set','Lululemon yoga set',200,'🧘','fitness'],['nike-shoes','Nike running shoes, 2 pair',300,'👟','fitness'],['massage-cushion','shiatsu massage cushion',150,'💆','fitness'],
+ ['fender-squier','Squier Stratocaster pack',300,'🎸','music'],['yamaha-keyboard','Yamaha keyboard',200,'🎹','music'],['ukulele','Kala ukulele',100,'🪕','music'],['roland-drums','Roland electronic drum kit',800,'🥁','music'],
+ ['acoustic-guitar','Taylor acoustic guitar',500,'🎸','music'],['harmonica-set','Hohner harmonica set',100,'🎶','music'],
+ ['coach-bag','Coach handbag',400,'👜','fashion'],['ray-bans','Ray-Ban sunglasses, his and hers',350,'🕶️','fashion'],['fossil-watches','his and hers Fossil watches',300,'⌚','fashion'],['samsonite','Samsonite luggage set',400,'🧳','fashion'],
+ ['north-face','The North Face jackets, his and hers',500,'🧥','fashion'],['ugg-boots','UGG boots',180,'🥾','fashion'],['pandora','Pandora bracelet',150,'💍','fashion'],['diamond-studs','diamond stud earrings',900,'💎','fashion'],
+ ['lego-falcon','LEGO Star Wars Millennium Falcon',170,'🧱','toy'],['barbie-dreamhouse','Barbie Dreamhouse',200,'🏠','toy'],['power-wheels','Power Wheels Jeep',400,'🚙','toy'],['air-hockey-mini','tabletop air hockey',150,'🏒','toy'],
+ ['foosball','foosball table',300,'⚽','toy'],['dartboard-cab','dartboard cabinet set',150,'🎯','toy'],['poker-set','poker set',100,'🃏','toy'],['arcade-tabletop','tabletop arcade',130,'🕹️','toy'],
+ ['sewing-singer','Singer sewing machine',250,'🧵','home'],['cricut','Cricut cutting machine',300,'✂️','home'],['dyson-airwrap','Dyson Airwrap',600,'💇','beauty'],['massage-gun','massage gun',150,'💆','beauty']];
+const BID=[
+ ['tv-65-oled','LG 65-inch OLED TV',2000,'📺','tech'],['tv-75','Samsung 75-inch 4K TV',1000,'📺','tech'],['tv-85','Sony 85-inch 4K TV',2500,'📺','tech'],['tv-frame','Samsung The Frame 65-inch TV',1600,'🖼️','tech'],
+ ['macbook-air','MacBook Air',1000,'💻','tech'],['macbook-pro','MacBook Pro',2000,'💻','tech'],['iphone-pro','iPhone 17 Pro',1100,'📱','tech'],['galaxy-s','Samsung Galaxy S26 Ultra',1300,'📱','tech'],
+ ['ipad-pro','iPad Pro',1000,'📱','tech'],['gaming-pc','gaming PC',1800,'🖥️','tech'],['home-theater-sys','Sonos home theater system',1500,'🔊','tech'],['projector','Epson home projector + screen',1300,'🎞️','tech'],
+ ['canon-camera','Canon mirrorless camera kit',1300,'📷','tech'],['ps5-pro','PlayStation 5 Pro + four games',1000,'🎮','tech'],['arcade-cabinet','Arcade1Up arcade cabinet',600,'🕹️','tech'],['vr-pro','Apple Vision Pro',3500,'🥽','tech'],
+ ['sofa','sofa',1800,'🛋️','furniture'],['sectional','sectional sofa',2800,'🛋️','furniture'],['lazboy-recliners','pair of La-Z-Boy recliners',1600,'🛋️','furniture'],['dining-table','dining table and six chairs',2200,'🍽️','furniture'],
+ ['bedroom-set','bedroom set',3500,'🛏️','furniture'],['mattress','Tempur-Pedic mattress',3000,'🛏️','furniture'],['bunk-beds','bunk beds',900,'🛏️','furniture'],['china-cabinet','china cabinet',1500,'🗄️','furniture'],
+ ['entertainment-center','entertainment center',1200,'📺','furniture'],['desk-set','executive desk and chair',1800,'🪑','furniture'],['patio-dining','patio dining set',1800,'☀️','furniture'],['outdoor-sectional','outdoor sectional',2500,'☀️','furniture'],
+ ['grandfather-clock','grandfather clock',2400,'🕰️','furniture'],['leather-sofa','leather sofa',2400,'🛋️','furniture'],['massage-chair','Osaki massage chair',3500,'💺','furniture'],['bar-set','home bar and stools',1600,'🍸','furniture'],
+ ['fridge','Samsung French door refrigerator',2500,'🧊','appliance'],['washer-dryer','LG washer and dryer',2000,'🫧','appliance'],['range','GE gas range',1200,'🔥','appliance'],['dishwasher','Bosch dishwasher',1100,'🍽️','appliance'],
+ ['microwave-hood','over-the-range microwave',500,'📟','appliance'],['wine-fridge','wine refrigerator + a case of wine',900,'🍷','appliance'],['espresso-machine','Breville Barista Express',700,'☕','appliance'],['freezer','chest freezer',600,'🧊','appliance'],
+ ['ice-maker','GE Profile nugget ice maker',580,'🧊','appliance'],['range-hood','KitchenAid kitchen package',4500,'🍳','appliance'],
+ ['peloton','Peloton Bike',1450,'🚴','fitness'],['treadmill','NordicTrack treadmill',2000,'🏃','fitness'],['elliptical','elliptical trainer',1300,'🏃','fitness'],['home-gym-small','Bowflex home gym',1500,'🏋️','fitness'],
+ ['tonal','Tonal home gym',4000,'🏋️','fitness'],['mirror-gym','smart fitness mirror',1500,'🪞','fitness'],['ping-pong','table tennis table',800,'🏓','fitness'],
+ ['pool-table','Brunswick pool table',3300,'🎱','game'],['air-hockey','arcade air hockey table',1200,'🏒','game'],['pinball','Stern pinball machine',4500,'🕹️','game'],['jukebox','Crosley Rocket jukebox',1100,'🎵','game'],
+ ['poker-table','poker table',900,'🃏','game'],['skee-ball','Skee-Ball home arcade',1300,'🎳','game'],['foosball-pro','Tornado foosball table',1600,'⚽','game'],['shuffleboard','shuffleboard table',2000,'🥌','game'],
+ ['weber-genesis','Weber Genesis gas grill',1100,'🔥','outdoor'],['traeger-pro','Traeger Pro pellet grill',900,'🍖','outdoor'],['big-green-egg','Big Green Egg',1400,'🥚','outdoor'],['hot-tub-inflatable','inflatable hot tub',600,'♨️','outdoor'],
+ ['pizza-oven-pro','outdoor pizza oven',800,'🍕','outdoor'],['gazebo','backyard gazebo',1800,'⛺','outdoor'],['swing-set','wooden swing set',2000,'🛝','outdoor'],['above-ground-pool','above-ground pool',1500,'🏊','outdoor'],
+ ['firepit-table','fire pit table',900,'🔥','outdoor'],['riding-mower','Toro riding mower',2800,'🚜','outdoor'],['generator','Honda generator',1200,'⚡','outdoor'],['kayaks-pair','two kayaks',900,'🛶','outdoor'],
+ ['canoe','Old Town canoe',1300,'🛶','outdoor'],['paddle-boards','two paddle boards',1000,'🏄','outdoor'],['camping-set','camping package',1200,'⛺','outdoor'],['trek-bikes','his and hers Trek bikes',1200,'🚲','outdoor'],
+ ['e-bike','Rad Power e-bike',1700,'🚲','outdoor'],['mountain-bike','Specialized mountain bike',1500,'🚵','outdoor'],['golf-clubs','Callaway golf clubs',1500,'⛳','outdoor'],['putting-green','backyard putting green',2500,'⛳','outdoor'],
+ ['electric-scooter','Segway electric scooter',800,'🛴','outdoor'],['telescope','Celestron computerized telescope',900,'🔭','outdoor'],['storage-shed','storage shed',2200,'🏚️','outdoor'],
+ ['piano-digital','Yamaha digital piano',1200,'🎹','music'],['strat-amp','Fender Stratocaster and amp',1350,'🎸','music'],['drum-kit','Pearl drum kit',900,'🥁','music'],['gibson','Gibson Les Paul',2700,'🎸','music'],
+ ['dj-set','DJ turntable set',1100,'🎧','music'],['saxophone','Yamaha saxophone',1800,'🎷','music'],['violin','violin outfit',800,'🎻','music'],
+ ['rolex-like','Tag Heuer watch',3000,'⌚','fashion'],['diamond-ring','diamond ring',2500,'💍','fashion'],['fur-coats','his and hers faux fur coats',2800,'🧥','fashion'],['luggage','Tumi luggage set',2000,'🧳','fashion'],
+ ['wardrobe','his and hers wardrobes',3500,'👔','fashion'],['louis-bag','designer handbag',2200,'👜','fashion'],
+ ['trip-vegas-bid','trip to Las Vegas',3000,'🎰','trip'],['trip-orlando','trip to Orlando',3500,'🏰','trip'],['trip-nyc-bid','trip to New York City',4000,'🗽','trip'],['trip-nashville-bid','trip to Nashville',3200,'🎸','trip'],
+ ['trip-new-orleans-bid','trip to New Orleans',3400,'🎺','trip'],['trip-san-diego','trip to San Diego',3100,'🌊','trip']];
+const GRAND=[
+ ['harley','a Harley-Davidson Sportster',11000,'🏍️','motor'],['honda-rebel','a Honda Rebel motorcycle',6500,'🏍️','motor'],['kawasaki-ninja','a Kawasaki Ninja motorcycle',7900,'🏍️','motor'],
+ ['vespa-gts','a Vespa GTS scooter',7500,'🛵','motor'],['honda-grom','a Honda Grom',3600,'🏍️','motor'],['can-am-ryker','a Can-Am Ryker three-wheeler',10500,'🏍️','motor'],
+ ['sea-doo-gti','a Sea-Doo GTI personal watercraft',11900,'🚤','motor'],['yamaha-waverunner','a Yamaha WaveRunner',9600,'🚤','motor'],['atv','a Polaris Sportsman ATV',8800,'🏍️','motor'],
+ ['golf-cart','a Club Car golf cart',13500,'⛳','motor'],['side-by-side','a Polaris RZR',14500,'🏎️','motor'],['snowmobile','a Ski-Doo snowmobile',12000,'❄️','motor'],['go-kart','a gas go-kart',2500,'🏎️','motor'],
+ ['hot-tub','a six-person hot tub',9000,'♨️','home'],['steinway','a Steinway baby grand piano',9500,'🎹','music'],['yamaha-grand','a Yamaha baby grand piano',14500,'🎹','music'],
+ ['home-gym','a complete home gym',5600,'🏋️','fitness'],['sauna','a backyard sauna',6000,'🧖','home'],['outdoor-kitchen','an outdoor kitchen',9000,'🍳','home'],['kitchen-package','a new kitchen appliance package',8500,'🍳','home'],
+ ['living-room','a new living room',6800,'🛋️','home'],['home-theater','a home theater with a 100-inch screen',6900,'🎬','home'],['bedroom-suite','a five-piece bedroom suite',5800,'🛏️','home'],
+ ['game-room','a game room: pool table, pinball and jukebox',8900,'🎱','home'],['pergola','a pergola and patio set',7400,'☀️','home'],['playset','a deluxe backyard playset',4500,'🛝','home'],
+ ['fishing-boat-small','an aluminum fishing boat',6500,'🚤','motor'],['jet-boat-small','a two-person jet boat',14900,'🚤','motor'],['ebikes-pair','two electric bikes',3800,'🚲','outdoor'],
+ ['shed-workshop','a backyard workshop shed',6200,'🏚️','home'],['wine-cellar','a wine cellar and 200 bottles of wine',7600,'🍷','home'],['solar','a home solar generator package',4800,'⚡','home'],
+ ['trip-hawaii-g','a trip to Hawaii',8400,'🌺','trip'],['trip-cancun-g','a trip to Cancun',6200,'🏖️','trip'],['trip-paris-g','a trip to Paris',9100,'🗼','trip'],['trip-alaska-g','an Alaskan cruise',7300,'🛳️','trip'],
+ ['trip-caribbean-g','a Caribbean cruise',6900,'🛳️','trip'],['trip-london-g','a trip to London',8200,'🎡','trip'],['trip-vegas-g','a trip to Las Vegas',3900,'🎰','trip'],['trip-disney-g','a trip to Walt Disney World',5600,'🏰','trip']];
+// new cars (2026 model year, base trim + destination, rounded)
+const CARS=[
+ ['nissan-versa','Nissan Versa',18300,'🚗','car'],['kia-soul','Kia Soul',21500,'🚗','car'],['hyundai-venue','Hyundai Venue',22100,'🚙','car'],['chevy-trax','Chevrolet Trax',22100,'🚙','car'],
+ ['nissan-kicks','Nissan Kicks',23200,'🚙','car'],['vw-jetta','Volkswagen Jetta',23000,'🚗','car'],['toyota-corolla','Toyota Corolla',23500,'🚗','car'],['hyundai-elantra','Hyundai Elantra',23700,'🚗','car'],
+ ['subaru-impreza','Subaru Impreza',24300,'🚗','car'],['mazda3','Mazda3',25000,'🚗','car'],['kia-seltos','Kia Seltos',25200,'🚙','car'],['honda-civic','Honda Civic',26900,'🚗','car'],
+ ['ford-maverick','Ford Maverick pickup',28100,'🛻','car'],['toyota-camry','Toyota Camry',29500,'🚗','car'],['honda-accord','Honda Accord',29600,'🚗','car'],['mini-cooper','MINI Cooper',29900,'🚗','car'],
+ ['subaru-crosstrek','Subaru Crosstrek',27300,'🚙','car'],['toyota-rav4','Toyota RAV4',30100,'🚙','car'],['mazda-miata','Mazda MX-5 Miata convertible',30500,'🏎️','car'],['honda-crv','Honda CR-V',31300,'🚙','car'],
+ ['ford-bronco-sport','Ford Bronco Sport',32000,'🚙','car'],['toyota-tacoma','Toyota Tacoma pickup',33000,'🛻','car'],['jeep-wrangler','Jeep Wrangler',33200,'🚙','car'],['ford-mustang','Ford Mustang',33500,'🏎️','car'],
+ ['kia-telluride','Kia Telluride',37300,'🚙','car'],['vw-atlas','Volkswagen Atlas',39000,'🚙','car'],['chevy-silverado','Chevrolet Silverado pickup',39500,'🛻','car'],['ford-f150','Ford F-150 pickup',39900,'🛻','car'],
+ ['ford-bronco','Ford Bronco',40900,'🚙','car'],['jeep-grand-cherokee','Jeep Grand Cherokee',40800,'🚙','car'],['tesla-model-3','Tesla Model 3',42500,'🚗','car'],['mustang-convertible','Ford Mustang convertible',40100,'🏎️','car'],
+ ['chevy-corvette','Chevrolet Corvette',70000,'🏎️','car']];
+// showcase finishers that aren't cars
+const BIG=[['pontoon','a 20-foot pontoon boat',29000,'⛵','boat'],['bass-boat','a bass fishing boat',32000,'🚤','boat'],['ski-boat','a ski boat',48000,'🚤','boat'],
+ ['airstream','an Airstream travel trailer',58000,'🚐','camper'],['teardrop','a teardrop camper',19500,'🚐','camper'],['travel-trailer','a travel trailer',32000,'🚐','camper'],
+ ['tiny-house','a tiny house',62000,'🏡','camper'],['motorhome','a Winnebago motorhome',89000,'🚌','camper'],['harley-trike','a Harley-Davidson trike',33000,'🏍️','motor'],['jet-skis-2','two Sea-Doo watercraft',24000,'🚤','motor']];
+// trips (a week for two unless it says)
+const TRIPS=[
+ ['trip-hawaii','a trip to Maui, Hawaii',8400,'🌺','trip'],['trip-paris','a trip to Paris, France',9100,'🗼','trip'],['trip-rome','a trip to Rome, Italy',9300,'🏛️','trip'],['trip-london','a trip to London, England',8200,'🎡','trip'],
+ ['trip-ireland','a trip to Ireland',7700,'☘️','trip'],['trip-greece','a trip to the Greek islands',9800,'🏛️','trip'],['trip-tokyo','a trip to Tokyo, Japan',10500,'🏯','trip'],['trip-australia','a trip to Sydney, Australia',11800,'🦘','trip'],
+ ['trip-cancun','a trip to Cancun, Mexico',6200,'🏖️','trip'],['trip-cabo','a trip to Cabo San Lucas',6600,'🌵','trip'],['trip-jamaica','a trip to Jamaica',6400,'🏝️','trip'],['trip-bahamas','a trip to the Bahamas',6100,'🐚','trip'],
+ ['trip-costa-rica','a trip to Costa Rica',6800,'🦜','trip'],['trip-tahiti','a trip to Tahiti',12400,'🌺','trip'],['trip-fiji','a trip to Fiji',11600,'🏝️','trip'],['trip-bali','a trip to Bali',10200,'🌴','trip'],
+ ['trip-alaska','a seven-night Alaskan cruise',7300,'🛳️','trip'],['trip-caribbean','a Caribbean cruise',6900,'🛳️','trip'],['trip-mediterranean','a Mediterranean cruise',10800,'🛳️','trip'],
+ ['trip-nyc','a trip to New York City with Broadway tickets',6000,'🗽','trip'],['trip-vegas','a trip to Las Vegas',3900,'🎰','trip'],['trip-disney','a trip to Walt Disney World',5600,'🏰','trip'],
+ ['trip-aspen','a ski trip to Aspen, Colorado',7900,'⛷️','trip'],['trip-yellowstone','a trip to Yellowstone',5200,'🦬','trip'],['trip-napa','a trip to Napa Valley wine country',5800,'🍷','trip'],
+ ['trip-nashville','a trip to Nashville',4300,'🎸','trip'],['trip-new-orleans','a trip to New Orleans',4600,'🎺','trip'],['trip-key-west','a trip to Key West',5400,'🌴','trip'],
+ ['trip-philly','a trip to Philadelphia with a night at Paddy\'s Pub',2500,'🔔','trip'],['trip-iceland','a trip to Iceland',8600,'🧊','trip'],['trip-switzerland','a trip to the Swiss Alps',10900,'🏔️','trip']];
+// SHOWCASES like the show's: a theme (the announcer's skit), 3 or 4 prizes, usually a trip in the middle and a car or a boat/camper last.
+// Ids refer to any list above. A few are the rare crazy ones (two cars, a car + a boat).
+const SHOWCASES=[
+ ['beach','Beach Bum','Surf\'s up! This showcase is a day at the beach!',['paddle-boards','trip-cabo','jeep-wrangler']],
+ ['paris','April in Paris','Bonjour! We\'re off to the most romantic city on Earth.',['espresso-machine','trip-paris','mini-cooper']],
+ ['rockstar','Rock Star','Ladies and gentlemen, are you ready to rock?',['gibson','trip-nashville','harley']],
+ ['camping','The Great Outdoors','Get away from it all, and into the great outdoors!',['camping-set','trip-yellowstone','travel-trailer']],
+ ['sunny','Always Sunny','Pour yourself a pint, because this showcase is always sunny!',['jukebox','trip-philly','toyota-corolla']],
+ ['islands','Island Getaway','Grab your grass skirt, we\'re going to the islands!',['outdoor-sectional','trip-hawaii','sea-doo-gti']],
+ ['home','Home Sweet Home','There\'s no place like home, especially one like this!',['sectional','bedroom-set','toyota-camry']],
+ ['winter','Winter Wonderland','Baby, it\'s cold outside, but this showcase will warm you up!',['hot-tub-inflatable','trip-aspen','snowmobile']],
+ ['japan','Big in Japan','Konnichiwa! This showcase is big in Japan!',['ps5-pro','trip-tokyo','honda-civic']],
+ ['lake','Lake Life','Life is better at the lake!',['kayaks-pair','fishing-boat-small','pontoon']],
+ ['vegas','Viva Las Vegas','Feeling lucky? Viva Las Vegas!',['poker-table','trip-vegas','ford-mustang']],
+ ['fitness','Let\'s Get Physical','New year, new you!',['peloton','home-gym','ford-bronco-sport']],
+ ['maestro','The Maestro','Strike up the band! This showcase is music to your ears.',['piano-digital','trip-nyc','yamaha-grand']],
+ ['ireland','Luck of the Irish','Top of the morning! Are you feeling lucky?',['golf-clubs','trip-ireland','mazda-miata']],
+ ['italy','La Dolce Vita','Mangia! This showcase is a taste of the good life.',['pizza-oven-pro','trip-rome','vespa-gts']],
+ ['cruise','Anchors Aweigh','All aboard! Set sail for adventure!',['luggage','trip-caribbean','bass-boat']],
+ ['cowboy','Home on the Range','Saddle up, partner!',['big-green-egg','trip-yellowstone','ford-f150']],
+ ['gamer','Game On','Player one, are you ready?',['gaming-pc','pinball','kia-soul']],
+ ['wedding','Here Comes the Bride','Somebody\'s getting married!',['diamond-ring','trip-tahiti','honda-accord']],
+ ['backyard','Backyard Bash','Fire up the grill, it\'s a backyard party!',['weber-genesis','outdoor-kitchen','chevy-silverado']],
+ ['roadtrip','Road Trip','Pack the car, we\'re going on a road trip!',['camping-set','trip-key-west','airstream']],
+ ['greece','Greek Odyssey','Opa! This showcase is pure mythology!',['patio-dining','trip-greece','subaru-crosstrek']],
+ ['kitchen','Kitchen Confidential','Calling all chefs!',['kitchen-package','wine-cellar','trip-napa']],
+ ['twins','Seeing Double','You won\'t believe your eyes, because everything in this showcase comes in twos!',['trek-bikes','toyota-rav4','honda-crv']],
+ ['speed','Need for Speed','Start your engines!',['go-kart','kawasaki-ninja','chevy-corvette']],
+ ['retirement','Golden Years','Kick back and enjoy the good life!',['lazboy-recliners','trip-alaska','golf-cart']],
+ ['tropics','Tropical Paradise','Paradise is calling!',['hot-tub','trip-fiji','yamaha-waverunner']],
+ ['adventure','Off the Beaten Path','For the adventurer in you!',['e-bike','trip-costa-rica','jeep-grand-cherokee']],
+ ['london','Cheerio!','Pip pip! We\'re off to jolly old England!',['grandfather-clock','trip-london','ford-maverick']],
+ ['mountains','Mountain High','Head for the hills!',['sauna','trip-switzerland','teardrop']],
+ ['tinyhome','Downsizing','Who needs a mansion?',['generator','solar','tiny-house']],
+ ['family','Family Fun','Fun for the whole family!',['swing-set','trip-disney','kia-telluride']]];
+// GROCERY (cents) for grocery pricing games (Hole in One...): real everyday prices
+const GROCERY=[['heinz','Heinz ketchup, 32 oz',4.79,'🍅'],['jif','Jif peanut butter',3.98,'🥜'],['cheerios','Cheerios, family size',5.49,'🥣'],['tide-pods','Tide Pods, 42 count',13.97,'🧺'],
+ ['spam-can','Spam, 12 oz',3.48,'🥫'],['oreo','Oreo cookies',4.98,'🍪'],['bounty','Bounty, 6 rolls',15.48,'🧻'],['folgers','Folgers coffee, 30 oz',13.98,'☕'],['mayo','Hellmann\'s mayonnaise',5.27,'🫙'],
+ ['ramen','Maruchan ramen, 12 pack',4.28,'🍜'],['gatorade','Gatorade, 8 pack',7.48,'🥤'],['pringles','Pringles',2.68,'🥔'],['nutella','Nutella',5.86,'🍫'],['dawn','Dawn dish soap',4.47,'🧼'],
+ ['honey','Sue Bee honey',6.24,'🍯'],['pop-tarts','Pop-Tarts, 8 count',3.97,'🍓'],['velveeta','Velveeta',7.98,'🧀'],['charmin','Charmin, 12 rolls',16.97,'🧻'],['eggs','a dozen eggs',3.12,'🥚'],
+ ['milk','a gallon of milk',3.89,'🥛'],['butter','Land O Lakes butter',5.68,'🧈'],['crayola','Crayola crayons, 64',4.99,'🖍️'],['dr-pepper','Dr Pepper, 12 pack',7.98,'🥤'],
+ ['tabasco-bottle','Tabasco sauce',3.84,'🌶️'],['campbells-can','Campbell\'s tomato soup',1.48,'🥫'],['kraft-box','Kraft Mac & Cheese',1.38,'🧀'],['skippy','Skippy peanut butter',3.32,'🥜'],
+ ['lysol','Lysol wipes',5.98,'🧴'],['windex','Windex',4.97,'🧴'],['crest','Crest toothpaste',3.47,'🪥'],['frosted-flakes','Frosted Flakes',5.18,'🥣'],['doritos','Doritos, party size',6.48,'🌽']];
+Object.assign(exports,{SMALL,MID,BID,GRAND,CARS,BIG,TRIPS,SHOWCASES,GROCERY});

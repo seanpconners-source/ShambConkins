@@ -11,7 +11,14 @@ const arg=k=>{const a=process.argv.find(x=>x.startsWith('--'+k));return a?(a.spl
 const only=arg('only')?new RegExp(arg('only')):null,force=!!arg('force'),dry=!!arg('dry');
 const OUT='assets/music',KEY=process.env.FISH_API_KEY||'proxy-injected',MODEL='s2.1-pro-free';
 // how product names are said out loud
-const say=s=>s.replace(/\+/g,' Plus').replace(/\s*\(A16\)/,'').replace(/11-inch/,'eleven-inch').replace(/HERO13/,'Hero thirteen').replace(/CREAMi/,'Creamy').replace(/E-325/,'E three twenty-five').replace(/Pro 3\b/,'Pro three').replace(/Tundra 45/,'Tundra forty-five').replace(/Vitamix 5200/,'Vitamix fifty-two hundred').replace(/Switch 2\b/,'Switch two').replace(/Primavera 50\b/,'Primavera fifty');
+// catalog names (src/data/showCatalog.js) the voice would trip on
+const SPELL=[[/\bRAV4\b/g,'Rav four'],[/\bCR-V\b/g,'C R V'],[/\bMX-5\b/g,'M X five'],[/\bF-150\b/g,'F one fifty'],[/\bMazda3\b/g,'Mazda three'],[/\bS26\b/g,'S twenty-six'],
+ [/\bGTI\b/g,'G T I'],[/\bRZR\b/g,'Razor'],[/\bTCL\b/g,'T C L'],[/\bDJI\b/g,'D J I'],[/\bUGG\b/g,'Ugg'],[/Wüsthof/g,'Voost-hof'],[/\bSMEG\b/g,'Smeg'],[/\bLG\b/g,'L G'],
+ [/\bYETI\b/g,'Yeti'],[/\bOXO\b/g,'Oxo'],[/\bJBL\b/g,'J B L'],[/\bKONG\b/g,'Kong'],[/\bCHI\b/g,'C H I'],[/\bENO\b/g,'Eno'],[/\bLEGO\b/g,'Lego'],[/\bUNO\b/g,'Uno'],
+ [/\bTI-84\b/g,'T I eighty-four'],[/\bA9\+/g,'A nine plus'],[/\bK-Mini\b/g,'K Mini'],[/\bK-Elite\b/g,'K Elite'],[/\bi-Type\b/g,'i Type'],[/\b4K\b/g,'four K'],
+ [/\bAA\b/g,'double A'],[/\bNFL\b/g,'N F L'],[/\bNBA\b/g,'N B A'],[/\bPS5\b/g,'P S five'],[/\bQC\b/g,'Q C'],[/\bVR\b/g,'V R'],[/\bATV\b/g,'A T V'],[/\bDJ\b/g,'D J']];
+const spell=s=>SPELL.reduce((a,[re,to])=>a.replace(re,to),s);
+const say=s=>spell(s).replace(/\+/g,' Plus').replace(/\s*\(A16\)/,'').replace(/11-inch/,'eleven-inch').replace(/HERO13/,'Hero thirteen').replace(/CREAMi/,'Creamy').replace(/E-325/,'E three twenty-five').replace(/Pro 3\b/,'Pro three').replace(/Tundra 45/,'Tundra forty-five').replace(/Vitamix 5200/,'Vitamix fifty-two hundred').replace(/Switch 2\b/,'Switch two').replace(/Primavera 50\b/,'Primavera fifty');
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 async function tts(text,ref){for(let i=0;i<5;i++){
  const r=await fetch('https://api.fish.audio/v1/tts',{method:'POST',headers:{'Authorization':'Bearer '+KEY,'Content-Type':'application/json','model':MODEL},

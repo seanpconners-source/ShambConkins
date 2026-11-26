@@ -72,10 +72,11 @@ async function cliffHangers(s){
  const net=isOnline(s)?s.online:null,me=net?net.me:0,cpu=!net&&isCpu(s),board=s.origin==='board',names=s.players.map(p=>p.name||'Player');
  const snd=ST.createShowSound({clips:['cliff-hangers','cliff-hangers-crash-2','big-winner','losing-horn','ding','bell'],voice:'cliff'}),sfx=snd.sfx;holdMusic(6*3600);s.cleanup(()=>{snd.stop();releaseMusic();});
  const mine=i=>net?i===me:!(cpu&&i===1),cpuTurn=()=>cpu&&cur===1;
- const R0=seededRandom(`${s.seed}:cliff:grand`),grand=SP.GRAND_PRIZES[Math.floor(R0()*SP.GRAND_PRIZES.length)];
+ const R0=seededRandom(`${s.seed}:cliff:grand`),grandPool=SP.GRAND_PRIZES.filter(p=>p[2]>=2500&&p[2]<=12000),grand=grandPool[Math.floor(R0()*grandPool.length)];
  const smalls=SP.PRIZES.filter(p=>p[2]<=MAX_SMALL);
  const P=names.map((n,i)=>{const R=seededRandom(`${s.seed}:cliff:${i}`),pool=smalls.slice();for(let k=pool.length-1;k>0;k--){const j=Math.floor(R()*(k+1));[pool[k],pool[j]]=[pool[j],pool[k]];}
   return {prizes:pool.slice(0,3).map(([id,name,price,em])=>({id,name,price,em,guess:null})),steps:0,fell:false,done:false,score:0,mood:'normal'};});
+ snd.prepare([`He made it! You win ${grand[1]}!`,...P.flatMap(p=>p.prizes.flatMap((q,k)=>[`First prize: ${q.name}. What do you think it costs?`,`Next: ${q.name}.`,`Last one: ${q.name}. He's on step 0.`]))]);
  for(const p of P)for(const q of p.prizes)SP.prizePhoto(q.id);SP.prizePhoto(grand[0]);
  let W=s.W,H=s.H,t=0,mode='intro',introT=0,curtain=0,cur=0,pk=-1,entry='',banner=null,hostSay=null,hurry=false;
  // the climber: shown position (steps, may be fractional), pose, fall animation
