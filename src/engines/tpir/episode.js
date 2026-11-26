@@ -99,7 +99,9 @@ async function episode(s,{alone=false}={}){
   const out=wep.out||{winner:0,bonus:[0,0,0],totals:[0,0,0]};out.bonus.forEach((b,i)=>{if(b)add(C[i],b,'Big Wheel bonus');});wheels.push({winner:C[out.winner],C,totals:out.totals});
   // ---- the commercial break between the halves
   if(half===0){setScene({name:'break',host:true,draw:studio('row')});cast.cheer(1);say(R()<.5?'Stay with us! We\'ll be right back after this.':'Don\'t go away! We\'ll be right back.',2600);sfx.applause?.(2.4,.8);await wait(2600);if(!s.alive)return;
-   const ad=ADS[Math.floor(R()*ADS.length)];setScene({name:'ad',cast:false,draw(g,W,H,t){g.fillStyle='#000';g.fillRect(0,0,W,H);const pic=SS.picture(ad[0]),z=1.02+t*.012;if(pic){const k=Math.max(W/pic.width,H/pic.height)*z,w=pic.width*k,h=pic.height*k;g.drawImage(pic,(W-w)/2,(H-h)/2,w,h);}
+   const ad=ADS[Math.floor(R()*ADS.length)];setScene({name:'ad',cast:false,draw(g,W,H,t){g.fillStyle='#000';g.fillRect(0,0,W,H);const pic=SS.picture(ad[0]),z=1.02+t*.012;if(pic){// the 16:9 ad: fills a wide screen; on an upright one it sits whole in the middle over a blurred, darkened copy
+    if(W>H*1.2){const k=Math.max(W/pic.width,H/pic.height)*z,w=pic.width*k,h=pic.height*k;g.drawImage(pic,(W-w)/2,(H-h)/2,w,h);}
+    else{const kb=Math.max(W/pic.width,H/pic.height),bw=pic.width*kb,bh=pic.height*kb;g.save();g.filter='blur(14px) brightness(.45)';g.drawImage(pic,(W-bw)/2,(H-bh)/2,bw,bh);g.restore();const k=W/pic.width*z,w=pic.width*k,h=pic.height*k;g.drawImage(pic,(W-w)/2,H*.42-h/2,w,h);}}
     const fs=Math.min(W,H)*.06,y=H*.8;g.fillStyle='rgba(0,0,0,.45)';g.fillRect(0,y-fs*1.6,W,fs*3.4);txt(g,ad[1],W/2,y-fs*.5,fs*1.3,'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:W*.9});txt(g,ad[2],W/2,y+fs*.85,fs*.6,'#fff',{max:W*.9});
     if(t>5)txt(g,'Available TODAY at your local store!',W/2,H*.12,fs*.7,'#fff',{max:W*.9});
     // an old TV ad: soft scanlines
@@ -147,7 +149,10 @@ async function episode(s,{alone=false}={}){
    const roll=Math.min(1,Math.max(0,(t-.8-i*.5)/1.4));txt(g,money(e.total*roll),px+pw-fs*1,y,fs*1.6,'#7dff5a',{align:'right',font:'"SC Bangers",Impact,sans-serif',w:400});g.restore();});}});
  ann('Let\'s see how everybody did today!',2400);sfx.applause?.(3,.8);await wait(3000);if(!s.alive)return;ann('Today\'s big winner...',1800);await wait(2000);if(!s.alive)return;
  show(`${best.name.toUpperCase()}!`,money(best.total)+' in cash and prizes',3.2,'#ffe23a');sfx.winner?.();vibrate([30,40,30]);await wait(3600);if(!s.alive)return;
- const scores=humans.map((h,i)=>entry({p:i}).total);s.finish(scores,`THE PRICE IS RIGHT · ${humans.map((h,i)=>`${hName(i)} ${money(scores[i])}`).join(' · ')}`);}
+ const scores=humans.map((h,i)=>entry({p:i}).total);
+ // played alone: the result card is a personal best (no CPU line), like the other play-alone games
+ if(alone&&s.solo){s.solo.kind='game';s.solo.alone=true;}
+ s.finish(scores,`THE PRICE IS RIGHT · ${humans.map((h,i)=>`${hName(i)} ${money(scores[i])}`).join(' · ')}`);}
 // the winner's family: characters from the same show/film as the winner (else anybody), up to four
 function familyFor(id,R){const pool=facePool(),src=id&&character(id)?.source,same=src?pool.filter(f=>f!==id&&character(f)?.source===src):[],rest=pool.filter(f=>f!==id&&!same.includes(f));
  const pick=a=>a.splice(Math.floor(R()*a.length),1)[0],out=[];while(out.length<4&&same.length)out.push(pick(same));while(out.length<4&&rest.length)out.push(pick(rest));return out;}
