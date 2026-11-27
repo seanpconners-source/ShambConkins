@@ -166,6 +166,7 @@ LINES.push(
  ['ep-pick-1',RICH,"It's The Price Is Right, game time! Pick a game and play along!","It's The Price Is Right, game time! Pick a game and play along!",['episode'],1],
  ['ep-sc-all-yours',RICH,'And it can all be yours... if the price is right!','And it can all be yours... if the price is right!',['episode'],1],
  ['ep-sc-two',BOB,'Here\'s the second showcase!','Here\'s the second showcase!',['episode'],1],
+ ['ep-sc-first',BOB,'Let\'s take a look at the first showcase!','Let\'s take a look at the first showcase!',['episode'],1],
  ['ep-car-1',RICH,'A NEW CAR!','A NEW CAR!',['episode'],2]);
 
 // ---- MORE TALK (src/data/tpirScript.js; owner, Nov 26): Showcase bridges, trip write-ups, car blurbs, the host's comments, goodbyes,
@@ -177,6 +178,7 @@ for(const [id,t] of Object.entries(SC.TRIP_DESC))LINES.push([`tripd-${id}`,RICH,
 SC.CAR_DESC.forEach((t,i)=>LINES.push([`car-desc-${i+1}`,RICH,t,t,['episode'],1]));
 SC.BOB_COMMENTS.forEach((t,i)=>LINES.push([`bob-c-${i+1}`,BOB,t,t,['episode'],1]));
 SC.GOODBYE.forEach((t,i)=>LINES.push([`bye-${i+1}`,i?RICH:BOB,t,t,['episode'],1]));
+for(const [id,t] of SC.PARTING)if(t!==SC.GOODBYE[1])LINES.push([`gift-${id}`,RICH,t,t,['episode'],1]);
 const cap=t=>t[0].toUpperCase()+t.slice(1);
 for(const t of SC.WITH_NAME)LINES.push([`wn-${slug(t)}`,BOB,cap(t),cap(t),ALL,1]);
 for(let n=1;n<=SC.HL_MAX;n++)LINES.push([`hl-${n}`,BOB,`Is it higher or lower than $${n}?`,null,['punch'],1]);

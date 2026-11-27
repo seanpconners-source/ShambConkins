@@ -42,7 +42,7 @@ async function punchABunch(s){
    L={tags:{x:8,y:H-tagH-8,w:W-16,h:tagH},board:{x:W*.02,y:by,w:bw,h:bh},logo:{x:W/2,y:ly,w:lw},prize:{x:W*.05,y:py,w:W*.9,h:ph},btns:{x:W*.05,y:py+ph+fs*2.2,w:W*.9,h:fs*2.5},
     bub:{x:W/2,y:by+bh*.4,w:Math.min(W*.86,fs*15)},slip:{x:W/2,y:by+bh*.5,w:Math.min(W*.7,fs*16)}};}}
  const cell=(i)=>{const B=L.board,k=B.w/BG.w,[a,b,c,d]=BG.grid,cw=(c-a)/BG.cols,ch=(d-b)/BG.rows,col=i%BG.cols,row=Math.floor(i/BG.cols),sz=Math.min(cw,ch)*.9;return {x:B.x+(a+col*cw+(cw-sz)/2)*k,y:B.y+(b+row*ch+(ch-sz)/2)*k,w:sz*k,h:sz*k};};
- function draw(){const g=K.begin();layout();const {fs,t}=K,p=P[K.cur],B=L.board;
+ function draw(){K.hideCast=phase==='ask'||phase==='answer';const g=K.begin();layout();const {fs,t}=K,p=P[K.cur],B=L.board;
   g.save();g.translate(B.x,B.y);g.scale(B.w/BG.w,B.w/BG.w);drawBoard(g);g.restore();
   for(let i=0;i<50;i++){const cb=cell(i),k=cb.w/PPG.w;g.save();g.translate(cb.x,cb.y);g.scale(k,k);if(p.punched.has(i))drawHole(g);else drawPaper(g,phase==='punch'&&!K.waiting()&&Math.floor(t*4+i)%7===0);g.restore();
    if(p.punched.has(i)&&p.cur!==i)txt(g,p.slips[i]>=1000?`${p.slips[i]/1000}K`:String(p.slips[i]),cb.x+cb.w/2,cb.y+cb.h/2,cb.w*.34,'#ffd75a');

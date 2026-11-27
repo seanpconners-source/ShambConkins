@@ -77,11 +77,18 @@ const CAR_DESC=['It comes with a backup camera, Bluetooth, heated seats, and all
 const BOB_COMMENTS=['Isn\'t that something?','Oh, that\'s a beautiful showcase!','I\'d bid on that one myself!','Now that\'s a showcase!','Wow! Look at that!','Oh, that\'s nice. Very nice.'];
 // a player who's out: the host and the announcer say goodbye like the show
 const GOODBYE=['Thank you so much for playing The Price Is Right!','You\'ll go home with a lifetime supply of Rice-A-Roni, the San Francisco treat, and a copy of The Price Is Right home game! Thanks for playing!'];
+// the parting gifts (owner, Nov 27: not always Rice-A-Roni, always the home game): [prize photo id, the announcer's line]
+const HOME_GAME='tpir-home-game';
+const PARTING=[['rice-a-roni',GOODBYE[1]],
+ ...[['spam','a year\'s supply of Spam'],['crest-strips','a year\'s supply of Crest 3D Whitestrips'],['kraft-mac','a year\'s supply of Kraft Macaroni and Cheese'],
+  ['charmin-case','a year\'s supply of Charmin toilet paper'],['pop-tarts-case','a year\'s supply of Pop-Tarts'],['folgers-case','a year\'s supply of Folgers coffee'],
+  ['ramen-case','a year\'s supply of Maruchan ramen noodles'],['oreo-case','a year\'s supply of Oreo cookies']].map(([id,g])=>[id,`You'll go home with ${g}, and a copy of The Price Is Right home game! Thanks for playing!`,g])];
 // a new car! (the host's line after the name; the announcer's shout is 'A NEW CAR!')
 const NEW_CAR=['you just won a NEW CAR!'];
 // the host with a name in front: "<name>, " + one of these (each its own clip, the name its own clip: tpirVoice nm-*)
 const WITH_NAME=['what\'s your bid?','come on up here!','you\'re going to the Showcase!','thank you for playing The Price Is Right!','you just won a NEW CAR!',
- 'it\'s your turn!','spin the wheel!','here\'s your showcase!','congratulations!','you did it!','oh, I\'m sorry.','come on down!','you\'re our big winner today!','here we go!','step up to the wheel!'];
+ 'it\'s your turn!','spin the wheel!','here\'s your showcase!','congratulations!','you did it!','oh, I\'m sorry.','come on down!','you\'re our big winner today!','here we go!','step up to the wheel!',
+ 'you were our top winner on the wheel, so you decide. Do you want to bid on this showcase, or pass it?'];
 // higher or lower than $N (Punch-a-Bunch): one clip per amount
 const HL_MAX=120;
-Object.assign(exports,{SHOWCASE_TIES,TRIP_DESC,CAR_DESC,BOB_COMMENTS,GOODBYE,NEW_CAR,WITH_NAME,HL_MAX});
+Object.assign(exports,{SHOWCASE_TIES,TRIP_DESC,CAR_DESC,BOB_COMMENTS,GOODBYE,PARTING,HOME_GAME,NEW_CAR,WITH_NAME,HL_MAX});

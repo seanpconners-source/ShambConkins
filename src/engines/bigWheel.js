@@ -93,9 +93,11 @@ async function bigWheel(s){
  function draw(){layout();x.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);const g=x,fs=L.fs;ST.drawStage(g,W,H,'wheel',t);
   const hostH=L.wide?H*.84:Math.min(H*.4,W*.8),hx=L.wide?W-W*.09:Math.min(W*.86,W-hostH*.19),hy=L.wide?H*.97:H-fs*5.6;
   if(L.wide){ST.drawModel(g,L.wx-L.ww*.32,H*.97,hostH*.92,modelPose,t,0);ST.drawModel(g,L.wx+L.ww*1.3,H*.97,hostH*.9,modelPose,t+1,1,true);}
+  // tall screens: the host stands behind the wheel (owner, Nov 27: he covered the wheel on the phone)
+  if(!L.wide)ST.drawHost(g,hx,hy,hostH,hostPose,t,true);
   g.save();if(shake){g.translate(Math.sin(t*90)*shake*4,0);}drawWheel(g);g.restore();
   ST.drawLogo(g,'wheel-logo','THE BIG WHEEL',W/2,Math.max(L.top+fs*.6,L.wy-fs*.4),Math.min(W*.46,fs*15),t,{cols:['#ffe23a','#ff8a1e']});
-  ST.drawHost(g,hx,hy,hostH,hostPose,t,true);
+  if(L.wide)ST.drawHost(g,hx,hy,hostH,hostPose,t,true);
   podiums(g);
   if(mode==='pull'&&human(cur)&&!drag)txtC(g,'GRAB THE WHEEL AND PULL IT DOWN HARD!',W/2,L.wy+L.wh+fs*(L.wide?-1:1),fs*.82,'#fff');
   if(drag){g.strokeStyle='rgba(255,255,255,.5)';g.lineWidth=4;g.beginPath();g.moveTo(drag.x,drag.y0);g.lineTo(drag.x,drag.y);g.stroke();}

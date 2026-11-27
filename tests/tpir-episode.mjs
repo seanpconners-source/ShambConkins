@@ -8,7 +8,7 @@ const browser=await launchBrowser(),page=await (await browser.newContext({viewpo
 const errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('  PAGE ERROR',e.message);});page.on('console',m=>{if(m.type()==='error'||/engine failure|episode segment/i.test(m.text())){console.log('  CONSOLE',m.text().slice(0,300));if(/engine failure|episode segment/i.test(m.text()))errors.push(m.text());}});
 let bad=0;const check=(ok,m)=>{console.log((ok?'ok   ':'FAIL ')+m);if(!ok)bad++;};
 await page.goto((await appURL()),{timeout:180000});await page.waitForSelector('.title-screen',{timeout:60000});await page.waitForFunction(()=>!document.getElementById('boot'));
-await page.evaluate(([m,mw])=>{const S=window.ShambConkins;globalThis.__tpirAuto=true;globalThis.__tpirSharp=true;globalThis.__tpirWin=mw.endsWith('win');if(m==='2p'){S.store.profile.settings.solo={on:false,who:0,level:'normal'};S.requestGame({id:'price-bid-off',origin:'arcade',quick:true});}
+await page.evaluate(([m,mw])=>{const S=window.ShambConkins;globalThis.__tpirAuto=true;globalThis.__tpirSharp=true;globalThis.__tpirWin=mw.endsWith('win');globalThis.__tpirScHuman=true;if(m==='2p'){S.store.profile.settings.solo={on:false,who:0,level:'normal'};S.requestGame({id:'price-bid-off',origin:'arcade',quick:true});}
  else{S.store.profile.settings.solo={on:true,who:0,level:'normal'};S.requestGame({id:'price-bid-off',origin:'arcade',solo:true,quick:true});}},[mode,modeArg]);
 await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.guide,null,{timeout:30000});await page.waitForTimeout(3000);
 await page.screenshot({path:screenshotPath(`tpe-guide-${tag}.png`)});
@@ -31,10 +31,14 @@ const seen=new Set(),shots=new Set(),t0=Date.now();let last='';
 while(Date.now()-t0<900000){const st=await page.evaluate(()=>{const S=window.ShambConkins.store,ss=S.session;if(!ss)return {over:true};const D=ss.debug||{};
   let what=D.episode?'ep:'+D.scene:D.C?'wheel':D.seats?'row':D.cases?'showcase':D.P?'game':'?';
   const slow=/^ep:(family|tally|credits|signoff)$/.test(what);
+  // the Showcase's moments get their own screenshot before the bot answers (prize on the turntable, the choice card, the bid keypad)
+  const sub=D.cases?(D.waiting?'sc-bid'+D.bidder:D.choosing?'sc-choose':D.door>.97&&D.prize?'sc-door':null):null;
+  if(sub&&!(globalThis.__shot||(globalThis.__shot=new Set())).has(sub)){globalThis.__shot.add(sub);return {what,sub,over:false};}
   try{if(D.waiting&&D.autoBid)D.autoBid();if(D.cases&&D.choose)D.choose('pass');if(D.C&&D.mode==='pull')D.spin(10+Math.random()*12);if(D.C&&D.mode==='choose')D.choose('stay');if(!slow)D.hurry=true;}catch(e){}
   return {what,over:false};});
  if(st.over)break;if(!seen.has(st.what)){seen.add(st.what);console.log('  part:',st.what,Math.round((Date.now()-t0)/1000)+'s');}
- if(st.what!==last&&!shots.has(st.what)){shots.add(st.what);await page.waitForTimeout(1500);await page.screenshot({path:screenshotPath(`tpe-${st.what.replace(':','-')}-${tag}.png`)});}
+ if(st.sub){await page.waitForTimeout(st.sub==='sc-door'?2600:900);await page.screenshot({path:screenshotPath(`tpe-${st.sub}-${tag}.png`)});console.log('  shot',st.sub);continue;}
+ if(st.what!==last&&!shots.has(st.what)){shots.add(st.what);await page.waitForTimeout(st.what==='ep:goodbye'?5200:1500);await page.screenshot({path:screenshotPath(`tpe-${st.what.replace(':','-')}-${tag}.png`)});}
  last=st.what;await page.waitForTimeout(250);
  if(st.what==='ep:tally'){await page.waitForTimeout(2500);await page.screenshot({path:screenshotPath(`tpe-tally-${tag}.png`)});const T=await page.evaluate(()=>window.ShambConkins.store.session?.debug?.tally);console.log('  tally',JSON.stringify(T));}}
 // the show branches now (owner, Nov 26: out on the row / the wheel / the Showcase = goodbye, no ending): always the open, a row, a

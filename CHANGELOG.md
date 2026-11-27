@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.99.71
+
+- **The Showcase like the show:** the first showcase is presented first, then Bob asks the top winner on the wheel, by name, to bid on it or pass it.
+- **The bid keypad lists what's in the showcase** (pictures and names), and it no longer covers the contestants.
+- **Cars sit on the turntable** and are bigger; the announcer's words are a lower third that never covers the prizes.
+- **A commercial before the Showcase** when the show hasn't had one yet.
+- **Parting gifts:** always The Price Is Right home game, plus a year's supply of something (Spam, Crest Whitestrips, Pop-Tarts, Rice-A-Roni...), all read by the announcer.
+- **Tidier screens:** Bob and the model stand behind the game pieces (Safe Crackers, Race Game, the Big Wheel on phones), and Bob's speech never goes under the Pause/Exit buttons.
+
 ## v0.99.70
 
 - **A surprise for a friend:** a new character joins the ShambConkins Friends.

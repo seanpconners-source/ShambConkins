@@ -120,7 +120,10 @@ function drawLogo(g,slot,text,cx,cy,w,t,{cols=['#ffe23a','#ff3d6e']}={}){const p
  g.lineWidth=fs*.14;g.strokeStyle='#000';g.strokeText(text,cx,cy+fs*.04);const gr=g.createLinearGradient(0,cy-fs/2,0,cy+fs/2);gr.addColorStop(0,'#fff7c2');gr.addColorStop(.5,cols[0]);gr.addColorStop(1,cols[1]);g.fillStyle=gr;g.fillText(text,cx,cy+fs*.04);g.restore();return h;}
 // a speech bubble pointing at (px,py)
 function bubble(g,x,y,text,maxW,fs,px,py){g.save();g.font=`800 ${fs}px "SC Nunito",sans-serif`;const words=text.split(' '),lines=[];let cur='';for(const w of words){const tt=cur?cur+' '+w:w;if(g.measureText(tt).width>maxW&&cur){lines.push(cur);cur=w;}else cur=tt;}if(cur)lines.push(cur);
- const bw=Math.min(maxW,Math.max(...lines.map(l=>g.measureText(l).width)))+fs*1.2,bh=lines.length*fs*1.25+fs*.8;const bx=x-bw/2,by=y-bh;
+ const bw=Math.min(maxW,Math.max(...lines.map(l=>g.measureText(l).width)))+fs*1.2,bh=lines.length*fs*1.25+fs*.8;
+ // never under the floating Pause / Exit pills at the top right (owner, Nov 27: Bob's words went under them) or off the top
+ {const cw=g.canvas.clientWidth||g.canvas.width,right=x+bw/2>cw-190,minTop=right?50:6;if(y-bh<minTop)y=minTop+bh;}
+ const bx=x-bw/2,by=y-bh;
  g.fillStyle='#fff';g.strokeStyle='#14062e';g.lineWidth=2;g.beginPath();g.roundRect(bx,by,bw,bh,fs*.6);g.fill();g.stroke();
  if(px!=null){const ax=clampN(px,bx+fs,bx+bw-fs),dx=px-ax,dy=py-y,d=Math.hypot(dx,dy)||1,L=Math.min(d,fs*1.8),tx=ax+dx/d*L,ty=y+Math.max(fs*.6,dy/d*L);
   g.beginPath();g.moveTo(ax-fs*.45,y-1);g.lineTo(tx,ty);g.lineTo(ax+fs*.45,y-1);g.closePath();g.fill();g.stroke();g.fillRect(ax-fs*.5,y-2.5,fs,3);}

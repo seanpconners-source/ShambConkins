@@ -39,7 +39,10 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
  K.recv=async()=>{const m=await net.next();return m&&s.alive?m:null;};
  // sizes for this frame; a game calls it first in its draw
  K.base=()=>{K.W=s.W;K.H=s.H;K.top=(fb.top||40)+6;K.fs=clamp(Math.min(K.W,K.H)*.04,12,20);K.wide=K.W>K.H*1.15;K.fold=!K.wide&&K.W>K.H*.78;return K;};
- K.begin=()=>{K.base();const g=x;g.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);K.hits=[];ST.drawStage(g,K.W,K.H,kind,K.t,{floorY:K.floorY});return g;};
+ K.begin=()=>{K.base();const g=x;g.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);K.hits=[];ST.drawStage(g,K.W,K.H,kind,K.t,{floorY:K.floorY});
+  // the host and the model stand on the stage BEHIND the game's props (owner, Nov 27: the model covered the safe's digits / the race
+  // board on wide screens); only their speech bubble is drawn on top. A game that places them itself (K.spots) keeps them in front.
+  K._castDrawn=false;if(!K.spots&&!K.hideCast&&K.mode!=='intro'){K.cast.draw(g,K.W,K.H,K.t,K.cast.spots(K.W,K.H,{foot:K.H-K.fs*3-10}),!!K.hostSay);K._castDrawn=true;}return g;};
  // the stage floor line on screen (K.floorY = where the game wants it: the picture is moved/zoomed to put its floor there)
  K.floor=()=>ST.floorAt(K.W,K.H,kind,K.floorY);
  // a lit game-show button; tapping it calls fn (only while it is drawn)
@@ -53,7 +56,7 @@ function createKit(s,{kind,bg='#14062e',clips=[],song=null}={}){
   s.sprite(g,i,x0+fs*1.5,y0+th/2,th*.75,{exact:true,still:true,mood:moods[i]||'normal'});g.fillStyle=i===K.cur?'#14062e':'#fff';g.font=`900 ${fs*.9}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';
   g.fillText(n.slice(0,12).toUpperCase(),x0+fs*3,y0+th*.31);g.font=`900 ${fs*1.05}px "SC Bangers",Impact,sans-serif`;g.fillText(String(line(i)||'—').slice(0,18),x0+fs*3,y0+th*.69);});};
  // host bubble, curtain, banner (drawn last)
- K.overlay=(g,B,{noCast=false}={})=>{const sp=K.spots||K.cast.spots(K.W,K.H,{foot:K.H-K.fs*3-10});if(!noCast)K.cast.draw(g,K.W,K.H,K.t,sp,!!K.hostSay);
+ K.overlay=(g,B,{noCast=false}={})=>{const sp=K.spots||K.cast.spots(K.W,K.H,{foot:K.H-K.fs*3-10});if(!noCast&&!K._castDrawn)K.cast.draw(g,K.W,K.H,K.t,sp,!!K.hostSay);
   if(K.hostSay&&!noCast){if(K.cast.hv>.5){const b=K.cast.bubbleAt(K.W,K.H,sp,K.fs);ST.bubble(g,b.x,b.y,K.hostSay.text,b.w,K.fs*.85,b.tx,b.ty);}else if(B)ST.bubble(g,B.x,B.y,K.hostSay.text,B.w,K.fs*.85,B.x,B.y+K.fs*2.5);}if(K.mode==='intro')ST.drawCurtain(g,K.W,K.H,K.curtain,K.t);
   if(K.banner)ST.moneyBanner(g,K.W,K.H,K.banner.big,K.banner.small,Math.min(1,K.banner.t*3),K.banner.col);};
  K.inBox=(pt,b)=>pt.x>=b.x&&pt.x<=b.x+b.w&&pt.y>=b.y&&pt.y<=b.y+b.h;

@@ -128,8 +128,10 @@ async function episode(s,{alone=false}={}){
  let fin=finalists.filter(w=>w.p!=null&&st[w.p]==='wheel');const gFin=finalists.filter(w=>w.p==null);
  while(fin.length<2){const g=gFin.shift()||(()=>{const n=nextGuest();return {name:n.name,id:n.id};})();fin.push(g);}
  fin=fin.slice(0,2);
+ // no break yet (owner, Nov 27): the show always goes to a commercial before the Showcase
+ if(!broke){broke=true;await commercial();if(!s.alive)return;}
  // ---- THE SHOWCASE
- const [A,B]=fin;const scWho=[A,B].map((w,i)=>{const e=entry(w),isP=w.p!=null;return {name:e.name,p:isP?w.p:null,id:isP?null:w.id,body:isP?bodyOf[w.p]:i*2+1,won:e.total,human:isP&&!auto(w.p),skill:isP?(s.solo?.skill??.6):.42};});
+ const [A,B]=fin;const scWho=[A,B].map((w,i)=>{const e=entry(w),isP=w.p!=null;return {name:e.name,p:isP?w.p:null,id:isP?null:w.id,body:isP?bodyOf[w.p]:i*2+1,won:e.total,human:isP&&(!auto(w.p)||!!globalThis.__tpirScHuman),skill:isP?(s.solo?.skill??.6):.42};});
  const scEp={sc:{who:scWho,top:scWho[0].won>=scWho[1].won?0:1}};
  const sr=await seg(require("src/engines/tpir/showcase.js").showcase,{players:alone?[humans[0],humans[0]]:humans,solo:s.solo,episode:scEp,seed:`${s.seed}:ep:showcase`});if(!sr)return;
  const so=scEp.out||{won:[0,0],winner:-1};[A,B].forEach((w,i)=>{if(so.won[i])add(w,so.won[i],'Showcase');});
@@ -170,17 +172,19 @@ async function episode(s,{alone=false}={}){
   ann(SC.CAR_DESC[Math.floor(R()*SC.CAR_DESC.length)],3600);await wait(3800);}
  // OUT (owner, Nov 26): the host thanks them by name, the announcer reads the parting gifts (a lifetime supply of Rice-A-Roni, the home
  // game), and their show is over
- async function goodbye(i,why){st[i]='out';const e=entry({p:i}),who={p:i};add({p:i},0,'Rice-A-Roni + the home game');snd.want(['v-'+TV.nameKey(e.name)]);
+ async function goodbye(i,why){st[i]='out';const e=entry({p:i}),who={p:i};
+  // the parting gifts (owner, Nov 27): always the home game, and a year's supply of something (not always the Rice-A-Roni)
+  const gift=SC.PARTING[Math.floor(R()*SC.PARTING.length)],gname=gift[2]?gift[2].replace(/^a year's supply of /i,''):'Rice-A-Roni';
+  add({p:i},0,`${gname} + the home game`);snd.want(['v-'+TV.nameKey(e.name)]);snd.prepare?.([gift[1]]);SP.prizePhoto(gift[0]);SP.prizePhoto(SC.HOME_GAME);
   setScene({name:'goodbye',host:true,draw(g,W,H,t,fs){ST.drawStage(g,W,H,why==='showcase'?'showcase':'wheel',t);const h=Math.min(H*.6,W*.5),fy=H*.94;
    ST.floorShadow(g,W*.5,fy,h*.4);P.contestant(g,s,who,W*.5,fy,h,{body:bodyOf[i],pose:t>4?'clap':'stand',mood:t>4?'normal':'sad',t});
-   if(t>3.2){const a=ease(t-3.2),rr=SP.prizePhoto('rice-a-roni'),bw=Math.min(W*.24,h*.5);g.save();g.globalAlpha=a;ST.drawPrizeOn(g,rr,W*.76,fy-h*.05,bw,bw,{emoji:'🍚',ped:true});
-    // the home game: a box in the show's colours
-    const bx=W*.24,by=fy-h*.05-bw*.7,bw2=bw*.9,bh=bw*.62;g.save();g.translate(bx,by);g.rotate(-.08);const gr=g.createLinearGradient(-bw2/2,0,bw2/2,0);gr.addColorStop(0,'#ff3d6e');gr.addColorStop(.5,'#ffd23f');gr.addColorStop(1,'#3a86ff');g.fillStyle=gr;g.fillRect(-bw2/2,-bh/2,bw2,bh);g.strokeStyle='#fff';g.lineWidth=3;g.strokeRect(-bw2/2,-bh/2,bw2,bh);
-    txt(g,'THE PRICE IS RIGHT',0,-bh*.12,bh*.2,'#fff',{font:'"SC Bangers",Impact,sans-serif',w:400,max:bw2*.9});txt(g,'HOME GAME',0,bh*.2,bh*.16,'#14062e',{max:bw2*.8});g.restore();g.restore();}
+   if(t>3.2){const a=ease(t-3.2),bw=Math.min(W*.26,h*.55),ph=SP.prizePhoto(gift[0]),hg=SP.prizePhoto(SC.HOME_GAME);g.save();g.globalAlpha=a;
+    ST.drawPrizeOn(g,ph,W*.79,fy-h*.05,bw,bw,{emoji:'🎁',ped:true});ST.drawPrizeOn(g,hg,W*.21,fy-h*.05,bw,bw,{emoji:'🎲',ped:true});
+    const lf=Math.min(fs*.85,W*.03);txt(g,'THE HOME GAME',W*.21,fy+lf*.2,lf,'#fff',{max:W*.36});txt(g,gname.toUpperCase(),W*.79,fy+lf*.2,lf,'#fff',{max:W*.36});g.restore();}
    txt(g,`THANKS FOR PLAYING, ${String(e.name).toUpperCase()}!`,W/2,H*.12,Math.min(W*.07,H*.075),'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:W*.92});
    txt(g,`${money(e.total)} in cash and prizes`,W/2,H*.12+Math.min(W*.06,H*.065),fs*1,'#fff',{max:W*.9});}});
   if(!snd.clip('losing-horn'))sfx.aww?.();await wait(900);if(!s.alive)return;say(`${e.name}, thank you for playing The Price Is Right!`,3000);sfx.applause?.(2.4,.6);await wait(3200);if(!s.alive)return;
-  ann(SC.GOODBYE[1],6000);await wait(6200);}
+  ann(gift[1],6000);await wait(6200);}
  // ---- the end of the show: the ending only for a real player who won the Showcase, else straight to the winnings
  async function endShow(champ){if(!s.alive)return;
   const tally=[...T.values()].sort((p,q)=>(q.guest?0:1)-(p.guest?0:1)||q.total-p.total);
