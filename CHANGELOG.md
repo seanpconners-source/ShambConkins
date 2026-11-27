@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## v0.99.70
 
+- **A surprise for a friend:** a new character joins the ShambConkins Friends.
 - **The Price Is Right plays by the show's rules:** Contestants' Row keeps going until every player has won a bid and played a pricing game (no game twice in a show); studio guests who win go off camera and turn up at the Big Wheel. Win the wheel to reach the Showcase, win the Showcase for the ending. Lose anywhere and Bob thanks you by name and you go home with Rice-A-Roni and the home game. Your score is all your cash and prizes.
 - **A NEW CAR!** A big moment of its own: the car on the turntable with a model, then you run in and jump around it.
 - **The ending:** the family runs down, Bob signs off in front of everybody celebrating, and the credits roll over the party.

@@ -15,7 +15,10 @@ const GIFTS=[
   reveal:{title:'Somebody followed you out of the lab',body:'Hannah’s on the team — and look who came along. Carson joins your roster!'}},
  // Zach Godsey (owner, Nov 24): his saved name is "Zach". Zach joins at start; one stage only (no `then`)
  {id:'zach-lab',who:/^\s*zach\b/i,give:['uss-zach'],
-  hello:{title:'Hey Zach!',body:'Fresh out of the Unlimited Savory Systems lab: Zach just joined your roster. Pick him on Characters and have fun!'}}
+  hello:{title:'Hey Zach!',body:'Fresh out of the Unlimited Savory Systems lab: Zach just joined your roster. Pick him on Characters and have fun!'}},
+ // Nikki (owner, Nov 27): her saved name is "Nikki". Nikki joins at start; one stage only
+ {id:'nikki-gift',who:/^\s*nikki\b/i,give:['nikki'],
+  hello:{title:'Hey Nikki!',body:'Surprise! You\'re in the game: Nikki just joined your roster. Pick yourself on Characters and have fun!'}}
 ];
 const has=(profile,id)=>[...profile.shared,...Object.values(profile.rosters||{}).flat()].some(c=>characterIdentity(c)===characterIdentity(id));
 const add=(profile,ids)=>{const out=[];for(const id of ids)if(!profile.shared.some(c=>characterIdentity(c)===characterIdentity(id))){profile.shared.push(id);out.push(id);}return out;};

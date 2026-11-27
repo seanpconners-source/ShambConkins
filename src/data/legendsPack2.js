@@ -134,6 +134,8 @@ const ROWS2=[
  // Lydia's crew (owner, Nov 12): normal unlocks for everyone; Lydia's own phone gets them as a gift (src/gifts.js)
  ['houston','Houston','ShambConkins Friends','🚀','','explorer','Houston, we have a landmark. Always lands exactly where the points are.'],
  ['ezra','Ezra','ShambConkins Friends','🌟','','competitor','The secret third member of Lydia’s crew. Turns up for the win.'],
+ // Nikki (owner, Nov 27): a normal unlock for everyone; her own phone gets her as a gift (src/gifts.js)
+ ['nikki','Nikki','ShambConkins Friends','💖','','competitor','Sean’s friend Nikki. Smiles all the way to the win, pouts when she doesn’t get it.'],
  ['flarpy','Flarpy','ShambConkins','🐴','','explorer','A brown horse named Flarpy. Gallops straight to the landmark.'],
  ['david-bowie','David Bowie','David Bowie','⚡','David Bowie','explorer','Ziggy played guitar. Also finds every landmark.'],
  ['bowie-jareth','Jareth, the Goblin King','Labyrinth','🔮','David Bowie','scavenger','You remind him of the babe. Gives you a supply.'],
