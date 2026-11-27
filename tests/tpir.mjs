@@ -34,8 +34,9 @@ async function play(which){
   await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.mode==='guess'&&window.ShambConkins.store.session.debug.keys.length,null,{timeout:30000});
   const ks=await page.evaluate(()=>window.ShambConkins.store.session.debug.keys);for(const ch of '101'){const k=ks.find(k=>k.l===ch);await page.mouse.click(box.x+k.x+k.w/2,box.y+k.y+k.h/2);await page.waitForTimeout(100);}
   await page.waitForTimeout(400);await page.screenshot({path:screenshotPath(`tpir-clock-call-${tag}.png`)});
-  const st=await page.evaluate(()=>{const D=window.ShambConkins.store.session.debug;return {g:D.P[0].prizes[0].guesses,left:D.P[0].left};});
-  check(st.g.length===1&&st.g[0][0]===101&&st.g[0][1]==='HIGHER'&&st.left<30,`keypad guess $101 auto-submits: ${JSON.stringify(st.g)}, clock ${st.left.toFixed(1)} s`);}
+  const st=await page.evaluate(()=>{const D=window.ShambConkins.store.session.debug;const q=D.P[0].prizes[0];return {g:q.guesses,left:D.P[0].left,want:q.price>101?'HIGHER':q.price<101?'LOWER':'WIN'};});
+  // the call matches the real price (the catalog has prizes from $100 since v0.99.69)
+  check(st.g.length===1&&st.g[0][0]===101&&st.g[0][1]===st.want&&st.left<30,`keypad guess $101 auto-submits: ${JSON.stringify(st.g)}, clock ${st.left.toFixed(1)} s`);}
  const S_=f=>page.evaluate(f),click=async b=>{await page.mouse.click(box.x+b.x+b.w/2,box.y+b.y+b.h/2);await page.waitForTimeout(150);};
  if(which==='range-game'){ // a real tap on the big stop button while the finder rises
   await page.waitForFunction(()=>window.ShambConkins.store.session?.debug?.rising&&window.ShambConkins.store.session.debug.cur===0&&window.ShambConkins.store.session.debug.button,null,{timeout:30000});await page.waitForTimeout(1500);

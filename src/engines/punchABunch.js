@@ -53,15 +53,17 @@ async function punchABunch(s){
    // HIGHER OR LOWER (owner, Nov 26: "the item, its title, and the higher or lower buttons should just appear large in the center of the
    // screen"): the board dims, the prize stands big on a display stand in a card in the middle, its name, the question, two big buttons
    g.fillStyle='rgba(8,2,24,.62)';g.fillRect(0,0,K.W,K.H);
-   const cw=Math.min(K.W*.94,fs*26),top=K.top+fs*.4,ch=Math.min(K.H-top-L.tags.h-fs*1.2,fs*30),cx=K.W/2,y0=top+Math.max(0,(K.H-top-L.tags.h-fs-ch)/2);
+   const top=K.top+fs*.4,avail=K.H-top-L.tags.h-fs*1.2,side=K.W>K.H*1.25,cw=side?Math.min(K.W*.94,fs*46):Math.min(K.W*.94,fs*26),ch=side?avail:Math.min(avail,fs*30),cx=K.W/2,y0=top+Math.max(0,(avail+fs*.2-ch)/2);
    g.fillStyle='rgba(20,6,46,.94)';g.beginPath();g.roundRect(cx-cw/2,y0,cw,ch,18);g.fill();g.strokeStyle='#ffd75a';g.lineWidth=3;g.stroke();
-   txt(g,`PRIZE ${p.q+1} OF 4`,cx,y0+fs*1.2,fs*.85,'#ffd75a');
-   const bh=fs*3.6,qy=y0+ch-bh-fs*.9,ny=qy-fs*4.2,iy=y0+fs*2.2,ih=ny-fs*1.2-iy,pedW=Math.min(cw*.4,ih*.5),pedTop=ny-fs*1.6-pedW*.45;
-   ST().drawPrizeOn(g,SP.prizePhoto(q.id),cx,pedTop,cw*.78,pedTop-iy-fs*.3,{emoji:q.em,ped:true,pedW});
-   txt(g,q.name.toUpperCase(),cx,ny,fs*1.25,'#ffe23a',{max:cw*.92,font:'"SC Bangers",Impact,sans-serif',w:400});
-   txt(g,phase==='answer'?`IT'S ${K.money(q.price)}!`:`HIGHER OR LOWER THAN ${K.money(q.shown)}?`,cx,ny+fs*2,fs*1.25,phase==='answer'?(q.right?'#7dff5a':'#ff8a6a'):'#fff',{max:cw*.92});
-   if(phase==='ask'&&!K.waiting()){const w2=cw/2-fs*1.1;K.button(g,{x:cx-cw/2+fs*.7,y:qy,w:w2,h:bh},'HIGHER ▲',()=>answer('h'),{col:'#2fa84f',size:fs*1.4});K.button(g,{x:cx+cw/2-fs*.7-w2,y:qy,w:w2,h:bh},'LOWER ▼',()=>answer('l'),{col:'#c8102e',size:fs*1.4});}
-   else if(phase==='ask')txt(g,`${names[K.cur].toUpperCase()} IS THINKING…`,cx,qy+bh/2,fs*.95,'#bfe7ff',{max:cw*.9});}
+   // upright: prize on top, the question and the buttons under it; landscape: the prize on the left, the rest on the right
+   const px=side?cx-cw/2+cw*.24:cx,pcw=side?cw*.44:cw,tx=side?cx+cw*.24:cx,tw=side?cw*.46:cw,bh=Math.min(fs*3.6,ch*.24),qy=y0+ch-bh-fs*.9,ny=side?y0+ch*.3:qy-fs*4.2,iy=y0+fs*2.2,
+    pedW=side?Math.min(pcw*.5,ch*.3):Math.min(cw*.4,(ny-fs*1.2-iy)*.5),pedTop=side?y0+ch-fs*.8-pedW*.45:ny-fs*1.6-pedW*.45;
+   txt(g,`PRIZE ${p.q+1} OF 4`,side?px:cx,y0+fs*1.2,fs*.85,'#ffd75a');
+   ST().drawPrizeOn(g,SP.prizePhoto(q.id),px,pedTop,pcw*.86,pedTop-iy-fs*.3,{emoji:q.em,ped:true,pedW});
+   txt(g,q.name.toUpperCase(),tx,ny,fs*1.25,'#ffe23a',{max:tw*.92,font:'"SC Bangers",Impact,sans-serif',w:400});
+   txt(g,phase==='answer'?`IT'S ${K.money(q.price)}!`:`HIGHER OR LOWER THAN ${K.money(q.shown)}?`,tx,ny+fs*2,fs*1.25,phase==='answer'?(q.right?'#7dff5a':'#ff8a6a'):'#fff',{max:tw*.92});
+   if(phase==='ask'&&!K.waiting()){const w2=tw/2-fs*.9,bx=tx-tw/2;K.button(g,{x:bx+fs*.4,y:qy,w:w2,h:bh},'HIGHER ▲',()=>answer('h'),{col:'#2fa84f',size:Math.min(fs*1.4,bh*.42)});K.button(g,{x:bx+tw-fs*.4-w2,y:qy,w:w2,h:bh},'LOWER ▼',()=>answer('l'),{col:'#c8102e',size:Math.min(fs*1.4,bh*.42)});}
+   else if(phase==='ask')txt(g,`${names[K.cur].toUpperCase()} IS THINKING…`,tx,qy+bh/2,fs*.95,'#bfe7ff',{max:tw*.9});}
   else{txt(g,`PUNCHES: ${p.punches}`,Pz.x+Pz.w/2,Pz.y+Pz.h*.4,fs*2,'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400});
    txt(g,phase==='punch'?(K.waiting()?`${names[K.cur].toUpperCase()} IS PICKING A HOLE…`:'PUNCH A HOLE!'):phase==='choose'?`YOU HAVE ${K.money(p.slips[p.cur])}`:'',Pz.x+Pz.w/2,Pz.y+Pz.h*.68,fs*.95,'#fff',{max:Pz.w});
    if(phase==='choose'&&!K.waiting()){const bb=L.btns,w2=bb.w/2-fs*.4;K.button(g,{x:bb.x,y:bb.y,w:w2,h:bb.h},'KEEP IT',()=>choose(1),{col:'#2fa84f'});K.button(g,{x:bb.x+bb.w-w2,y:bb.y,w:w2,h:bb.h},`PUNCH AGAIN (${p.punches})`,()=>choose(0),{col:'#c8102e'});}}
