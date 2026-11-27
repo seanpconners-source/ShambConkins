@@ -73,11 +73,11 @@ async function showcase(s){
    txt(g,'ACTUAL RETAIL PRICE',b.x+b.w/2,y0+b.h*.08,b.h*.05,'#ffd75a',{max:w*.9});txt(g,money(o.arp),b.x+b.w/2,y0+b.h*.2,b.h*.1,'#7dff5a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:w*.9});
    if(o.diff!=null)txt(g,o.diff<0?'OVERBID':`${money(o.diff)} AWAY`,b.x+b.w/2,y0+b.h*.33,b.h*.07,o.diff<0?'#ff6a5a':'#fff',{max:w*.9});}}
  function card(g,L){const fs=L.fs,p=L.pods[0],top=K.top+4;let r;
-  if(K.wide){const x1=p.x-10,w=Math.min(x1-8,fs*24);r={x:Math.max(8,x1-w),y:top,w,h:L.H-top-8};}
-  else{const w=Math.min(L.W-16,fs*24),y1=p.y-8;r={x:L.W/2-w/2,y:top,w,h:Math.max(fs*14,y1-top)};}
+  if(K.wide){const x1=p.x-10,w=Math.min(x1-8,fs*24),x0=Math.max(8,x1-w),fsBtn=x0<L.W/2+20&&x0+w>L.W/2-20?38:0;r={x:x0,y:top,w,h:L.H-top-8-fsBtn};}
+  else{const w=Math.min(L.W-16,fs*24),y1=p.y-8-(p.y>L.H-60?38:0);r={x:L.W/2-w/2,y:top,w,h:Math.max(fs*14,y1-top)};}
   g.fillStyle='rgba(20,6,46,.94)';g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,14);g.fill();g.strokeStyle='#ffd75a';g.lineWidth=3;g.stroke();return r;}
  // the showcase's prizes, listed on the bid / choice card (owner, Nov 27): small picture + name, two columns when there's room
- function itemList(g,C,y,n,maxH){const fs=L0.fs,its=cases[n].items,cols=C.w>fs*17&&its.length>3?2:1,rows=Math.ceil(its.length/cols),lh=Math.min(fs*1.5,maxH/rows),cw=(C.w-fs)/cols;
+ function itemList(g,C,y,n,maxH){const fs=L0.fs,its=cases[n].items,cols=C.w>fs*17&&its.length>3?2:1,rows=Math.ceil(its.length/cols),lh=Math.min(fs*2.8,maxH/rows),cw=(C.w-fs)/cols;
   its.forEach((it,j)=>{const cx=C.x+fs*.5+(j%cols)*cw,cy=y+Math.floor(j/cols)*lh+lh/2,ph=SP.prizePhoto(it[0]),ps=lh*.86;
    if(ph)ST.drawPrizeOn(g,ph,cx+ps/2,cy+ps/2,ps,ps,{emoji:it[3]});else txt(g,it[3],cx+ps/2,cy,ps*.7,'#fff');
    g.save();g.font=`700 ${Math.min(fs*.78,lh*.55)}px "SC Nunito",sans-serif`;g.textAlign='left';g.textBaseline='middle';g.fillStyle=it[4]==='car'?'#ffe23a':'#fff';
@@ -109,6 +109,8 @@ async function showcase(s){
   // the announcer's caption = a lower third: on wide screens left of the podiums, on tall ones just above them (never over the prize)
   if(cap){const fs=L.fs,p=L.pods[0],ch=fs*2.6;let cx,w,y0;if(K.wide){const x1=p.x-10;w=Math.min(x1-12,fs*26);cx=Math.max(8+w/2,x1-w/2);y0=L.H-ch-10;}else{w=Math.min(L.W*.94,fs*26);cx=L.W/2;y0=p.y-ch-8;}
    g.fillStyle='rgba(10,4,30,.82)';g.beginPath();g.roundRect(cx-w/2,y0,w,ch,10);g.fill();wrapCap(g,'♪ '+cap.text,cx,y0+ch/2,fs*.85,w*.94);}
+  // while a card is up its words are on it (and spoken): no speech bubble half under the card
+  K.noBubble=!!(resolveBid&&bidder>=0&&who[bidder].human)||!!(choose&&who[sc.top].human);
   K.overlay(g,null);
   if(resolveBid&&bidder>=0&&who[bidder].human)drawKeypad(g,L);else if(choose&&who[sc.top].human)drawChoice(g,L);});
  // ---- the flow
