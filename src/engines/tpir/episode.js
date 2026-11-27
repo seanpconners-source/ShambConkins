@@ -180,10 +180,12 @@ async function episode(s,{alone=false}={}){
   const gift=SC.PARTING[Math.floor(R()*SC.PARTING.length)],gname=gift[2]?gift[2].replace(/^a year's supply of /i,''):'Rice-A-Roni';
   add({p:i},0,`${gname} + the home game`);snd.want(['v-'+TV.nameKey(e.name)]);snd.prepare?.([gift[1]]);SP.prizePhoto(gift[0]);SP.prizePhoto(SC.HOME_GAME);
   setScene({name:'goodbye',host:true,capY:(W,H,fs)=>H*.12+Math.min(W*.06,H*.065)+fs*1.1,draw(g,W,H,t,fs){ST.drawStage(g,W,H,why==='showcase'?'showcase':'wheel',t);const h=Math.min(H*.6,W*.5),fy=H*.94;
-   ST.floorShadow(g,W*.5,fy,h*.4);P.contestant(g,s,who,W*.5,fy,h,{body:bodyOf[i],pose:t>4?'clap':'stand',mood:t>4?'normal':'sad',t});
-   if(t>3.2){const a=ease(t-3.2),bw=Math.min(W*.26,h*.55),ph=SP.prizePhoto(gift[0]),hg=SP.prizePhoto(SC.HOME_GAME);g.save();g.globalAlpha=a;
-    ST.drawPrizeOn(g,ph,W*.79,fy-h*.05,bw,bw,{emoji:'🎁',ped:true});ST.drawPrizeOn(g,hg,W*.21,fy-h*.05,bw,bw,{emoji:'🎲',ped:true});
-    const lf=Math.min(fs*.85,W*.03);txt(g,'THE HOME GAME',W*.21,fy+lf*.2,lf,'#fff',{max:W*.36});txt(g,gname.toUpperCase(),W*.79,fy+lf*.2,lf,'#fff',{max:W*.36});g.restore();}
+   const cx=H>W*1.15?W*.42:W*.5;ST.floorShadow(g,cx,fy,h*.4);P.contestant(g,s,who,cx,fy,h,{body:bodyOf[i],pose:t>4?'clap':'stand',mood:t>4?'normal':'sad',t});
+   if(t>3.2){const a=ease(t-3.2),tall=H>W*1.15,bw=tall?W*.21:Math.min(W*.26,h*.55),ph=SP.prizePhoto(gift[0]),hg=SP.prizePhoto(SC.HOME_GAME);g.save();g.globalAlpha=a;
+    // phones: both gifts on the right (Bob stands on the left); wide: one each side of the contestant
+    const gx=tall?W*.885:W*.79,hx=tall?W*.665:W*.21;
+    ST.drawPrizeOn(g,ph,gx,fy-h*.05,bw,bw,{emoji:'🎁',ped:true});ST.drawPrizeOn(g,hg,hx,fy-h*.05,bw,bw,{emoji:'🎲',ped:true});
+    const lf=Math.min(fs*.85,W*.03,tall?W*.026:99);txt(g,'THE HOME GAME',hx,fy+lf*.2,lf,'#fff',{max:tall?W*.21:W*.36});txt(g,gname.toUpperCase(),gx,fy+lf*.2,lf,'#fff',{max:tall?W*.21:W*.36});g.restore();}
    txt(g,`THANKS FOR PLAYING, ${String(e.name).toUpperCase()}!`,W/2,H*.12,Math.min(W*.07,H*.075),'#ffe23a',{font:'"SC Bangers",Impact,sans-serif',w:400,max:W*.92});
    txt(g,`${money(e.total)} in cash and prizes`,W/2,H*.12+Math.min(W*.06,H*.065),fs*1,'#fff',{max:W*.9});}});
   if(!snd.clip('losing-horn'))sfx.aww?.();await wait(900);if(!s.alive)return;say(`${e.name}, thank you for playing The Price Is Right!`,3000);sfx.applause?.(2.4,.6);await wait(3200);if(!s.alive)return;

@@ -74,7 +74,7 @@ async function showcase(s){
    if(o.diff!=null)txt(g,o.diff<0?'OVERBID':`${money(o.diff)} AWAY`,b.x+b.w/2,y0+b.h*.33,b.h*.07,o.diff<0?'#ff6a5a':'#fff',{max:w*.9});}}
  function card(g,L){const fs=L.fs,p=L.pods[0],top=K.top+4;let r;
   if(K.wide){const x1=p.x-10,w=Math.min(x1-8,fs*24),x0=Math.max(8,x1-w),fsBtn=x0<L.W/2+20&&x0+w>L.W/2-20?38:0;r={x:x0,y:top,w,h:L.H-top-8-fsBtn};}
-  else{const w=Math.min(L.W-16,fs*24),y1=p.y-8-(p.y>L.H-60?38:0);r={x:L.W/2-w/2,y:top,w,h:Math.max(fs*14,y1-top)};}
+  else{const w=Math.min(L.W-16,fs*24),y1=p.y-p.h*.95;r={x:L.W/2-w/2,y:top,w,h:Math.max(fs*14,y1-top)};}
   g.fillStyle='rgba(20,6,46,.94)';g.beginPath();g.roundRect(r.x,r.y,r.w,r.h,14);g.fill();g.strokeStyle='#ffd75a';g.lineWidth=3;g.stroke();return r;}
  // the showcase's prizes, listed on the bid / choice card (owner, Nov 27): small picture + name, two columns when there's room
  function itemList(g,C,y,n,maxH){const fs=L0.fs,its=cases[n].items,cols=C.w>fs*17&&its.length>3?2:1,rows=Math.ceil(its.length/cols),lh=Math.min(fs*2.8,maxH/rows),cw=(C.w-fs)/cols;
