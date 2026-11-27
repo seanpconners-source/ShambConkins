@@ -52,7 +52,10 @@ async function episode(s,{alone=false}={}){
   cast.step(dt,{host:!!bubble||scene.host,model:!!scene.model});const g=x,W=s.W,H=s.H,fs=clamp(Math.min(W,H)*.04,12,20);g.setTransform(s.dpr||1,0,0,s.dpr||1,0,0);scene.draw(g,W,H,sceneT,fs);
   if(scene.cast!==false){const sp=cast.spots(W,H,{foot:H-4});cast.draw(g,W,H,sceneT,sp,!!bubble);if(bubble&&cast.hv>.5){const b=cast.bubbleAt(W,H,sp,fs);ST.bubble(g,b.x,b.y,bubble.text,b.w,fs*.85,b.tx,b.ty);}}
   else if(bubble){ST.bubble(g,W/2,H*.18,bubble.text,Math.min(W*.8,fs*18),fs*.85,W/2,H*.3);}
-  if(caption){const w=Math.min(W*.9,fs*26),y0=scene.capLow?H-fs*3.2:52+fs*.2;g.fillStyle='rgba(10,4,30,.82)';g.beginPath();g.roundRect(W/2-w/2,y0,w,fs*2.6,10);g.fill();txt(g,'♪ '+caption.text,W/2,y0+fs*1.3,fs*.85,'#fff',{max:w*.94,w:800});}
+  if(caption){const w=Math.min(W*.9,fs*26),y0=scene.capY?scene.capY(W,H,fs):scene.capLow?H-fs*3.2:52+fs*.2;g.fillStyle='rgba(10,4,30,.82)';g.beginPath();g.roundRect(W/2-w/2,y0,w,fs*2.6,10);g.fill();
+   // long lines on two rows (one shrunk row was unreadable)
+   const tx='♪ '+caption.text,mx=w*.94;g.save();g.font=`800 ${fs*.85}px "SC Nunito",sans-serif`;if(g.measureText(tx).width<=mx){g.restore();txt(g,tx,W/2,y0+fs*1.3,fs*.85,'#fff',{max:mx,w:800});}
+   else{const ws=tx.split(' ');let a='',i=0;while(i<ws.length&&g.measureText(a+ws[i]+' ').width<=mx)a+=ws[i++]+' ';g.restore();txt(g,a.trim(),W/2,y0+fs*.8,fs*.8,'#fff',{max:mx,w:800});txt(g,ws.slice(i).join(' '),W/2,y0+fs*1.8,fs*.8,'#fff',{max:mx,w:800});}}
   if(banner)ST.moneyBanner(g,W,H,banner.big,banner.small,Math.min(1,banner.t*3),banner.col);});
  const setScene=sc=>{if(!c||!c.isConnected)stage();scene=sc;sceneT=0;bubble=caption=banner=null;s.debug={episode:true,scene:sc.name,lineup:L0,get tally(){return [...T.values()].map(e=>({name:e.name,total:e.total,lines:e.lines}));},set hurry(v){hurry=!!v;}};};
  // a part of the show as a segment: the scene stops drawing while it runs
@@ -176,7 +179,7 @@ async function episode(s,{alone=false}={}){
   // the parting gifts (owner, Nov 27): always the home game, and a year's supply of something (not always the Rice-A-Roni)
   const gift=SC.PARTING[Math.floor(R()*SC.PARTING.length)],gname=gift[2]?gift[2].replace(/^a year's supply of /i,''):'Rice-A-Roni';
   add({p:i},0,`${gname} + the home game`);snd.want(['v-'+TV.nameKey(e.name)]);snd.prepare?.([gift[1]]);SP.prizePhoto(gift[0]);SP.prizePhoto(SC.HOME_GAME);
-  setScene({name:'goodbye',host:true,draw(g,W,H,t,fs){ST.drawStage(g,W,H,why==='showcase'?'showcase':'wheel',t);const h=Math.min(H*.6,W*.5),fy=H*.94;
+  setScene({name:'goodbye',host:true,capY:(W,H,fs)=>H*.12+Math.min(W*.06,H*.065)+fs*1.1,draw(g,W,H,t,fs){ST.drawStage(g,W,H,why==='showcase'?'showcase':'wheel',t);const h=Math.min(H*.6,W*.5),fy=H*.94;
    ST.floorShadow(g,W*.5,fy,h*.4);P.contestant(g,s,who,W*.5,fy,h,{body:bodyOf[i],pose:t>4?'clap':'stand',mood:t>4?'normal':'sad',t});
    if(t>3.2){const a=ease(t-3.2),bw=Math.min(W*.26,h*.55),ph=SP.prizePhoto(gift[0]),hg=SP.prizePhoto(SC.HOME_GAME);g.save();g.globalAlpha=a;
     ST.drawPrizeOn(g,ph,W*.79,fy-h*.05,bw,bw,{emoji:'🎁',ped:true});ST.drawPrizeOn(g,hg,W*.21,fy-h*.05,bw,bw,{emoji:'🎲',ped:true});
